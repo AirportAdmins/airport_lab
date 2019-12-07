@@ -6,6 +6,6 @@ comp/*навание компоненты*
 
 Например:
 
-comp/passenger
-comp/timetable
-comp/departuretable
+comp/passenger  
+comp/timetable  
+comp/departuretable 
