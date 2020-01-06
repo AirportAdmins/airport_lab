@@ -5,20 +5,20 @@ using System.Text;
 using RabbitMQ.Client.Events;
 using System.Configuration;
 
-namespace MqWrapper
+namespace RabbitMqWrapper
 {
-    public class WrapperClient
+    public class RabbitMqClient
     {
         IConnection mqConnection;
         IModel mqChannel;
 
         // In order to use this constructor you need to have App.config
         // file in root of the project with the following parameters
-        public WrapperClient() 
+        public RabbitMqClient() 
             : this(ConfigurationManager.AppSettings["mqHostName"],
                   ConfigurationManager.AppSettings["mqUserName"],
                   ConfigurationManager.AppSettings["mqPassword"]) { }
-        public WrapperClient(string hostName, string userName, string password)
+        public RabbitMqClient(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory()
             {

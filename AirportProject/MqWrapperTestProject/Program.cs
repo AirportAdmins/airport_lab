@@ -1,5 +1,5 @@
 ﻿using System;
-using MqWrapper;
+using RabbitMqWrapper;
 
 namespace MqWrapperTestProject
 {
@@ -8,7 +8,7 @@ namespace MqWrapperTestProject
         const string QUEUE_NAME = "schedule-cashbox";
         static void Main(string[] args)
         {
-            var mqClient = new WrapperClient();
+            var mqClient = new RabbitMqClient();
 
             mqClient.DeclareQueues(QUEUE_NAME);
 
