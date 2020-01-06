@@ -5,9 +5,13 @@ VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{1A134D0A-F959-49D8-9E48-494E0660D092}"
 EndProject
+<<<<<<< HEAD
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MqWrapper", "MqWrapper\MqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirplaneComponent", "AirplaneComponent\AirplaneComponent.csproj", "{79AD2644-EE07-4C35-A3E2-041C9D174D7A}"
+=======
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
+>>>>>>> master
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +27,13 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Release|Any CPU.Build.0 = Release|Any CPU
+=======
+>>>>>>> master
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
