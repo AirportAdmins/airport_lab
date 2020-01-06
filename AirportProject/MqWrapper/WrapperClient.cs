@@ -22,16 +22,22 @@ namespace MqWrapper
             mqChannel = mqConnection.CreateModel();
         }
 
-        public void Send<T>(T message, string queueName)
+        public void DeclareQueues(params string[] queues)
+        {
+            foreach (var queue in queues)
+            {
+                mqChannel.QueueDeclare(queue: queue,
+                    durable: false,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
+            }
+        }
+
+        public void Send<T>(string queueName, T message)
         {
             var json = JsonConvert.SerializeObject(message);
             var rawMessage = Encoding.UTF8.GetBytes(json);
-
-            mqChannel.QueueDeclare(queue: queueName,
-                durable: false,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null);
 
             mqChannel.BasicPublish(exchange: "",
                 routingKey: queueName,

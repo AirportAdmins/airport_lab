@@ -13,6 +13,8 @@ namespace MqWrapperTestProject
         {
             var mqClient = new WrapperClient(HOST_NAME, USERNAME, PASSWORD);
 
+            mqClient.DeclareQueues(QUEUE_NAME);
+
             var message = new MyCustomMessage()
             {
                 MyTime = DateTime.Now,
@@ -20,7 +22,7 @@ namespace MqWrapperTestProject
                 MyArray = new int[] { 1, 2, 3, 44, 42 }
             };
 
-            mqClient.Send(message, QUEUE_NAME);
+            mqClient.Send(QUEUE_NAME, message);
 
             mqClient.SubscribeTo<MyCustomMessage>(QUEUE_NAME, (mes) =>
             {
