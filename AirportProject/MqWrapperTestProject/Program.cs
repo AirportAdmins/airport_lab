@@ -5,13 +5,10 @@ namespace MqWrapperTestProject
 {
     class Program
     {
-        const string HOST_NAME = "v174153.hosted-by-vdsina.ru";
         const string QUEUE_NAME = "schedule-cashbox";
-        const string USERNAME = "schedule";
-        const string PASSWORD = "schedule";
         static void Main(string[] args)
         {
-            var mqClient = new WrapperClient(HOST_NAME, USERNAME, PASSWORD);
+            var mqClient = new WrapperClient();
 
             mqClient.DeclareQueues(QUEUE_NAME);
 

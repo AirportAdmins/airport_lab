@@ -3,6 +3,7 @@ using RabbitMQ.Client;
 using Newtonsoft.Json;
 using System.Text;
 using RabbitMQ.Client.Events;
+using System.Configuration;
 
 namespace MqWrapper
 {
@@ -10,6 +11,13 @@ namespace MqWrapper
     {
         IConnection mqConnection;
         IModel mqChannel;
+
+        // In order to use this constructor you need to have App.config
+        // file in root of the project with the following parameters
+        public WrapperClient() 
+            : this(ConfigurationManager.AppSettings["mqHostName"],
+                  ConfigurationManager.AppSettings["mqUserName"],
+                  ConfigurationManager.AppSettings["mqPassword"]) { }
         public WrapperClient(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory()
