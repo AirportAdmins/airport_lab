@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using RabbitMqWrapper;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Text;
@@ -8,57 +9,41 @@ namespace ScheduleComponent
 {
     class Program
     {
-        const string HOST_NAME = "v174153.hosted-by-vdsina.ru";
         const string QUEUE_NAME = "schedule-cashbox";
-        const string USERNAME = "schedule";
-        const string PASSWORD = "schedule";
         static void Main(string[] args)
         {
-            var factory = new ConnectionFactory() {
-                HostName = HOST_NAME,
-                UserName = USERNAME,
-                Password = PASSWORD
-            };
-            using (var connection = factory.CreateConnection())
-            using (var channel = connection.CreateModel())
+            var mqClient = new RabbitMqClient();
+
+            mqClient.DeclareQueues(QUEUE_NAME);
+
+            var message = new MyCustomMessage()
             {
-                channel.QueueDeclare(queue: QUEUE_NAME,
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
+                MyTime = DateTime.Now,
+                MyString = "Hello World, This is a test",
+                MyArray = new int[] { 1, 2, 3, 44, 42 }
+            };
 
-                string message = "Hello World!";
-                var body = Encoding.UTF8.GetBytes(message);
+            mqClient.Send(QUEUE_NAME, message);
 
-                // Send 10 messages
-                for (int i = 0; i < 10; i++)
-                {
-                    // Alter first char
-                    body[0]++;
-                    // Send altered
-                    channel.BasicPublish(exchange: "",
-                                         routingKey: QUEUE_NAME,
-                                         basicProperties: null,
-                                         body: body);
-                }
-                Console.WriteLine(" [x] Sent \"{0}\" but altered", message);
+            mqClient.SubscribeTo<MyCustomMessage>(QUEUE_NAME, (mes) =>
+            {
+                Console.WriteLine("{0} Received: {1}", DateTime.Now, mes);
+            });
 
-                // Create listener
-                var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (model, ea) =>
-                {
-                    var respBody = ea.Body;
-                    var respMessage = Encoding.UTF8.GetString(respBody);
-                    Console.WriteLine(" [x] Received {0}", respMessage);
-                };
-                // Start listening
-                channel.BasicConsume(queue: QUEUE_NAME,
-                                     autoAck: true,
-                                     consumer: consumer);
+            Console.ReadLine();
+            mqClient.Dispose();
+        }
+    }
 
-                Console.ReadLine();
-            }
+    class MyCustomMessage
+    {
+        public DateTime MyTime { get; set; }
+        public string MyString { get; set; }
+        public int[] MyArray { get; set; }
+
+        public override string ToString()
+        {
+            return MyTime.ToString() + "; " + MyString + "; " + String.Join(", ", MyArray);
         }
     }
 }
