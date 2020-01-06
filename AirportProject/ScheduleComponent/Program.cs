@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 
 namespace ScheduleComponent
-{
+{ 
     class Program
     {
         const string QUEUE_NAME = "schedule-cashbox";
