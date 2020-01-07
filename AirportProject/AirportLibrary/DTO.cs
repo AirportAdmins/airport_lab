@@ -6,7 +6,7 @@ namespace AirportLibrary.DTO
 {
     // Schedule component
     // ===================================
-    // To Timetable, Cashbox, Registration 
+    // With Timetable, Cashbox, Registration 
     public class FlightStatusUpdate
     {
         public string FlightId { get; set; }
@@ -18,7 +18,7 @@ namespace AirportLibrary.DTO
     {
         New, CheckIn, Boarding, Delayed, Departed
     }
-    // To GroundService
+    // With GroundService
     public class AirplaneServiceSignal
     {
         public ServiceSignal Signal { get; set; }
@@ -38,7 +38,7 @@ namespace AirportLibrary.DTO
     {
         Delayed, Departed
     }
-    // To Airplane
+    // With Airplane
     public class AirplaneModel
     {
         public static readonly IList<AirplaneModel> Models = new List<AirplaneModel>() {
@@ -68,9 +68,91 @@ namespace AirportLibrary.DTO
     }
     // ===================================
 
+    // All vehicles
+    // ===================================
+    // 
+    // ===================================
 
+    // Airplane Component
+    // ===================================
+    // With GroundService
+    public class AirplaneServiceRequest
+    {
+        public string PlaneId { get; set; }
+        public int LocationVertex { get; set; }
+        public List<Tuple<AirplaneNeeds, int>> Needs { get; set; }
+    }
+    public enum AirplaneNeeds
+    {
+        PickUpPassengers, PickUpBaggage, Refuel
+    }
+    public class DepartureSignal
+    {
+        public string PlaneId { get; set; }
+    }
 
+    // With Bus
+    public class PassengersTransfer
+    {
+        public string BusId { get; set; }
+        public int PassengerCount { get; set; }
+    }
+    public class PassengerTransferRequest
+    {
+        public string PlaneId { get; set; }
+        public string BusId { get; set; }
+        public TransferAction Action { get; set; }
+        public int PassengersCount { get; set; }
+    }
+    public enum TransferAction
+    {
+        Take, Give
+    }
 
+    // With Baggage
+    public class BaggageTransfer
+    {
+        public string BaggageCarId { get; set; }
+        public int BaggageCount { get; set; }
+    }
+    public class BaggageTransferRequest
+    {
+        public string PlaneId { get; set; }
+        public string BaggageCarId { get; set; }
+        public TransferAction Action { get; set; }
+        public int BaggageCount { get; set; }
+    }
+    // With FollowMe
+    public class ArrivalConfirmation
+    {
+        public string PlaneId { get; set; }
+        public string FollowMeId { get; set; }
+        public int LocationVertex { get; set; }
+    }
+    public class FollowMeCommand
+    {
+        public string PlaneId { get; set; }
+        public string FollowMeId { get; set; }
+        public int DestinationVertex { get; set; }
+    }
+    // With Deicing
+    public class DeicingCompletion
+    {
+        public string PlaneId { get; set; }
+    }
+    // With FuelTruck
+    public class RefuelCompletion
+    {
+        public string PlaneId { get; set; }
+        public int Fuel { get; set; }
+    }
+    // With Catering
+    public class CateringCompletion
+    {
+        public string PlaneId { get; set; }
+        public List<Tuple<Food, int>> Food { get; set; }
+    }
+    // ===================================
 
 
 
