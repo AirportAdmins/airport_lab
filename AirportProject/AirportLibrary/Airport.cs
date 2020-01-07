@@ -2,52 +2,29 @@
 
 namespace AirportLibrary
 {
-    public enum Component
+    public static class Component
     {
-        Schedule,
-        Airplane,
-        GroundService,
-        Timetable,
-        Cashbox,
-        Registration,
-        Storage,
-        Passenger,
-        GroundMotion,
-        Bus,
-        Baggage,
-        FollowMe,
-        Catering,
-        Deicing,
-        FuelTruck,
-        TimeService,
-        Visualizer,
-        Logs,
+        public const string Schedule = "schedule";
+        public const string Airplane = "airplane";
+        public const string GroundService = "groundservice";
+        public const string Timetable = "timetable";
+        public const string Cashbox = "cashbox";
+        public const string Registration = "registration";
+        public const string Storage = "storage";
+        public const string Passenger = "passenger";
+        public const string GroundMotion = "groundmotion";
+        public const string Bus = "bus";
+        public const string Baggage = "baggage";
+        public const string FollowMe = "followme";
+        public const string Catering = "catering";
+        public const string Deicing = "deicing";
+        public const string FuelTruck = "fueltruck";
+        public const string TimeService = "timeservice";
+        public const string Visualizer = "visualizer";
+        public const string Logs = "logs";
     }
-    public static class Airport
+    public static class Subject
     {
-        
-    }
-
-    // Class for generating queue names
-    public class Queue
-    {
-        Component from;
-        private Queue(Component from)
-        {
-            this.from = from;
-        }
-        public static Queue From(Component from)
-        {
-            return new Queue(from);
-        }
-        public string To(Component to)
-        {
-            return from.ToString() + "-" + to.ToString();
-        }
-        public static string FromAnyTo(Component to)
-        {
-            return to.ToString();
-        }
-
+        public const string AirplaneTypes = "airplanetypes";
     }
 }
