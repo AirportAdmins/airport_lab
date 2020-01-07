@@ -45,12 +45,14 @@ namespace AirportLibrary.DTO
             new AirplaneModel("Boeing 737", 60, 1000)
         };
         public int Seats { get; set; }
+        public int BaggagePlaces { get; set; }
         public int Fuel { get; set; }
         public string Model { get; set; }
         private AirplaneModel(string model, int seats, int fuel)
         {
             Model = model;
             Seats = seats;
+            BaggagePlaces = seats;
             Fuel = fuel;
         }
     }
@@ -76,7 +78,7 @@ namespace AirportLibrary.DTO
     // Airplane Component
     // ===================================
     // With GroundService
-    public class AirplaneServiceRequest
+    public class AirplaneServiceCommand
     {
         public string PlaneId { get; set; }
         public int LocationVertex { get; set; }
@@ -228,6 +230,86 @@ namespace AirportLibrary.DTO
     }
     // ===================================
 
+    // GroundService Component
+    // ===================================
+    // With Storage
+    public class FlightStorageInfoRequest
+    {
+        public string FlightId { get; set; }
+    }
+    public class FlightStorageInfoResponse
+    {
+        public string FlightId { get; set; }
+        public int PassengersCount { get; set; }
+        public int BaggageCount { get; set; }
+    }
+    // Common to Service Commands
+    public class ServiceCommand
+    {
+        public int PlaneLocationVertex { get; set; }
+        public string PlaneId { get; set; }
+    }
+    // With FollowMe
+    public class AirplaneTransferCommand : ServiceCommand
+    {
+        public int DestinationVertex { get; set; }
+    }
+    // With Bus
+    public class PassengersServiceCommand : ServiceCommand
+    {
+        public int StorageVertex { get; set; }
+        public TransferAction Action { get; set; }
+        public int PassengersCount { get; set; }
+        public string FlightId { get; set; }
+    }
+    // With Baggage
+    public class BaggageServiceCommand : ServiceCommand
+    {
+        public int StorageVertex { get; set; }
+        public TransferAction Action { get; set; }
+        public int BaggageCount { get; set; }
+        public string FlightId { get; set; }
+    }
+    // With FuelTruck
+    public class RefuelServiceCommand : ServiceCommand
+    {
+        public int Fuel { get; set; }
+    }
+    // With Catering
+    public class CateringServiceCommand : ServiceCommand
+    {
+        public List<Tuple<Food, int>> FoodList { get; set; }
+    }
+    // With all service cars
+    public class ServiceCompletionMessage
+    {
+        // Constant from AirportLibrary.Component class
+        public string Component { get; set; }
+        public string PlaneId { get; set; }
+    }
+    // ===================================
+
+    // GroundMotion Component
+    // ===================================
+    // With all transport
+    public class MotionPermissionRequest
+    {
+        // Constant from AirportLibrary.Component class
+        public string Component { get; set; }
+        public string ObjectId { get; set; }
+        public int StartVertex { get; set; }
+        public int DestinationVertex { get; set; }
+        public MotionAction Action { get; set; }
+    }
+    public enum MotionAction
+    {
+        Occupy, Free
+    }
+    public enum MotionPermissionResponse
+    {
+        Positive
+    }
+    // ===================================
 
     // TimeService Component
     // ===================================
