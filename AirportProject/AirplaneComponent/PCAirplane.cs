@@ -11,7 +11,7 @@ namespace AirplaneComponent
     {
         RabbitMqClient MqClient;
         Dictionary<string, Airplane> airplanes;
-        string[] queues = new string[] { "Aiplane-Schedule" };
+        string[] queues = new string[] { "Aiplane-Schedule","Airplane-Bus" };
         public PCAirplane()
         {
             MqClient = new RabbitMqClient();
@@ -19,18 +19,36 @@ namespace AirplaneComponent
 
         void SubscribeAll()
         {
-            MqClient.SubscribeTo<AirplaneGenerationRequest>(queues[0], mes =>
-                     CreateScheduleResponse(mes));
+            MqClient.SubscribeTo<AirplaneGenerationRequest>(queues[0], mes =>   //schedule
+                     ScheduleResponse(mes));
+            MqClient.SubscribeTo<PassengerTransferRequest>(queues[1], mes =>    //bus
+                     BusTransferResponse(mes));
         }
-        AirplaneGenerationResponse CreateScheduleResponse(AirplaneGenerationRequest req)
+        void ScheduleResponse(AirplaneGenerationRequest req)
         {
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
-            airplanes.Add(airplane.AirplaneID, airplane);
-            return new AirplaneGenerationResponse()
-            {
+            airplanes.Add(airplane.PlaneID, airplane);
+            MqClient.Send<AirplaneGenerationResponse>(queues[0],new AirplaneGenerationResponse() 
+            { 
                 FlightId = req.FlightId,
-                PlaneId = airplane.AirplaneID
-            };
+                PlaneId = airplane.PlaneID
+            });
+        }
+        void BusTransferResponse(PassengerTransferRequest req)
+        {
+            if (req.Action == TransferAction.Take)
+            {
+                MqClient.Send<PassengersTransfer>(queues[1], new PassengersTransfer()
+                {
+                    BusId = req.BusId,
+                    PassengerCount = airplanes[req.PlaneId].Passengers
+                });
+                airplanes[req.PlaneId].Passengers = 0;
+            }
+            else
+            {
+                airplanes[req.PlaneId].Passengers = req.PassengersCount;
+            }
         }
     } 
 }

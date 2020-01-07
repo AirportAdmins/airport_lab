@@ -9,7 +9,7 @@ namespace AirplaneComponent.AirplaneGenerator
     {
         AirplaneModel model;
 
-        int numberOfPassengers;
+        int passengers;
         int baggageAmount;
         int fuelAmout;
         bool isDeiced;
@@ -22,12 +22,12 @@ namespace AirplaneComponent.AirplaneGenerator
             this.model = model;
             this.airplaneID = "Plane-" + id;
         }
-        public string AirplaneID { get => airplaneID; }
+        public string PlaneID { get => airplaneID; }
         public string FlightID { get => flightID; set => flightID = value; }
         public AirplaneModel Model { get => model; }
 
         //properties to be filled
-        public int NumberOfPassengers { get => numberOfPassengers; set => numberOfPassengers = value; }
+        public int Passengers { get => passengers; set => passengers = value; }
         public int BaggageAmount { get => baggageAmount; set => baggageAmount = value; }
         public int FuelAmout { get => fuelAmout; set => fuelAmout = value; }
         public bool IsDeiced { get => isDeiced; set => isDeiced = value; }
