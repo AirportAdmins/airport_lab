@@ -2,61 +2,30 @@
 using System.Collections.Generic;
 using System.Text;
 using AirplaneComponent.AirplaneGenerator;
-using AirplaneComponent.AirplaneGenerator.AirplaneTypes;
-
+using AirportLibrary.DTO;
 
 namespace AirplaneComponent.Airplanes
 {
     public class AirplaneGenerator
     {
         static int aiplaneID = 0;
-        int flightID;
         Random rand;
-        public Airplane Generate(string type,int flightID)
+        public Airplane Generate(AirplaneModel model,int flightID)
         {
             rand = new Random();
-            this.flightID = flightID;
-            Airplane airplane = null;
-            switch (type)
-            {
-                case "A":
-                    airplane=MakeAirplaneTypeA();
-                    break;
-                case "B":
-                    airplane=MakeAirplaneTypeB();
-                    break;
-                case "C":
-                    airplane=MakeAirplaneTypeC();
-                    break;
-            }
+            Airplane airplane = new Airplane(model);
+            airplane.FlightID = flightID;
+
             return airplane;
         }
         
         Airplane FillAirplane(Airplane airplane)
         {
-            airplane.NumberOfPassengers = rand.Next(0, airplane.PassengerCapacity);
-            airplane.BaggageAmount = rand.Next(0, airplane.BaggageCapacity);
-            airplane.FuelAmout = rand.Next(1, airplane.MaxFuelAmount);
-            airplane.FlightID = flightID;
+            airplane.NumberOfPassengers = rand.Next(0, airplane.Model.Seats);
+            //airplane.BaggageAmount = rand.Next(0, ); TODO Доделать
+            airplane.FuelAmout = rand.Next(1, airplane.Model.Fuel);
             return airplane;
         }
-        Airplane MakeAirplaneTypeA()
-        {
-            Airplane airplane = new AirplaneTypeA(aiplaneID);
-            aiplaneID++;
-            return FillAirplane(airplane);
-        }
-        Airplane MakeAirplaneTypeB()
-        {
-            Airplane airplane = new AirplaneTypeB(aiplaneID);
-            aiplaneID++;
-            return FillAirplane(airplane);
-        }
-        Airplane MakeAirplaneTypeC()
-        {
-            Airplane airplane = new AirplaneTypeC(aiplaneID);
-            aiplaneID++;
-            return FillAirplane(airplane);
-        }
+   
     }
 }

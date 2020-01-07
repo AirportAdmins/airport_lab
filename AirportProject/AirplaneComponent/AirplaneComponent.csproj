@@ -10,7 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MqWrapper\MqWrapper.csproj" />
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
+    <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
   </ItemGroup>
 
 

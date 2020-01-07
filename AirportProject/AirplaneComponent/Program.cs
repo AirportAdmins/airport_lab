@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using MqWrapper;
 
 namespace AirplaneComponent
 {

@@ -5,18 +5,11 @@ VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{1A134D0A-F959-49D8-9E48-494E0660D092}"
 EndProject
-<<<<<<< HEAD
-<<<<<<< HEAD
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MqWrapper", "MqWrapper\MqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirplaneComponent", "AirplaneComponent\AirplaneComponent.csproj", "{79AD2644-EE07-4C35-A3E2-041C9D174D7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirplaneComponent", "AirplaneComponent\AirplaneComponent.csproj", "{79AD2644-EE07-4C35-A3E2-041C9D174D7A}"
-=======
-=======
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLibrary\AirportLibrary.csproj", "{D8F7B003-666C-4920-A534-0E683FD434C1}"
 EndProject
->>>>>>> 8fb0c24ab4235ea3a531d98cf99a5bd1b5bbc7ef
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
->>>>>>> master
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{21ECA996-0352-4919-8535-B3DF71192DF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,21 +21,18 @@ Global
 		{1A134D0A-F959-49D8-9E48-494E0660D092}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A134D0A-F959-49D8-9E48-494E0660D092}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A134D0A-F959-49D8-9E48-494E0660D092}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D8F7B003-666C-4920-A534-0E683FD434C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8F7B003-666C-4920-A534-0E683FD434C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D8F7B003-666C-4920-A534-0E683FD434C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D8F7B003-666C-4920-A534-0E683FD434C1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
-<<<<<<< HEAD
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79AD2644-EE07-4C35-A3E2-041C9D174D7A}.Release|Any CPU.Build.0 = Release|Any CPU
-=======
->>>>>>> master
+		{D8F7B003-666C-4920-A534-0E683FD434C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8F7B003-666C-4920-A534-0E683FD434C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8F7B003-666C-4920-A534-0E683FD434C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8F7B003-666C-4920-A534-0E683FD434C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21ECA996-0352-4919-8535-B3DF71192DF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21ECA996-0352-4919-8535-B3DF71192DF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21ECA996-0352-4919-8535-B3DF71192DF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21ECA996-0352-4919-8535-B3DF71192DF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
