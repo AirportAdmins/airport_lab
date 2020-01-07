@@ -150,11 +150,83 @@ namespace AirportLibrary.DTO
     public class CateringCompletion
     {
         public string PlaneId { get; set; }
-        public List<Tuple<Food, int>> Food { get; set; }
+        public List<Tuple<Food, int>> FoodList { get; set; }
     }
     // ===================================
 
+    // Registration component
+    // ===================================
+    // From Passenger
+    public class CheckInRequest
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+        public bool HasBaggage { get; set; }
+        public Food FoodType { get; set; }
+    }
 
+    public enum Food
+    {
+        Standard,
+        Vegan,
+        Child
+    }
+
+    // To Passenger
+    public class CheckInResponse
+    {
+        public string PassengerId { get; set; }
+        public CheckInStatus Status { get; set; }
+    }
+
+    public enum CheckInStatus
+    {
+        Early,
+        Late,
+        WrongTicket,
+        Terminal
+    }
+
+    // To CashBox
+    public class CheckTicketRequest
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+    }
+
+    // From CashBox
+    public class CheckTicketResponse
+    {
+        public string PassengerId { get; set; }
+        public bool HasTicket { get; set; }
+    }
+
+    // From GroundService
+    public class FoodInfoRequest
+    {
+        public string FlightId { get; set; }
+    }
+
+    // To GroundService
+    public class FoodInfoResponse
+    {
+        public string FlightId { get; set; }
+        public List<Tuple<Food, int>> FoodList { get; set; }
+    }
+
+    // Passing passenger to Storage
+    public class PassengerStoragePass
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+    }
+
+    // Passing baggage to Storage
+    public class BaggageStoragePass
+    {
+        public string FlightId { get; set; }
+    }
+    // ===================================
 
 
     // TimeService Component
