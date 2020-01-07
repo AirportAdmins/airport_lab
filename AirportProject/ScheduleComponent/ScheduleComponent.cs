@@ -1,4 +1,5 @@
 ﻿using AirportLibrary;
+using AirportLibrary.DTO;
 using RabbitMqWrapper;
 using System;
 using System.Collections.Generic;
@@ -22,8 +23,13 @@ namespace ScheduleComponent
             Component.Schedule + Component.Cashbox;
         public const string ScheduleToRegistrationQueue =
             Component.Schedule + Component.Registration;
+        public const string ScheduleToGroundService =
+            Component.Schedule + Component.GroundService;
+
         public const string TimeServiceToScheduleQueue =
             Component.TimeService + Component.Schedule;
+        public const string GroundServiceToScheduleQueue =
+            Component.GroundService + Component.Schedule;
 
         IFlightManager flightManager;
 
@@ -34,14 +40,53 @@ namespace ScheduleComponent
             mqClient.DeclareQueues(
                 ScheduleToTimetableQueue,
                 ScheduleToCashboxQueue,
-                ScheduleToRegistrationQueue
+                ScheduleToRegistrationQueue,
+                TimeServiceToScheduleQueue
             );
 
-            mqClient.Send(null, new Object());
-
-            mqClient.SubscribeTo<object>(null, (mes) =>
+            mqClient.SubscribeTo<CurrentPlayTime>(TimeServiceToScheduleQueue, (mes) =>
             {
-                Console.WriteLine("{0} Received: {1}", DateTime.Now, mes);
+                flightManager.SetCurrentTime(mes.PlayTime);
+                foreach (var flight in flightManager.GetFlightChanges())
+                {
+                    var statusUpdate = new FlightStatusUpdate()
+                    {
+                        FlightId = flight.FlightId,
+                        Status = flight.Status,
+                        DepartureTime = flight.DepartureTime,
+                        TicketCount = flight.Model.Seats
+                    };
+                    mqClient.Send(
+                        ScheduleToTimetableQueue,
+                        statusUpdate);
+                    if (statusUpdate.Status != FlightStatus.Delayed)
+                    {
+                        mqClient.Send(ScheduleToRegistrationQueue, statusUpdate);
+                        if (statusUpdate.Status != FlightStatus.CheckIn)
+                        {
+                            mqClient.Send(ScheduleToCashboxQueue, statusUpdate);
+                        }
+                    }
+                    if (statusUpdate.Status == FlightStatus.Boarding)
+                    {
+                        var serviceSignal = new AirplaneServiceSignal()
+                        {
+                            FlightId = flight.FlightId,
+                            PlaneId = flight.PlaneId,
+                            Signal = ServiceSignal.Boarding
+                        };
+                        mqClient.Send(ScheduleToGroundService, serviceSignal);
+                    }
+                    if (statusUpdate.Status == FlightStatus.Departed)
+                    {
+                        //flightManager.RemoveByFlightId(flight.FlightId);
+                    }
+                }
+            });
+
+            mqClient.SubscribeTo<AirplaneServiceStatus>(GroundServiceToScheduleQueue, (mes) =>
+            {
+                //flightManager.UpdateStatusByPlaneId(mes.PlaneId, mes.Status);
             });
 
             Console.ReadLine();
