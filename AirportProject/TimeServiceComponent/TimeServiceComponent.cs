@@ -1,7 +1,10 @@
-﻿using RabbitMqWrapper;
+﻿using AirportLibrary;
+using RabbitMqWrapper;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TimeServiceComponent
 {
@@ -28,15 +31,40 @@ namespace TimeServiceComponent
             Component.TimeService + Component.Registration
         };
         public static double TimeSpeedFactor = 1.0;
+        public const int SEND_CURRENT_TIME_PERIOD_MS = 200;
         public const int CHANGE_FACTOR = 2;
-        public const double MAX_SPEED_FACTOR = 4096;
+        public const double MAX_SPEED_FACTOR = 1024;
         public const double MIN_SPEED_FACTOR = 0.015625;
+
+        DateTime playTime;
         public void Start()
         {
             //var mqClient = new RabbitMqClient();
 
             //mqClient.DeclareQueues(CurrentTimeReceivers.ToArray());
             //mqClient.DeclareQueues(NewTimeSpeedFactorReceivers.ToArray());
+
+            var cancellationSource = new CancellationTokenSource();
+            var token = cancellationSource.Token;
+
+            Task.Run(() =>
+            {
+                long prev;
+                long delay;
+                playTime = DateTime.Now;
+                while (!token.IsCancellationRequested)
+                {
+                    prev = DateTime.Now.Ticks;
+                    foreach (var queue in CurrentTimeReceivers)
+                    {
+                        Console.WriteLine("Time {0} sent to {1}", playTime, queue);
+                    }
+                    delay = DateTime.Now.Ticks - prev;
+                    Console.WriteLine(delay / 10000);
+                    Thread.Sleep(SEND_CURRENT_TIME_PERIOD_MS);
+                    playTime = playTime.AddMilliseconds(SEND_CURRENT_TIME_PERIOD_MS * TimeSpeedFactor);
+                }
+            });
 
             char ch;
             ShowInfoMessage();
@@ -46,7 +74,10 @@ namespace TimeServiceComponent
                 Console.WriteLine();
 
                 if (ch == 'q')
+                {
+                    cancellationSource.Cancel();
                     break;
+                }
 
                 switch (ch)
                 {
@@ -62,8 +93,8 @@ namespace TimeServiceComponent
                         ShowInfoMessage();
                         break;
                 }
+                Console.WriteLine();
             }
-            Console.WriteLine();
         }
         public void ShowInfoMessage()
         {
@@ -109,27 +140,6 @@ namespace TimeServiceComponent
         public enum Action
         {
             Increase, Decrease
-        }
-        public static class Component
-        {
-            public const string Schedule = "schedule";
-            public const string Airplane = "airplane";
-            public const string GroundService = "groundservice";
-            public const string Timetable = "timetable";
-            public const string Cashbox = "cashbox";
-            public const string Registration = "registration";
-            public const string Storage = "storage";
-            public const string Passenger = "passenger";
-            public const string GroundMotion = "groundmotion";
-            public const string Bus = "bus";
-            public const string Baggage = "baggage";
-            public const string FollowMe = "followme";
-            public const string Catering = "catering";
-            public const string Deicing = "deicing";
-            public const string FuelTruck = "fueltruck";
-            public const string TimeService = "timeservice";
-            public const string Visualizer = "visualizer";
-            public const string Logs = "logs";
         }
     }
 }
