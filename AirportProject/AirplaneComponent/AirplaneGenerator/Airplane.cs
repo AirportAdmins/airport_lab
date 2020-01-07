@@ -15,14 +15,15 @@ namespace AirplaneComponent.AirplaneGenerator
         bool isDeiced;
         int foodAmount;
         string airplaneID;
-        int flightID;
+        string flightID;
 
-        public Airplane(AirplaneModel model)
+        public Airplane(AirplaneModel model,int id)
         {
             this.model = model;
+            this.airplaneID = "Plane-" + id;
         }
         public string AirplaneID { get => airplaneID; }
-        public int FlightID { get => flightID; set => flightID = value; }
+        public string FlightID { get => flightID; set => flightID = value; }
         public AirplaneModel Model { get => model; }
 
         //properties to be filled

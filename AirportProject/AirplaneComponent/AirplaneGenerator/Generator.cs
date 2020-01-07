@@ -13,16 +13,16 @@ namespace AirplaneComponent.Airplanes
         public Airplane Generate(AirplaneModel model,int flightID)
         {
             rand = new Random();
-            Airplane airplane = new Airplane(model);
+            Airplane airplane = new Airplane(model,aiplaneID);
+            aiplaneID++;
             airplane.FlightID = flightID;
-
-            return airplane;
+            return FillAirplane(airplane);
         }
         
         Airplane FillAirplane(Airplane airplane)
         {
             airplane.NumberOfPassengers = rand.Next(0, airplane.Model.Seats);
-            //airplane.BaggageAmount = rand.Next(0, ); TODO Доделать
+            airplane.BaggageAmount = rand.Next(0, airplane.Model.BaggagePlaces);
             airplane.FuelAmout = rand.Next(1, airplane.Model.Fuel);
             return airplane;
         }
