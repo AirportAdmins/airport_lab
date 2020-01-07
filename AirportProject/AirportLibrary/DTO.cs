@@ -45,12 +45,14 @@ namespace AirportLibrary.DTO
             new AirplaneModel("Boeing 737", 60, 1000)
         };
         public int Seats { get; set; }
+        public int BaggagePlaces { get; set; }
         public int Fuel { get; set; }
         public string Model { get; set; }
         private AirplaneModel(string model, int seats, int fuel)
         {
             Model = model;
             Seats = seats;
+            BaggagePlaces = seats;
             Fuel = fuel;
         }
     }
