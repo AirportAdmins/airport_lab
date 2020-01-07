@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{194A72F7-2F02-45A6-84E3-E63DFBCD2AAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{0233CD02-EABE-410C-B55F-6C3E0149330A}"
 EndProject
-Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{E61AC35A-6191-4AB5-B341-81AB33705088}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{D3C895F4-A70B-4FBF-9C42-9540F4D7E83E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundmoutionComponent", "GroundmoutionComponent\GroundmoutionComponent.csproj", "{3B997099-838C-43E3-9196-3390E2EF88B9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundmoutionComponent", "GroundmoutionComponent\GroundmoutionComponent.csproj", "{A80A4DB6-67E9-40FD-B3F2-74793203D685}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,18 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{194A72F7-2F02-45A6-84E3-E63DFBCD2AAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{194A72F7-2F02-45A6-84E3-E63DFBCD2AAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{194A72F7-2F02-45A6-84E3-E63DFBCD2AAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{194A72F7-2F02-45A6-84E3-E63DFBCD2AAF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E61AC35A-6191-4AB5-B341-81AB33705088}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E61AC35A-6191-4AB5-B341-81AB33705088}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E61AC35A-6191-4AB5-B341-81AB33705088}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E61AC35A-6191-4AB5-B341-81AB33705088}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B997099-838C-43E3-9196-3390E2EF88B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B997099-838C-43E3-9196-3390E2EF88B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B997099-838C-43E3-9196-3390E2EF88B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B997099-838C-43E3-9196-3390E2EF88B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0233CD02-EABE-410C-B55F-6C3E0149330A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0233CD02-EABE-410C-B55F-6C3E0149330A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0233CD02-EABE-410C-B55F-6C3E0149330A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0233CD02-EABE-410C-B55F-6C3E0149330A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3C895F4-A70B-4FBF-9C42-9540F4D7E83E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3C895F4-A70B-4FBF-9C42-9540F4D7E83E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3C895F4-A70B-4FBF-9C42-9540F4D7E83E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3C895F4-A70B-4FBF-9C42-9540F4D7E83E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A80A4DB6-67E9-40FD-B3F2-74793203D685}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A80A4DB6-67E9-40FD-B3F2-74793203D685}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A80A4DB6-67E9-40FD-B3F2-74793203D685}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A80A4DB6-67E9-40FD-B3F2-74793203D685}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
