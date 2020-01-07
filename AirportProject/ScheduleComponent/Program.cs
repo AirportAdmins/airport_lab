@@ -4,17 +4,19 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Text;
 using System.Threading;
+using AirportLibrary;
 
 namespace ScheduleComponent
 { 
     class Program
     {
-        const string QUEUE_NAME = "schedule-cashbox";
+        
         static void Main(string[] args)
         {
             var mqClient = new RabbitMqClient();
 
-            mqClient.DeclareQueues(QUEUE_NAME);
+            var queueName = Component.Schedule + Component.Airplane + Subject.AirplaneTypes;
+            mqClient.DeclareQueues(queueName);
 
             var message = new MyCustomMessage()
             {
@@ -23,9 +25,9 @@ namespace ScheduleComponent
                 MyArray = new int[] { 1, 2, 3, 44, 42 }
             };
 
-            mqClient.Send(QUEUE_NAME, message);
+            mqClient.Send(queueName, message);
 
-            mqClient.SubscribeTo<MyCustomMessage>(QUEUE_NAME, (mes) =>
+            mqClient.SubscribeTo<MyCustomMessage>(queueName, (mes) =>
             {
                 Console.WriteLine("{0} Received: {1}", DateTime.Now, mes);
             });
