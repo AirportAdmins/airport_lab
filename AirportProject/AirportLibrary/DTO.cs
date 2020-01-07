@@ -70,6 +70,78 @@ namespace AirportLibrary.DTO
 
 
 
+    // Registration component
+    // ===================================
+    // From Passenger
+    class CheckInRequest
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+        public bool HasBaggage { get; set; }
+        public Food FoodType { get; set; }
+    }
+    
+    enum Food
+    {
+        Standard,
+        Vegan,
+        Child
+    }
+
+    // To Passenger
+    class CheckInResponse
+    {
+        public string PassengerId { get; set; }
+        public CheckInStatus Status { get; set; }
+    }
+
+    enum CheckInStatus
+    {
+        Early,
+        Late,
+        WrongTicket,
+        Terminal
+    }
+    
+    // To CashBox
+    class CheckTicketRequest
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+    }
+
+    // From CashBox
+    class CheckTicketResponse
+    {
+        public string PassengerId { get; set; }
+        public bool HasTicket { get; set; }
+    }
+
+    // From GroundService
+    class FoodInfoRequest
+    {
+        public string FlightId { get; set; }
+    }
+
+    // To GroundService
+    class FoodInfoResponse
+    {
+        public string FlightId { get; set; }
+        public List<Tuple<Food, int>> FoodList { get; set; }
+    }
+
+    // Passing passenger to Storage
+    class PassengerStoragePass
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+    }
+
+    // Passing baggage to Storage
+    class BaggageStoragePass
+    {
+        public string FlightId { get; set; }
+    }
 
 
 
