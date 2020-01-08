@@ -50,7 +50,9 @@ namespace ScheduleComponent
             mqClient.DeclareQueues(
                 queues.ToArray()
             );
-            
+            mqClient.PurgeQueues(
+                queues.ToArray()
+            );
 
             mqClient.SubscribeTo<CurrentPlayTime>(TimeServiceToScheduleQueue, (mes) =>
             {
