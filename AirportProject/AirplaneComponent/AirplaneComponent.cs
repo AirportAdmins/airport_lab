@@ -24,6 +24,7 @@ namespace AirplaneComponent
             queues.Add(Component.Schedule, Component.Airplane + Component.Schedule);
             queues.Add(Component.Bus, Component.Airplane + Component.Bus);
             queues.Add(Component.Baggage, Component.Airplane + Component.Baggage);
+            queues.Add(Component.GroundService, Component.Airplane + Component.GroundService);
         }
         
         void DeclareQueues()
@@ -45,11 +46,12 @@ namespace AirplaneComponent
         {
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
             airplanes.Add(airplane.PlaneID, airplane);
-            MqClient.Send<AirplaneGenerationResponse>(queues[0],new AirplaneGenerationResponse() 
-            { 
-                FlightId = req.FlightId,
-                PlaneId = airplane.PlaneID
-            });
+            MqClient.Send<AirplaneGenerationResponse>(queues[Component.Schedule],
+                new AirplaneGenerationResponse() 
+                { 
+                    FlightId = req.FlightId,
+                    PlaneId = airplane.PlaneID
+                });
         }
         void BusTransferResponse(PassengerTransferRequest req)
         {
@@ -86,6 +88,21 @@ namespace AirplaneComponent
             }
         }
 
-                           
+        void AirplaneServiceCommand(string planeID)
+        {
+            Airplane plane = airplanes[planeID];
+
+            MqClient.Send<AirplaneServiceCommand>(queues[Component.GroundService],
+                new AirplaneServiceCommand()
+                {
+                    LocationVertex=plane.MotionData.LocationVertex,
+                    PlaneId=planeID,
+                    Needs=new List<Tuple<AirplaneNeeds, int>>(){
+                        new Tuple<AirplaneNeeds, int> (AirplaneNeeds.PickUpPassengers,plane.Passengers),
+                        new Tuple<AirplaneNeeds, int> (AirplaneNeeds.PickUpPassengers,plane.Passengers),
+
+                    }
+                });
+        }                  
     } 
 }

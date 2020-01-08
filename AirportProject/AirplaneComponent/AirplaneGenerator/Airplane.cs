@@ -23,7 +23,7 @@ namespace AirplaneComponent.AirplaneGenerator
         public AirplaneModel Model { get => model; }
         public string PlaneID { get => airplaneID; }
         public string FlightID { get; set; }
-        MotionData GroundData { get; set; }
+        public MotionData MotionData { get; set; }
 
         //properties to be filled
         public int Passengers { get; set; }
