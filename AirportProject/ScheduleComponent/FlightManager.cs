@@ -8,24 +8,27 @@ namespace ScheduleComponent
     class FlightManager : IFlightManager
     {
         const string FLIGHT_PREFIX = "FL";
-        public const int MAX_PERIOD_BETWEEN_FLIGHTS_MS = 60 * 60 * 1000;
-        public const int MIN_PERIOD_BETWEEN_FLIGHTS_MS = 20 * 60 * 1000;
-        public const int MIN_TIME_BEFORE_DEPARTURE_MS = 15 * 60 * 1000;
+        public const int MAX_PERIOD_BETWEEN_FLIGHTS_MS = 30 * 60 * 1000;
+        public const int MIN_PERIOD_BETWEEN_FLIGHTS_MS = 15 * 60 * 1000;
+        public const int MIN_TIME_BEFORE_DEPARTURE_MS = 45 * 60 * 1000;
         const int CHECK_IN_STARTS_BEFORE_MS = 60 * 60 * 1000;
         const int BOARDING_STARTS_BEFORE_MS = 30 * 60 * 1000;
         DateTime nextFlightGenerationTime = DateTime.MinValue;
         List<IFlight> flights = new List<IFlight>();
         Queue<IFlight> updatedFlights = new Queue<IFlight>();
-        Queue<IFlight> flightsToDeparture = new Queue<IFlight>();
+        Queue<IFlight> flightsToSendDepartureRequest = new Queue<IFlight>();
+        List<IFlight> flightsToDeparture = new List<IFlight>();
         IFlightGenerator flightGenerator = new FlightGenerator(FLIGHT_PREFIX);
         public IEnumerable<IFlight> GetFlightChanges()
         {
-            throw new NotImplementedException();
+            if (updatedFlights.Count > 0)
+                yield return updatedFlights.Dequeue();
         }
 
         public IEnumerable<IFlight> GetFlightsToDeparture()
         {
-            throw new NotImplementedException();
+            if (flightsToSendDepartureRequest.Count > 0)
+                yield return flightsToSendDepartureRequest.Dequeue();
         }
 
         public void SetCurrentTime(DateTime currentTime)
@@ -35,15 +38,19 @@ namespace ScheduleComponent
                 if (flight.Status == FlightStatus.New && 
                     currentTime.AddMilliseconds(CHECK_IN_STARTS_BEFORE_MS) >= flight.DepartureTime)
                 {
+                    flight.Status = FlightStatus.CheckIn;
                     updatedFlights.Enqueue(flight);
                 } else if (flight.Status == FlightStatus.CheckIn &&
                     currentTime.AddMilliseconds(BOARDING_STARTS_BEFORE_MS) >= flight.DepartureTime)
                 {
+                    flight.Status = FlightStatus.Boarding;
                     updatedFlights.Enqueue(flight);
                 } else if (flight.Status == FlightStatus.Boarding &&
                     currentTime >= flight.DepartureTime)
                 {
-                    flightsToDeparture.Enqueue(flight);
+                    flights.Remove(flight);
+                    flightsToDeparture.Add(flight);
+                    flightsToSendDepartureRequest.Enqueue(flight);
                 }
             }
             if (nextFlightGenerationTime < currentTime)
@@ -83,7 +90,7 @@ namespace ScheduleComponent
 
         public void UpdateStatusByPlaneId(string planeId, ServiceStatus status)
         {
-            var toUpdate = flights.Find(flight => flight.PlaneId == planeId);
+            var toUpdate = flightsToDeparture.Find(flight => flight.PlaneId == planeId);
             switch (status)
             {
                 case ServiceStatus.Delayed:
@@ -91,6 +98,7 @@ namespace ScheduleComponent
                     break;
                 case ServiceStatus.Departed:
                     toUpdate.Status = FlightStatus.Departed;
+                    flightsToDeparture.Remove(toUpdate);
                     break;
                 default:
                     Console.WriteLine("Unknown ServiceStatus of {0} argument: {1}", nameof(status), status);
