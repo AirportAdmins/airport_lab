@@ -28,7 +28,7 @@ namespace AirplaneComponent.AirplaneGenerator
         //properties to be filled
         public int Passengers { get; set; }
         public int BaggageAmount { get; set; }
-        public int FuelAmout { get; set; }
+        public int FuelAmount { get; set; }
         public bool IsDeiced { get; set; }
         protected int FoodAmount { get; set; }
 

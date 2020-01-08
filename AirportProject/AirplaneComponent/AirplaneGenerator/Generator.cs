@@ -25,7 +25,7 @@ namespace AirplaneComponent.AirplaneGenerator
         {
             airplane.Passengers = rand.Next(0, airplane.Model.Seats);
             airplane.BaggageAmount = rand.Next(0, airplane.Model.BaggagePlaces);
-            airplane.FuelAmout = rand.Next(1, airplane.Model.Fuel);
+            airplane.FuelAmount = rand.Next(1, airplane.Model.Fuel);
             return airplane;
         }
    

@@ -45,8 +45,9 @@ namespace AirplaneComponent
                      BusTransferResponse(mes));
             MqClient.SubscribeTo<BaggageTransferRequest>(queues[Component.Baggage], mes =>    //baggage
                      BaggageTransferResponse(mes));
-            MqClient.SubscribeTo<BaggageTransferRequest>(queues[Component.Baggage], mes =>    //baggage
-                     BaggageTransferResponse(mes));
+            MqClient.SubscribeTo<NewTimeSpeedFactor>(queues[Component.TimeService], mes =>  //time speed
+                     TimeSpeedChanged(mes));
+            
         }
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
@@ -105,7 +106,7 @@ namespace AirplaneComponent
                     {
                         Tuple.Create(AirplaneNeeds.PickUpPassengers,plane.Passengers),
                         Tuple.Create(AirplaneNeeds.PickUpBaggage,plane.BaggageAmount),
-                        Tuple.Create(AirplaneNeeds.Refuel,plane.FuelAmout)
+                        Tuple.Create(AirplaneNeeds.Refuel,plane.Model.Fuel-plane.FuelAmount)
                     }
                 });
         }                  
@@ -116,5 +117,6 @@ namespace AirplaneComponent
                 plane.MotionData.Speed *= factor.Factor;
             }
         }
+
     } 
 }
