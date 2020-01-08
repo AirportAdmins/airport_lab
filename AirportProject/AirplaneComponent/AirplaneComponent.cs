@@ -8,12 +8,12 @@ using AirportLibrary;
 
 namespace AirplaneComponent
 {
-    public class PCAirplane
+    public class AirplaneComponent
     {
         RabbitMqClient MqClient;
         Dictionary<string, Airplane> airplanes;
         Dictionary<string, string> queues;
-        public PCAirplane()
+        public AirplaneComponent()
         {
             MqClient = new RabbitMqClient();
         }
@@ -21,9 +21,9 @@ namespace AirplaneComponent
         void FillQueues()
         {
             queues = new Dictionary<string, string>();
-            queues.Add(Component.Schedule, Component.Airplane + "-" + Component.Schedule);
-            queues.Add(Component.Bus, Component.Airplane + "-" + Component.Bus);
-            queues.Add(Component.Baggage, Component.Airplane + "-" + Component.Baggage);
+            queues.Add(Component.Schedule, Component.Airplane + Component.Schedule);
+            queues.Add(Component.Bus, Component.Airplane + Component.Bus);
+            queues.Add(Component.Baggage, Component.Airplane + Component.Baggage);
         }
         
         void DeclareQueues()
@@ -85,5 +85,7 @@ namespace AirplaneComponent
                 plane.BaggageAmount += req.BaggageCount;
             }
         }
+
+                           
     } 
 }
