@@ -40,7 +40,7 @@ namespace ScheduleComponent
             AirplaneToScheduleQueue
         };
 
-        IFlightManager flightManager;
+        IFlightManager flightManager = new FlightManager();
 
         public void Start()
         {
@@ -55,6 +55,9 @@ namespace ScheduleComponent
 
             mqClient.SubscribeTo<CurrentPlayTime>(TimeServiceToScheduleQueue, (mes) =>
             {
+                // DEBUG INFO
+                //Console.WriteLine($"{mes.PlayTime} Start handling: {DateTime.Now.Millisecond}:{DateTime.Now.Ticks % 10000}");
+                //Console.WriteLine($"Received Time: {mes.PlayTime}");
                 flightManager.SetCurrentTime(mes.PlayTime);
                 foreach (var flight in flightManager.GetFlightChanges())
                 {
@@ -99,11 +102,6 @@ namespace ScheduleComponent
                             Signal = ServiceSignal.Boarding
                         });
                     }
-                    // Move to flight manager itself
-                    if (statusUpdate.Status == FlightStatus.Departed)
-                    {
-                        //flightManager.RemoveByFlightId(flight.FlightId);
-                    }
                 }
                 foreach (var flight in flightManager.GetFlightsToDeparture())
                 {
@@ -120,6 +118,8 @@ namespace ScheduleComponent
                         Signal = ServiceSignal.Departure
                     });
                 }
+                // DEBUG INFO
+                //Console.WriteLine($"{mes.PlayTime}   End handling: {DateTime.Now.Millisecond}:{DateTime.Now.Ticks % 10000}");
             });
 
             mqClient.SubscribeTo<AirplaneServiceStatus>(GroundServiceToScheduleQueue, (mes) =>
