@@ -1,4 +1,5 @@
 ﻿using AirportLibrary;
+using AirportLibrary.DTO;
 using RabbitMqWrapper;
 using System;
 using System.Collections.Generic;
@@ -31,40 +32,40 @@ namespace TimeServiceComponent
             Component.TimeService + Component.Registration
         };
         public static double TimeSpeedFactor = 1.0;
-        public const int SEND_CURRENT_TIME_PERIOD_MS = 200;
+        public const int SEND_CURRENT_TIME_PERIOD_MS = 100;
         public const int CHANGE_FACTOR = 2;
         public const double MAX_SPEED_FACTOR = 1024;
         public const double MIN_SPEED_FACTOR = 0.015625;
 
+        RabbitMqClient mqClient;
+
         DateTime playTime;
         public void Start()
         {
-            //var mqClient = new RabbitMqClient();
+            mqClient = new RabbitMqClient();
 
-            //mqClient.DeclareQueues(CurrentTimeReceivers.ToArray());
-            //mqClient.DeclareQueues(NewTimeSpeedFactorReceivers.ToArray());
+            mqClient.DeclareQueues(CurrentTimeReceivers.ToArray());
+            mqClient.DeclareQueues(NewTimeSpeedFactorReceivers.ToArray());
 
             var cancellationSource = new CancellationTokenSource();
             var token = cancellationSource.Token;
 
             Task.Run(() =>
             {
-                long prev;
-                long delay;
                 playTime = DateTime.Now;
                 while (!token.IsCancellationRequested)
                 {
-                    prev = DateTime.Now.Ticks;
                     foreach (var queue in CurrentTimeReceivers)
                     {
-                        Console.WriteLine("Time {0} sent to {1}", playTime, queue);
+                        mqClient.Send(queue, new CurrentPlayTime()
+                        {
+                            PlayTime = playTime
+                        });
                     }
-                    delay = DateTime.Now.Ticks - prev;
-                    Console.WriteLine(delay / 10000);
                     Thread.Sleep(SEND_CURRENT_TIME_PERIOD_MS);
                     playTime = playTime.AddMilliseconds(SEND_CURRENT_TIME_PERIOD_MS * TimeSpeedFactor);
                 }
-            });
+            }, token);
 
             char ch;
             ShowInfoMessage();
@@ -95,6 +96,7 @@ namespace TimeServiceComponent
                 }
                 Console.WriteLine();
             }
+            mqClient.Dispose();
         }
         public void ShowInfoMessage()
         {
@@ -124,6 +126,13 @@ namespace TimeServiceComponent
             }
             if (allow)
             {
+                foreach (var queue in NewTimeSpeedFactorReceivers)
+                {
+                    mqClient.Send(queue, new NewTimeSpeedFactor()
+                    {
+                        Factor = TimeSpeedFactor
+                    });
+                }
                 Console.WriteLine(
                     "Time speed has been {0} by factor of {1}. It's now {2}",
                     actionWord,
