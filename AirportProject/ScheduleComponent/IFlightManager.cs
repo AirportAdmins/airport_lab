@@ -7,10 +7,21 @@ namespace ScheduleComponent
 {
     interface IFlightManager
     {
-        void GenerateNewFlight();
         IEnumerable<IFlight> GetFlightChanges();
         IEnumerable<IFlight> GetFlightsToDeparture();
         void SetCurrentTime(DateTime currentTime);
+        void UpdateStatusByPlaneId(string planeId, ServiceStatus status);
+        void SetPlaneForFlight(string flightId, string planeId);
+    }
+
+    abstract class IFlightGenerator
+    {
+        protected string FlightPrefix { get; }
+        public IFlightGenerator(string flightPrefix)
+        {
+            FlightPrefix = flightPrefix;
+        }
+        public abstract IFlight GenerateFlight(DateTime departureTime, AirplaneModel model);
     }
 
     interface IFlight
