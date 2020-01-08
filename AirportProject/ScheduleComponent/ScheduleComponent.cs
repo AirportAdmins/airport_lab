@@ -23,13 +23,23 @@ namespace ScheduleComponent
             Component.Schedule + Component.Cashbox;
         public const string ScheduleToRegistrationQueue =
             Component.Schedule + Component.Registration;
-        public const string ScheduleToGroundService =
+        public const string ScheduleToGroundServiceQueue =
             Component.Schedule + Component.GroundService;
 
         public const string TimeServiceToScheduleQueue =
             Component.TimeService + Component.Schedule;
         public const string GroundServiceToScheduleQueue =
             Component.GroundService + Component.Schedule;
+
+        public static readonly List<string> queues = new List<string>
+        {
+            ScheduleToTimetableQueue,
+            ScheduleToCashboxQueue,
+            ScheduleToRegistrationQueue,
+            ScheduleToGroundServiceQueue,
+            TimeServiceToScheduleQueue,
+            GroundServiceToScheduleQueue
+        };
 
         IFlightManager flightManager;
 
@@ -38,11 +48,9 @@ namespace ScheduleComponent
             var mqClient = new RabbitMqClient();
 
             mqClient.DeclareQueues(
-                ScheduleToTimetableQueue,
-                ScheduleToCashboxQueue,
-                ScheduleToRegistrationQueue,
-                TimeServiceToScheduleQueue
+                queues.ToArray()
             );
+            
 
             mqClient.SubscribeTo<CurrentPlayTime>(TimeServiceToScheduleQueue, (mes) =>
             {
@@ -75,7 +83,7 @@ namespace ScheduleComponent
                             PlaneId = flight.PlaneId,
                             Signal = ServiceSignal.Boarding
                         };
-                        mqClient.Send(ScheduleToGroundService, serviceSignal);
+                        mqClient.Send(ScheduleToGroundServiceQueue, serviceSignal);
                     }
                     if (statusUpdate.Status == FlightStatus.Departed)
                     {
