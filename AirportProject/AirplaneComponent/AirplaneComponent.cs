@@ -15,16 +15,20 @@ namespace AirplaneComponent
         Dictionary<string, string> queues;
         public AirplaneComponent()
         {
+            airplanes = new Dictionary<string, Airplane>();
             MqClient = new RabbitMqClient();
         }
 
         void FillQueues()
         {
-            queues = new Dictionary<string, string>();
-            queues.Add(Component.Schedule, Component.Airplane + Component.Schedule);
-            queues.Add(Component.Bus, Component.Airplane + Component.Bus);
-            queues.Add(Component.Baggage, Component.Airplane + Component.Baggage);
-            queues.Add(Component.GroundService, Component.Airplane + Component.GroundService);
+            queues = new Dictionary<string, string>()
+            {
+                { Component.Schedule, Component.Airplane + Component.Schedule },
+                { Component.Bus, Component.Airplane + Component.Bus },
+                { Component.Baggage, Component.Airplane + Component.Baggage },
+                { Component.GroundService, Component.Airplane + Component.GroundService },
+                { Component.TimeService, Component.Airplane + Component.TimeService }
+            };
         }
         
         void DeclareQueues()
@@ -33,12 +37,14 @@ namespace AirplaneComponent
             queues.Values.CopyTo(queuesString,0);
             MqClient.DeclareQueues(queuesString);
         }
-        void SubscribeAll()
+        void Subscribe()
         {
             MqClient.SubscribeTo<AirplaneGenerationRequest>(queues[Component.Schedule], mes =>   //schedule
                      ScheduleResponse(mes));
             MqClient.SubscribeTo<PassengerTransferRequest>(queues[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
+            MqClient.SubscribeTo<BaggageTransferRequest>(queues[Component.Baggage], mes =>    //baggage
+                     BaggageTransferResponse(mes));
             MqClient.SubscribeTo<BaggageTransferRequest>(queues[Component.Baggage], mes =>    //baggage
                      BaggageTransferResponse(mes));
         }
@@ -87,22 +93,28 @@ namespace AirplaneComponent
                 plane.BaggageAmount += req.BaggageCount;
             }
         }
-
         void AirplaneServiceCommand(string planeID)
         {
             Airplane plane = airplanes[planeID];
-
             MqClient.Send<AirplaneServiceCommand>(queues[Component.GroundService],
                 new AirplaneServiceCommand()
                 {
                     LocationVertex=plane.MotionData.LocationVertex,
                     PlaneId=planeID,
-                    Needs=new List<Tuple<AirplaneNeeds, int>>(){
-                        new Tuple<AirplaneNeeds, int> (AirplaneNeeds.PickUpPassengers,plane.Passengers),
-                        new Tuple<AirplaneNeeds, int> (AirplaneNeeds.PickUpPassengers,plane.Passengers),
-
+                    Needs=new List<Tuple<AirplaneNeeds, int>>()
+                    {
+                        Tuple.Create(AirplaneNeeds.PickUpPassengers,plane.Passengers),
+                        Tuple.Create(AirplaneNeeds.PickUpBaggage,plane.BaggageAmount),
+                        Tuple.Create(AirplaneNeeds.Refuel,plane.FuelAmout)
                     }
                 });
         }                  
+        void TimeSpeedChanged(NewTimeSpeedFactor factor)
+        {
+            foreach(var plane in airplanes.Values)
+            {
+                plane.MotionData.Speed *= factor.Factor;
+            }
+        }
     } 
 }
