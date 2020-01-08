@@ -9,6 +9,7 @@ namespace ScheduleComponent
     {
         void GenerateNewFlight();
         IEnumerable<IFlight> GetFlightChanges();
+        IEnumerable<IFlight> GetFlightsToDeparture();
         void SetCurrentTime(DateTime currentTime);
     }
 
