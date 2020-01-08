@@ -10,11 +10,14 @@ namespace ScheduleComponent
     class Program
     {
         const string QUEUE_NAME = "schedule-cashbox";
+        const string QUEUE_NAME1 = "hello";
         static void Main(string[] args)
         {
             var mqClient = new RabbitMqClient();
 
-            mqClient.DeclareQueues(QUEUE_NAME);
+            mqClient.PurgeQueues(QUEUE_NAME, QUEUE_NAME1);
+
+            /*mqClient.DeclareQueues(QUEUE_NAME, QUEUE_NAME1);
 
             var message = new MyCustomMessage()
             {
@@ -24,11 +27,12 @@ namespace ScheduleComponent
             };
 
             mqClient.Send(QUEUE_NAME, message);
+            mqClient.Send(QUEUE_NAME1, message);
 
             mqClient.SubscribeTo<MyCustomMessage>(QUEUE_NAME, (mes) =>
             {
                 Console.WriteLine("{0} Received: {1}", DateTime.Now, mes);
-            });
+            });*/
 
             Console.ReadLine();
             mqClient.Dispose();
