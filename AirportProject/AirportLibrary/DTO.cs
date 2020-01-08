@@ -187,7 +187,9 @@ namespace AirportLibrary.DTO
         Early,
         Late,
         WrongTicket,
-        Terminal
+        Registered,
+        Terminal,
+        LateForTerminal
     }
 
     // To CashBox
