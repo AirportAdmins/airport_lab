@@ -21,65 +21,105 @@ namespace ScheduleComponent
         IFlightGenerator flightGenerator = new FlightGenerator(FLIGHT_PREFIX);
         public IEnumerable<IFlight> GetFlightChanges()
         {
-            if (updatedFlights.Count > 0)
-                yield return updatedFlights.Dequeue();
+            lock (updatedFlights)
+            {
+                while (updatedFlights.Count > 0)
+                    yield return updatedFlights.Dequeue();
+            }
         }
 
         public IEnumerable<IFlight> GetFlightsToDeparture()
         {
-            if (flightsToSendDepartureRequest.Count > 0)
-                yield return flightsToSendDepartureRequest.Dequeue();
+            lock (flightsToSendDepartureRequest)
+            {
+                while (flightsToSendDepartureRequest.Count > 0)
+                    yield return flightsToSendDepartureRequest.Dequeue();
+            }
         }
 
         public void SetCurrentTime(DateTime currentTime)
         {
-            foreach (var flight in flights)
+            lock (updatedFlights)
             {
-                if (flight.Status == FlightStatus.New && 
-                    currentTime.AddMilliseconds(CHECK_IN_STARTS_BEFORE_MS) >= flight.DepartureTime)
+                lock (flightsToDeparture)
                 {
-                    flight.Status = FlightStatus.CheckIn;
-                    updatedFlights.Enqueue(flight);
-                } else if (flight.Status == FlightStatus.CheckIn &&
-                    currentTime.AddMilliseconds(BOARDING_STARTS_BEFORE_MS) >= flight.DepartureTime)
-                {
-                    flight.Status = FlightStatus.Boarding;
-                    updatedFlights.Enqueue(flight);
-                } else if (flight.Status == FlightStatus.Boarding &&
-                    currentTime >= flight.DepartureTime)
-                {
-                    flights.Remove(flight);
-                    flightsToDeparture.Add(flight);
-                    flightsToSendDepartureRequest.Enqueue(flight);
+                    for (var i = flights.Count - 1; i >= 0; i--)
+                    {
+                        var flight = flights[i];
+                        if (flight.Status == FlightStatus.New &&
+                            currentTime.AddMilliseconds(CHECK_IN_STARTS_BEFORE_MS) >= flight.DepartureTime)
+                        {
+                            flight.Status = FlightStatus.CheckIn;
+                            updatedFlights.Enqueue(new Flight()
+                            {
+                                FlightId = flight.FlightId,
+                                DepartureTime = flight.DepartureTime,
+                                PlaneId = flight.PlaneId,
+                                Model = flight.Model,
+                                Status = FlightStatus.CheckIn
+                            });
+                        }
+                        if (flight.Status == FlightStatus.CheckIn &&
+                            currentTime.AddMilliseconds(BOARDING_STARTS_BEFORE_MS) >= flight.DepartureTime)
+                        {
+                            flight.Status = FlightStatus.Boarding;
+                            updatedFlights.Enqueue(new Flight()
+                            {
+                                FlightId = flight.FlightId,
+                                DepartureTime = flight.DepartureTime,
+                                PlaneId = flight.PlaneId,
+                                Model = flight.Model,
+                                Status = FlightStatus.Boarding
+                            });
+                        }
+                        if (flight.Status == FlightStatus.Boarding &&
+                            currentTime >= flight.DepartureTime)
+                        {
+                            flights.RemoveAt(i);
+                            flightsToDeparture.Add(flight);
+                            flightsToSendDepartureRequest.Enqueue(flight);
+                        }
+                    }
                 }
             }
             if (nextFlightGenerationTime < currentTime)
             {
-                var random = new Random();
-                nextFlightGenerationTime = currentTime.AddMilliseconds(
-                    random.Next(MIN_PERIOD_BETWEEN_FLIGHTS_MS, MAX_PERIOD_BETWEEN_FLIGHTS_MS)
-                );
-
-                var temp = currentTime.AddMilliseconds(MIN_TIME_BEFORE_DEPARTURE_MS);
-                DateTime departureTime = temp.Date;
-                if (temp.Minute <= 30)
+                lock (updatedFlights)
                 {
-                    departureTime += new TimeSpan(temp.Hour, 30, 0);
-                }
-                else
-                {
-                    temp = temp.AddHours(1);
-                    departureTime = temp.Date + new TimeSpan(temp.Hour, 0, 0);
-                }
+                    var random = new Random();
+                    nextFlightGenerationTime = currentTime.AddMilliseconds(
+                        random.Next(MIN_PERIOD_BETWEEN_FLIGHTS_MS, MAX_PERIOD_BETWEEN_FLIGHTS_MS)
+                    );
 
-                var model = AirplaneModel.Models[random.Next(AirplaneModel.Models.Count)];
+                    var temp = currentTime.AddMilliseconds(MIN_TIME_BEFORE_DEPARTURE_MS);
+                    DateTime departureTime = temp.Date;
+                    if (temp.Minute <= 30)
+                    {
+                        departureTime += new TimeSpan(temp.Hour, 30, 0);
+                    }
+                    else
+                    {
+                        temp = temp.AddHours(1);
+                        departureTime = temp.Date + new TimeSpan(temp.Hour, 0, 0);
+                    }
+                    //Console.WriteLine("Current: {0} New departure: {1}", currentTime, departureTime);
 
-                var flight = flightGenerator.GenerateFlight(
-                     departureTime,
-                     model
-                );
-                flights.Add(flight);
-                updatedFlights.Enqueue(flight);
+                    var model = AirplaneModel.Models[random.Next(AirplaneModel.Models.Count)];
+
+                    var flight = flightGenerator.GenerateFlight(
+                         departureTime,
+                         model
+                    );
+                    flights.Add(flight);
+                    updatedFlights.Enqueue(new Flight()
+                    {
+                        FlightId = flight.FlightId,
+                        DepartureTime = flight.DepartureTime,
+                        PlaneId = flight.PlaneId,
+                        Model = flight.Model,
+                        Status = FlightStatus.New
+                    });
+                }
             }
         }
 
@@ -90,21 +130,27 @@ namespace ScheduleComponent
 
         public void UpdateStatusByPlaneId(string planeId, ServiceStatus status)
         {
-            var toUpdate = flightsToDeparture.Find(flight => flight.PlaneId == planeId);
-            switch (status)
+            lock (updatedFlights)
             {
-                case ServiceStatus.Delayed:
-                    toUpdate.Status = FlightStatus.Delayed;
-                    break;
-                case ServiceStatus.Departed:
-                    toUpdate.Status = FlightStatus.Departed;
-                    flightsToDeparture.Remove(toUpdate);
-                    break;
-                default:
-                    Console.WriteLine("Unknown ServiceStatus of {0} argument: {1}", nameof(status), status);
-                    throw new ArgumentException($"Unknown ServiceStatus of {nameof(status)} argument: {status}");
+                lock (flightsToDeparture)
+                {
+                    var toUpdate = flightsToDeparture.Find(flight => flight.PlaneId == planeId);
+                    switch (status)
+                    {
+                        case ServiceStatus.Delayed:
+                            toUpdate.Status = FlightStatus.Delayed;
+                            break;
+                        case ServiceStatus.Departed:
+                            toUpdate.Status = FlightStatus.Departed;
+                            flightsToDeparture.Remove(toUpdate);
+                            break;
+                        default:
+                            Console.WriteLine("Unknown ServiceStatus of {0} argument: {1}", nameof(status), status);
+                            throw new ArgumentException($"Unknown ServiceStatus of {nameof(status)} argument: {status}");
+                    }
+                    updatedFlights.Enqueue(toUpdate);
+                }
             }
-            updatedFlights.Enqueue(toUpdate);
         }
     }
 
