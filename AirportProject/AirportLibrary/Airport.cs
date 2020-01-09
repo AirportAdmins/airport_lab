@@ -26,5 +26,6 @@ namespace AirportLibrary
     public static class Subject
     {
         public const string AirplaneTypes = "airplanetypes";
+        public const string Baggage = "baggage";
     }
 }

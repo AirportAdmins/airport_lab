@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -186,7 +187,9 @@ namespace AirportLibrary.DTO
         Early,
         Late,
         WrongTicket,
-        Terminal
+        Registered,
+        Terminal,
+        LateForTerminal
     }
 
     // To CashBox
@@ -315,11 +318,30 @@ namespace AirportLibrary.DTO
     // ===================================
     public class NewTimeSpeedFactor
     {
+        [JsonProperty("factor")]
         public double Factor { get; set; }
     }
     public class CurrentPlayTime
     {
         public DateTime PlayTime { get; set; }
+    }
+    // ===================================
+
+    // Visualizer Component
+    // ===================================
+    public class VisualizationMessage
+    {
+        // Constant from AirportLibrary.Component class or AirplaneModel.Models.Model names
+        [JsonProperty("type")]
+        public string Type { get; set; }
+        [JsonProperty("id")]
+        public string ObjectId { get; set; }
+        [JsonProperty("start")]
+        public int StartVertex { get; set; }
+        [JsonProperty("end")]
+        public int DestinationVertex { get; set; }
+        [JsonProperty("speed")]
+        public int Speed { get; set; }
     }
     // ===================================
 
