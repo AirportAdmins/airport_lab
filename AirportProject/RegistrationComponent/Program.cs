@@ -64,7 +64,7 @@ namespace RegistrationComponent
                         if (mes.HasTicket) // Если билет верный
                         {
                             reg.MqClient.Send<CheckInResponse>(regPas,
-                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registrated });
+                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registered });
                             reg.PassToTerminal(match.PassengerId, match.FlightId, match.HasBaggage, match.FoodType);
                         }
                         else // Если билет неверный
