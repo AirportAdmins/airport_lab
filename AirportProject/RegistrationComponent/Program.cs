@@ -12,6 +12,8 @@ namespace RegistrationComponent
     {
         public string FlightId { get; set; }
         public FlightStatus Status { get; set; }
+        public int PasCount { get; set; } = 0;
+        public int BagCount { get; set; } = 0;
         public int StandardFood { get; set; } = 0;
         public int VeganFood { get; set; } = 0;
         public int ChildFood { get; set; } = 0;
@@ -22,10 +24,12 @@ namespace RegistrationComponent
         public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
         public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
         private readonly object pasLock = new object();
-        const int MIN_ERR = 1;
-        const int MAX_ERR = 100;
+        const int MIN_ERR_10000 = 1; // задержка от 10 секунд
+        const int MAX_ERR_10000 = 60; // до 10 минут
+        const int REG_TIME_1000 = 2;
         public double TimeCoef { get; set; } = 1;
 
+        const string timeReg = Component.TimeService + Component.Registration;
         const string scheduleReg = Component.Schedule + Component.Registration;
         const string pasReg = Component.Passenger + Component.Registration;
         const string regPas = Component.Registration + Component.Passenger;
@@ -33,7 +37,6 @@ namespace RegistrationComponent
         const string regStorageBaggage = Component.Registration + Component.Storage + Subject.Baggage;
         const string regCash = Component.Registration + Component.Cashbox;
         const string cashReg = Component.Cashbox + Component.Registration;
-        const string grServReg = Component.GroundService + Component.Registration;
         const string regGrServ = Component.Registration + Component.GroundService;
 
         static void Main(string[] args)
@@ -42,6 +45,11 @@ namespace RegistrationComponent
             
             reg.MqClient.DeclareQueues(scheduleReg, pasReg, regPas, regStorage, regStorageBaggage, regCash, cashReg);
 
+            reg.MqClient.SubscribeTo<NewTimeSpeedFactor>(timeReg, (mes) =>
+            {
+                reg.TimeCoef = mes.Factor;
+            });
+
             reg.MqClient.SubscribeTo<FlightStatusUpdate>(scheduleReg, (mes) =>
             {
                 reg.UpdateFlightStatus(mes.FlightId, mes.Status);
@@ -49,7 +57,7 @@ namespace RegistrationComponent
 
             reg.MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
             {
-                Thread.Sleep(2000);
+                Thread.Sleep((int) (REG_TIME_1000 * 1000 * reg.TimeCoef));
                 reg.Registrate(mes.PassengerId, mes.FlightId, mes.HasBaggage, mes.FoodType);
             });
 
@@ -117,8 +125,8 @@ namespace RegistrationComponent
             var rand = new Random().Next(1, 10);
             if (rand < 3)
             {
-                var errorTime = new Random().Next(MIN_ERR, MAX_ERR);
-                Thread.Sleep((int) (errorTime * 100000 * TimeCoef));
+                var errorTime = new Random().Next(MIN_ERR_10000, MAX_ERR_10000);
+                Thread.Sleep((int) (errorTime * 10000 * TimeCoef));
 
                 var status = Flights.Find(e => e.FlightId == flightId).Status;
                 if (status == FlightStatus.Boarding || status == FlightStatus.Departed)
@@ -128,21 +136,23 @@ namespace RegistrationComponent
                     return;
                 }
             }
-            
+
+            var flight = Flights.Find(e => e.FlightId == flightId);
+
             // Отправить пассажира в накопитель
             MqClient.Send<PassengerStoragePass>(regStorage,
                     new PassengerStoragePass() { PassengerId = passengerId, FlightId = flightId });
+            flight.PasCount++;
 
             if (baggage)
             {
                 // Отправить багаж в накопитель - Накопитель(flightId)
                 MqClient.Send<BaggageStoragePass>(regStorageBaggage,
                     new BaggageStoragePass() { FlightId = flightId });
+                flight.BagCount++;
             }
 
             // Добавить еду для рейса
-            var flight = Flights.Find(e => e.FlightId == flightId);
-
             switch (food)
             {
                 case Food.Standard:
