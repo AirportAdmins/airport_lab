@@ -100,12 +100,14 @@ namespace RegistrationComponent
                 case FlightStatus.Boarding:
                     var boarding = Flights.Find(e => (e.FlightId == id));
                     boarding.Status = status;
-                    MqClient.Send<FoodInfoResponse>(regGrServ,
-                        new FoodInfoResponse()
+                    MqClient.Send<FlightInfo>(regGrServ,
+                        new FlightInfo()
                         {
                             FlightId = id,
+                            PassengerCount = boarding.PasCount,
+                            BaggageCount = boarding.BagCount,
                             FoodList = new List<Tuple<Food, int>>()
-                            { 
+                            {
                                 Tuple.Create(Food.Standard, boarding.StandardFood),
                                 Tuple.Create(Food.Vegan, boarding.VeganFood),
                                 Tuple.Create(Food.Child, boarding.ChildFood),
