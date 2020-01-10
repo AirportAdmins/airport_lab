@@ -189,7 +189,8 @@ namespace AirportLibrary.DTO
         WrongTicket,
         Registered,
         Terminal,
-        LateForTerminal
+        LateForTerminal,
+        NoSuchFlight
     }
 
     // To CashBox
@@ -206,16 +207,12 @@ namespace AirportLibrary.DTO
         public bool HasTicket { get; set; }
     }
 
-    // From GroundService
-    public class FoodInfoRequest
-    {
-        public string FlightId { get; set; }
-    }
-
     // To GroundService
-    public class FoodInfoResponse
+    public class FlightInfo
     {
         public string FlightId { get; set; }
+        public int PassengerCount { get; set; }
+        public int BaggageCount { get; set; }
         public List<Tuple<Food, int>> FoodList { get; set; }
     }
 
