@@ -7,7 +7,7 @@
 `location-of-repository> start.bat 2.2`
 
 Использование в shell:
-`$ chmod 700 start.sh  
+`$ chmod 700 start.sh\n  
 $ ./start.sh 2.2`
 
 
