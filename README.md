@@ -4,13 +4,15 @@
 
 
 Использование в cmd:
-
-`location-of-repository> start.bat 2.2`
+```
+location-of-repository> start.bat 2.2
+```
 
 Использование в shell: 
-
-`$ chmod 700 start.sh`  
-`$ ./start.sh 2.2`
+```
+$ chmod 700 start.sh
+$ ./start.sh 2.2
+```
 
 
 Где 2.2 - пример версии .NetCoreApp, можно опустить, тогда будет использоваться 3.0
