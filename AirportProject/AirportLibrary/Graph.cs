@@ -76,7 +76,7 @@ namespace AirportLibrary.Graph
             }
         }
     }
-    
+
     public class Dijkstra<T> : IAlgorithm<T>
     {
         public class DijkstraVertex
@@ -165,3 +165,4 @@ namespace AirportLibrary.Graph
             return null;
         }
     }
+}
