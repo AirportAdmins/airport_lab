@@ -22,7 +22,7 @@ namespace RegistrationComponent
     {
         public List<Flight> Flights { get; set; } = new List<Flight>();
         public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
-        public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
+        public RabbitMqClient MqClient { get; set; } = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "registration", "166e7343t");
         private readonly object pasLock = new object();
         const int MIN_ERR_10000 = 1; // задержка от 10 секунд
         const int MAX_ERR_10000 = 60; // до 10 минут
@@ -39,11 +39,17 @@ namespace RegistrationComponent
         const string cashReg = Component.Cashbox + Component.Registration;
         const string regGrServ = Component.Registration + Component.GroundService;
 
+        public static readonly List<string> queues = new List<string>
+        {
+            timeReg, scheduleReg, pasReg, regPas, regStorage, regStorageBaggage, regCash, cashReg, regGrServ
+        };
+
         static void Main(string[] args)
         {
             var reg = new Registration();
-            
-            reg.MqClient.DeclareQueues(scheduleReg, pasReg, regPas, regStorage, regStorageBaggage, regCash, cashReg);
+
+            reg.MqClient.DeclareQueues(queues.ToArray());
+            reg.MqClient.PurgeQueues(queues.ToArray());
 
             reg.MqClient.SubscribeTo<NewTimeSpeedFactor>(timeReg, (mes) =>
             {
@@ -52,12 +58,14 @@ namespace RegistrationComponent
 
             reg.MqClient.SubscribeTo<FlightStatusUpdate>(scheduleReg, (mes) =>
             {
+                Console.WriteLine($"Received from Schedule: {mes.FlightId} - {mes.Status}");
                 reg.UpdateFlightStatus(mes.FlightId, mes.Status);
             });
 
             reg.MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
             {
-                Thread.Sleep((int) (REG_TIME_1000 * 1000 * reg.TimeCoef));
+                Console.WriteLine($"Received from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
+                Thread.Sleep((int)(REG_TIME_1000 * 1000 / reg.TimeCoef));
                 reg.Registrate(mes.PassengerId, mes.FlightId, mes.HasBaggage, mes.FoodType);
             });
 
@@ -73,11 +81,15 @@ namespace RegistrationComponent
                         {
                             reg.MqClient.Send<CheckInResponse>(regPas,
                                 new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registered });
+                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.Registered}");
                             reg.PassToTerminal(match.PassengerId, match.FlightId, match.HasBaggage, match.FoodType);
                         }
                         else // Если билет неверный
+                        {
                             reg.MqClient.Send<CheckInResponse>(regPas,
                                 new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.WrongTicket });
+                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.WrongTicket}");
+                        }
 
                         reg.PasList.Remove(match);
                     }
@@ -93,13 +105,16 @@ namespace RegistrationComponent
             {
                 case FlightStatus.New:
                     Flights.Add(new Flight() { FlightId = id, Status = status });
+                    Console.WriteLine($"Added new flight {id}");
                     break;
                 case FlightStatus.CheckIn:
                     Flights.Find(e => (e.FlightId == id)).Status = status;
+                    Console.WriteLine($"Added check-in: {id} - {status}");
                     break;
                 case FlightStatus.Boarding:
                     var boarding = Flights.Find(e => (e.FlightId == id));
                     boarding.Status = status;
+                    Console.WriteLine($"Added boarding: {id} - {status}");
                     MqClient.Send<FlightInfo>(regGrServ,
                         new FlightInfo()
                         {
@@ -113,9 +128,11 @@ namespace RegistrationComponent
                                 Tuple.Create(Food.Child, boarding.ChildFood),
                             }
                         });
+                    Console.WriteLine($"Sent to Ground Service: {id}, {boarding.PasCount}, {boarding.BagCount}, {boarding.StandardFood}, {boarding.VeganFood}, {boarding.ChildFood}");
                     break;
                 case FlightStatus.Departed:
                     Flights.Find(e => (e.FlightId == id)).Status = status;
+                    Console.WriteLine($"Added departed: {id} - {status}");
                     break;
                 default:
                     break;
@@ -128,13 +145,14 @@ namespace RegistrationComponent
             if (rand < 3)
             {
                 var errorTime = new Random().Next(MIN_ERR_10000, MAX_ERR_10000);
-                Thread.Sleep((int) (errorTime * 10000 * TimeCoef));
+                Thread.Sleep((int)(errorTime * 10000 / TimeCoef));
 
                 var status = Flights.Find(e => e.FlightId == flightId).Status;
                 if (status == FlightStatus.Boarding || status == FlightStatus.Departed)
                 {
                     MqClient.Send<CheckInResponse>(regPas,
                         new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.LateForTerminal });
+                    Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.LateForTerminal}");
                     return;
                 }
             }
@@ -173,16 +191,18 @@ namespace RegistrationComponent
 
         public void Registrate(string passengerId, string flightId, bool hasBaggage, Food foodType)
         {
-            switch(Flights.Find(e => e.FlightId == flightId).Status)
+            switch (Flights.Find(e => e.FlightId == flightId).Status)
             {
                 case (FlightStatus.New):
                     MqClient.Send<CheckInResponse>(regPas,
                     new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Early });
+                    Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.Early}");
                     break;
 
                 case (FlightStatus.Boarding):
                     MqClient.Send<CheckInResponse>(regPas,
                     new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Late });
+                    Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.Late}");
                     break;
 
                 case (FlightStatus.CheckIn):
@@ -191,12 +211,14 @@ namespace RegistrationComponent
                     // Отправить запрос кассе на проверку билета
                     MqClient.Send<CheckTicketRequest>(regCash,
                     new CheckTicketRequest() { PassengerId = passengerId, FlightId = flightId });
+                    Console.WriteLine($"Sent to CashBox: {passengerId}, {flightId}");
                     break;
                 default:
                     MqClient.Send<CheckInResponse>(regPas,
                     new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.NoSuchFlight });
+                    Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.NoSuchFlight}");
                     break;
-        }
+            }
         }
     }
 }
