@@ -64,7 +64,7 @@ namespace RegistrationComponent
 
             reg.MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
             {
-                Console.WriteLine($"Reveived from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
+                Console.WriteLine($"Received from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
                 Thread.Sleep((int) (REG_TIME_1000 * 1000 / reg.TimeCoef));
                 reg.Registrate(mes.PassengerId, mes.FlightId, mes.HasBaggage, mes.FoodType);
             });
