@@ -43,7 +43,7 @@ namespace TimeServiceComponent
         DateTime playTime;
         public void Start()
         {
-            mqClient = new RabbitMqClient();
+            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "registration", "166e7343t");
 
             mqClient.DeclareQueues(CurrentTimeReceivers.ToArray());
             mqClient.DeclareQueues(NewTimeSpeedFactorReceivers.ToArray());

@@ -49,7 +49,7 @@ namespace ScheduleComponent
 
         public void Start()
         {
-            var mqClient = new RabbitMqClient();
+            var mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "registration", "166e7343t");
 
             mqClient.DeclareQueues(
                 queues.ToArray()
