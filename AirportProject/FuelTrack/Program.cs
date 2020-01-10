@@ -3,6 +3,8 @@ using RabbitMqWrapper;
 using AirportLibrary;
 using AirportLibrary.DTO;
 
+
+
 namespace FuelTruckComponent
 {
     class FuelTruck
