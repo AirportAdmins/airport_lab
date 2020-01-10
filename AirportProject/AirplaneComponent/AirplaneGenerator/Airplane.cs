@@ -5,11 +5,6 @@ using AirportLibrary.DTO;
 
 namespace AirplaneComponent.AirplaneGenerator
 {
-    public class MotionData
-    {
-        public double Speed { get; set; }
-        public int LocationVertex { get; set; }
-    }
     public class Airplane
     {
         AirplaneModel model;
@@ -23,14 +18,17 @@ namespace AirplaneComponent.AirplaneGenerator
         public AirplaneModel Model { get => model; }
         public string PlaneID { get => airplaneID; }
         public string FlightID { get; set; }
-        public MotionData MotionData { get; set; }
+
+        //for motion
+        public static int Speed { get; }         //TODO returns const
+        public int LocationVertex { get; set; }
 
         //properties to be filled
         public int Passengers { get; set; }
         public int BaggageAmount { get; set; }
         public int FuelAmount { get; set; }
         public bool IsDeiced { get; set; }
-        protected int FoodAmount { get; set; }
+        public List<Tuple<Food,int>> FoodList { get; set; }
 
     }
 }

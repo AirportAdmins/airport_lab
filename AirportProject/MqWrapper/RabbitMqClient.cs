@@ -42,6 +42,13 @@ namespace RabbitMqWrapper
             }
         }
 
+        public void PurgeQueues(params string[] queues)
+        {
+            foreach (var queue in queues)
+            {
+                mqChannel.QueuePurge(queue);
+            }
+        }
         public void Send<T>(string queueName, T message)
         {
             var json = JsonConvert.SerializeObject(message);
