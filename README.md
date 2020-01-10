@@ -3,12 +3,10 @@
 В корне проекта лежат start.bat (Windows) и start.sh (OS X) - скрипты для последовательного запуска нескольких компонент с небольшой задержкой
 
 
-Использование в cmd:
-`location-of-repository> start.bat 2.2`
+Использование в cmd:`location-of-repository> start.bat 2.2`
 
-Использование в shell:
-`$ chmod 700 start.sh`  
-`$ ./start.sh 2.2`
+Использование в shell:`$ chmod 700 start.sh`  
+		      `$ ./start.sh 2.2`
 
 
 Где 2.2 - пример версии .NetCoreApp, можно опустить, тогда будет использоваться 3.0
