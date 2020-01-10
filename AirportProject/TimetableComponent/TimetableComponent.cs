@@ -13,9 +13,9 @@ namespace TimetableComponent
             Component.Timetable + Component.Passenger;
 
         public const string ScheduleToTimetableQueue =
-            Component.Timetable + Component.Passenger;
+            Component.Schedule + Component.Timetable;
         public const string TimeServiceToTimetableQueue =
-            Component.TimeService + Component.Passenger;
+            Component.TimeService + Component.Timetable;
 
         public void Start()
         {
@@ -44,7 +44,6 @@ namespace TimetableComponent
             mqClient.SubscribeTo<FlightStatusUpdate>(ScheduleToTimetableQueue, (mes) =>
             {
                 timetable.UpdateFlight(mes);
-
             });
         }
     }

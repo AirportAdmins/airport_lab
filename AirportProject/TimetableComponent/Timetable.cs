@@ -13,25 +13,30 @@ namespace TimetableComponent
     }
     class ConsoleTimetable : ITimetable
     {
-        List<FlightStatusUpdate> flights;
+        List<FlightStatusUpdate> flights = new List<FlightStatusUpdate>();
         DateTime currentTime;
 
         public void Draw()
         {
             Console.Clear();
             Console.WriteLine(currentTime);
-            Console.WriteLine("======================================");
-            Console.WriteLine("||Flight || Status || Departure time||");
-            Console.WriteLine("======================================");
-            foreach (var flight in flights)
+            Console.WriteLine("============================================");
+            Console.WriteLine("|| Flight || Status   || Departure time   ||");
+            Console.WriteLine("============================================");
+            lock (flights)
             {
-                Console.WriteLine("||{0} {1} {2}||", 
-                    flight.FlightId, 
-                    flight.Status,  
-                    flight.Status == FlightStatus.Delayed ? "" : flight.DepartureTime.ToString()
-                );
+                foreach (var flight in flights)
+                {
+                    Console.WriteLine("|| {0, -6} || {1, -8} || {2, -5} {3, -10} ||",
+                        flight.FlightId,
+                        flight.Status,
+                        flight.Status == FlightStatus.Delayed ? "" : flight.DepartureTime.ToString("HH:mm"),
+                        flight.Status == FlightStatus.Delayed ? "" : flight.DepartureTime.ToString("dd.MM.yyyy")
+                    );
+                }
+                if (flights.Count > 0)
+                    Console.WriteLine("============================================");
             }
-            Console.WriteLine("======================================");
         }
 
         public void SetCurrentTime(DateTime currentTime)
@@ -41,15 +46,18 @@ namespace TimetableComponent
 
         public void UpdateFlight(FlightStatusUpdate flight)
         {
-            for (int i = 0; i < flights.Count; i++)
+            lock (flights)
             {
-                if (flights[i].FlightId == flight.FlightId)
+                for (int i = 0; i < flights.Count; i++)
                 {
-                    flights[i].Status = flight.Status;
-                    return;
+                    if (flights[i].FlightId == flight.FlightId)
+                    {
+                        flights[i].Status = flight.Status;
+                        return;
+                    }
                 }
+                flights.Add(flight);
             }
-            flights.Add(flight);
         }
     }
 }

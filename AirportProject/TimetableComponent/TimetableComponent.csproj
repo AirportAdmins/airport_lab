@@ -9,4 +9,9 @@
     <PackageReference Include="RabbitMQ.Client" Version="5.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
+    <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
+  </ItemGroup>
+
 </Project>
