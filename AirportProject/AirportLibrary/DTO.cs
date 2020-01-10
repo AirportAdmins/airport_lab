@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -45,12 +46,14 @@ namespace AirportLibrary.DTO
             new AirplaneModel("Boeing 737", 60, 1000)
         };
         public int Seats { get; set; }
+        public int BaggagePlaces { get; set; }
         public int Fuel { get; set; }
         public string Model { get; set; }
         private AirplaneModel(string model, int seats, int fuel)
         {
             Model = model;
             Seats = seats;
+            BaggagePlaces = seats;
             Fuel = fuel;
         }
     }
@@ -184,7 +187,10 @@ namespace AirportLibrary.DTO
         Early,
         Late,
         WrongTicket,
-        Terminal
+        Registered,
+        Terminal,
+        LateForTerminal,
+        NoSuchFlight
     }
 
     // To CashBox
@@ -201,16 +207,12 @@ namespace AirportLibrary.DTO
         public bool HasTicket { get; set; }
     }
 
-    // From GroundService
-    public class FoodInfoRequest
-    {
-        public string FlightId { get; set; }
-    }
-
     // To GroundService
-    public class FoodInfoResponse
+    public class FlightInfo
     {
         public string FlightId { get; set; }
+        public int PassengerCount { get; set; }
+        public int BaggageCount { get; set; }
         public List<Tuple<Food, int>> FoodList { get; set; }
     }
 
@@ -313,11 +315,30 @@ namespace AirportLibrary.DTO
     // ===================================
     public class NewTimeSpeedFactor
     {
+        [JsonProperty("factor")]
         public double Factor { get; set; }
     }
     public class CurrentPlayTime
     {
         public DateTime PlayTime { get; set; }
+    }
+    // ===================================
+
+    // Visualizer Component
+    // ===================================
+    public class VisualizationMessage
+    {
+        // Constant from AirportLibrary.Component class or AirplaneModel.Models.Model names
+        [JsonProperty("type")]
+        public string Type { get; set; }
+        [JsonProperty("id")]
+        public string ObjectId { get; set; }
+        [JsonProperty("start")]
+        public int StartVertex { get; set; }
+        [JsonProperty("end")]
+        public int DestinationVertex { get; set; }
+        [JsonProperty("speed")]
+        public int Speed { get; set; }
     }
     // ===================================
 
