@@ -72,9 +72,7 @@ namespace FollowMeComponent
             }
             followme.Status = Status.Busy;
             followme.LocationVertex = 0;    //hz
-            followme.PlaneId = cmd.PlaneId;
-
-            
+            followme.PlaneId = cmd.PlaneId;           
         }
         void TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
@@ -97,13 +95,7 @@ namespace FollowMeComponent
         {
             int timeInterval = 10;
             double position = 0;
-
-            int distance = map.Graph.FindVertex(DestinationVertex).Edges.    //get distance from graph
-                Find(ed =>
-                        ed.ConnVertices.Item2.Id == followme.LocationVertex &&
-                        ed.ConnVertices.Item1.Id == DestinationVertex
-                    ).Weight;
-            
+            int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);           
             SendVisualizationMessage(followme,DestinationVertex,FollowMeCar.Speed);
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //permission request
                 new MotionPermissionRequest()
@@ -114,6 +106,7 @@ namespace FollowMeComponent
                     ObjectId=followme.FollowMeId,
                     StartVertex=followme.LocationVertex
                 });
+
             while (!followme.MotionPermitted)               //check if followme can go
                 Thread.Sleep(5);
            
@@ -133,8 +126,7 @@ namespace FollowMeComponent
                     StartVertex=followme.LocationVertex
                 });
             followme.LocationVertex = DestinationVertex;
-            followme.MotionPermitted = false;
-          
+            followme.MotionPermitted = false;         
         }
         void SendVisualizationMessage(FollowMeCar followme, int DestinationVertex, int speed)
         {
