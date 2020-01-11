@@ -23,6 +23,7 @@ namespace FuelTruckComponent
         public RabbitMqClient mqClient { get; set; } = new RabbitMqClient();
         public double timeCoef { get; set; } = 1;
         public string planeID;
+        public int planeLocationVertex;
         public int fuel;
         static void Main(string[] args)
         {
@@ -39,25 +40,20 @@ namespace FuelTruckComponent
             });
 
             //НУЖНО ДОБАВИТЬ МЕСТО САМОЛЕТА В ДТО
-            ft.mqClient.SubscribeTo<RefuelCompletion>(queueFromGroundService, (mes) =>
+            ft.mqClient.SubscribeTo<RefuelServiceCommand>(queueFromGroundService, (mes) =>
             {
-                ft.FuelTruckJob(mes.PlaneId, mes.Fuel);
+                ft.fuel = mes.Fuel;
+                ft.planeID = mes.PlaneId;
+                ft.planeLocationVertex = mes.PlaneLocationVertex;
+                ft.FuelTruckJob(ft.planeID, ft.fuel, ft.planeLocationVertex, ft.timeCoef);
                 Console.WriteLine("Топливозаправщик поехал");
-                //ft.planeID = mes.PlaneId;
-                //ft.fuel = mes.Fuel;
                
-                
-                
-                
-                
-                //airplanePos = mes.
             });
-
             //ft.mqClient.Dispose();
         }
         
         //Работа Топливозаправщика
-        public void FuelTruckJob(string planeID, int fuel)
+        public void FuelTruckJob(string planeID, int fuel, int planeLocationVertex, double timeCoef)
         {
             //постоянная проверка времени
 
