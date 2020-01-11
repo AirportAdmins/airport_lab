@@ -75,6 +75,18 @@ namespace AirportLibrary.Graph
                 vertex2.AddEdge(currEdge);
             }
         }
+        public int GetWeightBetweenNearVerties(int v1, int v2)
+        {
+            Vertex<int> vertex1 = Graph.FindVertex(v1);
+            Vertex<int> vertex2 = Graph.FindVertex(v2);
+
+            foreach (Edge<int> edge in Graph.FindVertex(v1).Edges)
+            {
+                if (edge.GetOppsiteVertex(vertex1) == vertex2)
+                    return edge.Weight;
+            }
+            return -1;
+        }
     }
     
     public class Dijkstra<T> : IAlgorithm<T>
