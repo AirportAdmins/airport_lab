@@ -32,7 +32,7 @@ namespace AirportLibrary
     }
     public class Map
     {
-        private Graph<int> Graph = new Graph<int>();
+        public readonly Graph<int> Graph = new Graph<int>();
         public Map()
         { 
             for (int i = 1; i <= 25; i++)
