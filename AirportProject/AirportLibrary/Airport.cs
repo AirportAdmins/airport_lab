@@ -81,6 +81,7 @@ namespace AirportLibrary
         {
             return new Dijkstra<int>(Graph).FindShortcut(v1,v2);
         }
+        //if edge exist then return weight for near vertex else return -1 
         public int GetWeightBetweenNearVerties(int v1, int v2)
         {
             Vertex<int> vertex1 = Graph.FindVertex(v1);
