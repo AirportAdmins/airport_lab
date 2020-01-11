@@ -43,11 +43,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FollowMeComponent.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj">
+      <Project>{d8f7b003-666c-4920-a534-0e683fd434c1}</Project>
+      <Name>AirportLibrary</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj">
+      <Project>{548956ca-b7f5-4b8d-ab24-5ae5c900f789}</Project>
+      <Name>RabbitMqWrapper</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
