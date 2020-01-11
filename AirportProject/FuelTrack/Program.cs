@@ -12,7 +12,7 @@ namespace FuelTruckComponent
         //Получает сообщения
         const string queueFromTimeService = Component.TimeService + Component.FuelTruck;
         const string queueFromGroundService = Component.GroundService + Component.FuelTruck;
-        const string queueFromGroundMotion = Component.GroundMotion + Component.GroundMotion;
+        const string queueFromGroundMotion = Component.GroundMotion + Component.FuelTruck;
 
         //Отправляет сообщения
         const string queueToAirPlane = Component.FuelTruck + Component.Airplane;
@@ -45,6 +45,11 @@ namespace FuelTruckComponent
                 Console.WriteLine("Топливозаправщик поехал");
                 //ft.planeID = mes.PlaneId;
                 //ft.fuel = mes.Fuel;
+               
+                
+                
+                
+                
                 //airplanePos = mes.
             });
 
