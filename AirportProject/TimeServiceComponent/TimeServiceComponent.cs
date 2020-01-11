@@ -13,27 +13,29 @@ namespace TimeServiceComponent
     {
         public static readonly List<string> CurrentTimeReceivers = new List<string>()
         {
-            Component.TimeService + Component.Schedule,
-            Component.TimeService + Component.Timetable,
-            Component.TimeService + Component.Logs
+            //Component.TimeService + Component.Schedule,
+            //Component.TimeService + Component.Timetable,
+            //Component.TimeService + Component.Logs
+            Component.TimeService + Component.Schedule
         };
         public static readonly List<string> NewTimeSpeedFactorReceivers = new List<string>()
         {
-            Component.TimeService + Component.Visualizer,
-            Component.TimeService + Component.Airplane,
-            Component.TimeService + Component.Bus,
-            Component.TimeService + Component.Baggage,
-            Component.TimeService + Component.Catering,
-            Component.TimeService + Component.FollowMe,
-            Component.TimeService + Component.FuelTruck,
-            Component.TimeService + Component.Deicing,
-            Component.TimeService + Component.Passenger,
-            Component.TimeService + Component.Storage,
-            Component.TimeService + Component.Cashbox,
-            Component.TimeService + Component.Registration
+            //Component.TimeService + Component.Visualizer,
+            //Component.TimeService + Component.Airplane,
+            //Component.TimeService + Component.Bus,
+            //Component.TimeService + Component.Baggage,
+            //Component.TimeService + Component.Catering,
+            //Component.TimeService + Component.FollowMe,
+            //Component.TimeService + Component.FuelTruck,
+            //Component.TimeService + Component.Deicing,
+            //Component.TimeService + Component.Passenger,
+            //Component.TimeService + Component.Storage,
+            //Component.TimeService + Component.Cashbox,
+            //Component.TimeService + Component.Registration
+            Component.TimeService + Component.Schedule + "factor"
         };
         public static double TimeSpeedFactor = 1.0;
-        public const int SEND_CURRENT_TIME_PERIOD_MS = 100;
+        public const int SEND_CURRENT_TIME_PERIOD_MS = 1000;
         public const int CHANGE_FACTOR = 2;
         public const double MAX_SPEED_FACTOR = 1024;
         public const double MIN_SPEED_FACTOR = 0.015625;

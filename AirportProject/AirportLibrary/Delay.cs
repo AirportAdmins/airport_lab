@@ -14,9 +14,13 @@ namespace AirportLibrary.Delay
             get => timeFactor;
             set
             {
-                foreach (var token in tokens)
+                timeFactor = value;
+                lock (tokens)
                 {
-                    token.WakeUp();
+                    foreach (var token in tokens)
+                    {
+                        token.WakeUp();
+                    }
                 }
             }
         }
@@ -30,16 +34,23 @@ namespace AirportLibrary.Delay
         {
             var autoResetEvent = new AutoResetEvent(false);
             var token = new PlayDelayToken(this);
-            tokens.Add(token);
+            lock (tokens)
+            {
+                tokens.Add(token);
+            }
             return token;
         }
         public int Adapt(int playTimeMs)
         {
+            //Console.WriteLine("Real time sleep left: {0}", (int)(playTimeMs / timeFactor));
             return (int) (playTimeMs / timeFactor);
         }
         public void RemoveToken(PlayDelayToken token)
         {
-            tokens.Remove(token);
+            lock (tokens)
+            {
+                tokens.Remove(token);
+            }
         }
     }
 
@@ -54,15 +65,22 @@ namespace AirportLibrary.Delay
             this.source = source;
         }
 
-        public void Sleep(int playTimeMs)
+        public void Sleep(int playTimeMs)//, DateTime stdt)
         {
             sleepingLeft = playTimeMs;
             var timeFactor = source.TimeFactor;
             var start = DateTime.Now;
+            //Console.WriteLine("Play time of waking: {0}", stdt.AddMilliseconds(sleepingLeft).ToLongTimeString());
             while (resetEvent.WaitOne(source.Adapt(sleepingLeft)))
             {
-                var passed = (int) ((DateTime.Now - start).TotalMilliseconds * timeFactor);
+                var real = (int) (DateTime.Now - start).TotalMilliseconds;
+                start = DateTime.Now;
+                var passed = (int) (real * timeFactor);
+                timeFactor = source.TimeFactor;
+                //Console.WriteLine("Passed {0} of real and {1} of play time", real, passed);
                 sleepingLeft -= passed;
+                //stdt = stdt.AddMilliseconds(passed);
+                //Console.WriteLine("Play time of waking: {0}", stdt.AddMilliseconds(sleepingLeft).ToLongTimeString());
                 if (sleepingLeft <= 0)
                     break;
             }
