@@ -72,7 +72,7 @@ namespace AirportLibrary.Graph
             {
                 var currEdge = new Edge<T>(new Tuple<Vertex<T>, Vertex<T>>(vertex1, vertex2), weight);
                 vertex1.AddEdge(currEdge);
-                vertex1.AddEdge(currEdge);
+                vertex2.AddEdge(currEdge);
             }
         }
     }
