@@ -7,19 +7,21 @@ using RabbitMqWrapper;
 using AirplaneComponent.AirplaneGenerator;
 using AirportLibrary.DTO;
 using AirportLibrary;
+using System.Linq;
+using System.Collections.Concurrent;
 
 namespace AirplaneComponent
 {
     public class AirplaneComponent
     {
         RabbitMqClient MqClient;
-        Dictionary<string, Airplane> airplanes;
+        ConcurrentDictionary<string, Airplane> airplanes;
         Dictionary<string, string> queuesTo;
         Dictionary<string, string> queuesFrom;
-        double TimeSpeedFactor;
+        double TimeSpeedFactor = 1;
         public AirplaneComponent()
         {
-            airplanes = new Dictionary<string, Airplane>();
+            airplanes = new ConcurrentDictionary<string, Airplane>();
         }
 
         public void Start()
@@ -60,12 +62,8 @@ namespace AirplaneComponent
 
         void DeclareQueues()
         {
-            string[] queuesStringTo = new string[queuesTo.Count];
-            queuesTo.Values.CopyTo(queuesStringTo, 0);
-            MqClient.DeclareQueues(queuesStringTo);
-            string[] queuesStringFrom = new string[queuesFrom.Count];
-            queuesFrom.Values.CopyTo(queuesStringFrom, 0);
-            MqClient.DeclareQueues(queuesStringFrom);
+            MqClient.DeclareQueues(queuesTo.Values.ToArray());
+            MqClient.DeclareQueues(queuesFrom.Values.ToArray());
         }
         void Subscribe()
         {
@@ -92,13 +90,15 @@ namespace AirplaneComponent
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
-            airplanes.Add(airplane.PlaneID, airplane);
-            MqClient.Send<AirplaneGenerationResponse>(queuesTo[Component.Schedule],
-                new AirplaneGenerationResponse()
-                {
-                    FlightId = req.FlightId,
-                    PlaneId = airplane.PlaneID
-                });
+            if (airplanes.TryAdd(airplane.PlaneID, airplane))
+            {
+                MqClient.Send<AirplaneGenerationResponse>(queuesTo[Component.Schedule],
+                    new AirplaneGenerationResponse()
+                    {
+                        FlightId = req.FlightId,
+                        PlaneId = airplane.PlaneID
+                    });
+            }
         }
         void BusTransferResponse(PassengerTransferRequest req)
         {
