@@ -11,6 +11,7 @@ using AirportLibrary.Graph;
 
 namespace FollowMeComponent
 {
+    delegate void GoToVertexAction(FollowMeCar followme, int DestinationVertex);
     public class FollowMeComponent
     {
         Dictionary<string, string> queuesFrom;
@@ -21,6 +22,7 @@ namespace FollowMeComponent
 
         double TimeSpeedFactor = 1;
         int commonIdCounter = 0;
+        object lockerCars = new object();
         public FollowMeComponent()
         {
             MqClient = new RabbitMqClient();
@@ -59,8 +61,23 @@ namespace FollowMeComponent
                         TimeSpeedFactor = mes.Factor);
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotTransferRequest(cmd));
-            MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response =>
-                    GotMotionResponse(response.ObjectId));
+            MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
+                    {
+                        lock (lockerCars)
+                        {
+                            cars[response.ObjectId].MotionPermitted = true;
+                        }
+                    });
+            MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>
+                    {
+                        FollowMeCar followme = null;
+                        lock (lockerCars)               
+                        {
+                            followme = cars[mes.FollowMeId];
+                        }
+                        if (followme.PlaneId == mes.PlaneId)            //TODO maybe remove LocationVertex
+                            followme.GotAirplaneResponse = true;
+                    });
         }
         void GotTransferRequest(AirplaneTransferCommand cmd)
         {
@@ -68,65 +85,109 @@ namespace FollowMeComponent
             if (followme == null)
             {
                 followme = new FollowMeCar(commonIdCounter);
+                followme.LocationVertex = GetHomeVertex();//to appear in one of vertexes
                 commonIdCounter++;
+                cars.Add(followme.FollowMeId, followme);
             }
-            followme.Status = Status.Busy;
-            followme.LocationVertex = 0;    //hz
-            followme.PlaneId = cmd.PlaneId;           
+            followme.Status = Status.Busy;            
+            followme.PlaneId = cmd.PlaneId;
+            TransferAirplane(followme,cmd).Start();
         }
-        void TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
+        Task TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
-            var pathToAirplane = map.FindShortcut(followme.LocationVertex, cmd.PlaneLocationVertex);
-            for (int i = 0; i < pathToAirplane.Count - 1; i++)  //go to airplane
+            return new Task(() =>
+            {     
+                GoPath(GoToVertexAlone, followme, cmd.PlaneLocationVertex);
+                GoPath(GoToVertexWithAirplane, followme, cmd.DestinationVertex);
+                MqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
+                {
+                    Component = Component.FollowMe,
+                    PlaneId = followme.PlaneId
+                });
+                followme.Status = Status.Free;
+                GoPath(GoToVertexAlone, followme, GetHomeVertex());     //TODO will be in another task to cancel 
+            });                                                         //if free car will be needed
+        }
+        void GoPath(GoToVertexAction action, FollowMeCar followme, int destinationVertex)
+        {
+            var path = map.FindShortcut(followme.LocationVertex, destinationVertex);
+            for (int i = 0; i < path.Count - 1; i++) 
             {
-                GoToAnotherVertex(followme, pathToAirplane[i + 1]);
+                GoToVertexAlone(followme, path[i + 1]);
             }
-            var pathFromAirplane = map.FindShortcut(followme.LocationVertex, cmd.DestinationVertex);
-            for (int i = 0; i < pathToAirplane.Count - 1; i++)  //with airplane
+        }
+        int GetHomeVertex()
+        {
+            List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
+            Random rand = new Random();
+            return homeVertexes.ElementAt(rand.Next(0, 3));
+        }
+        void GoToVertexWithAirplane(FollowMeCar followme, int DestinationVertex)
+        {
+            WaitForMotionPermission(followme, DestinationVertex);
+            MqClient.Send<FollowMeCommand>(queuesTo[Component.Airplane], new FollowMeCommand()
             {
-                GoToAnotherVertex(followme, pathToAirplane[i + 1]);
-            }
+                FollowMeId = followme.FollowMeId,
+                DestinationVertex = DestinationVertex,
+                PlaneId = followme.PlaneId
+            });
+            MakeAMove(followme, DestinationVertex);
+            while (!followme.GotAirplaneResponse)           //wait for airplane response
+                Thread.Sleep(10);
+            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
+            new MotionPermissionRequest()
+            {
+                Action = MotionAction.Free,
+                DestinationVertex = DestinationVertex,
+                Component = Component.FollowMe,
+                ObjectId = followme.FollowMeId,
+                StartVertex = followme.LocationVertex
+            });
+            followme.GotAirplaneResponse = false;
         }
-        void GotMotionResponse(string FollowMeId)
+        void GoToVertexAlone(FollowMeCar followme, int DestinationVertex)
         {
-            cars[FollowMeId].MotionPermitted = true;
+            WaitForMotionPermission(followme, DestinationVertex);
+            MakeAMove(followme, DestinationVertex);
+            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
+            new MotionPermissionRequest()
+            {
+                Action = MotionAction.Free,
+                DestinationVertex = DestinationVertex,
+                Component = Component.FollowMe,
+                ObjectId = followme.FollowMeId,
+                StartVertex = followme.LocationVertex
+            });
         }
-        void GoToAnotherVertex(FollowMeCar followme, int DestinationVertex)
+        void WaitForMotionPermission(FollowMeCar followme, int DestinationVertex)
         {
-            int timeInterval = 10;
-            double position = 0;
-            int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);           
-            SendVisualizationMessage(followme,DestinationVertex,FollowMeCar.Speed);
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
-                    Component=Component.FollowMe,
-                    DestinationVertex=DestinationVertex,
-                    ObjectId=followme.FollowMeId,
-                    StartVertex=followme.LocationVertex
+                    Component = Component.FollowMe,
+                    DestinationVertex = DestinationVertex,
+                    ObjectId = followme.FollowMeId,
+                    StartVertex = followme.LocationVertex
                 });
 
             while (!followme.MotionPermitted)               //check if followme can go
                 Thread.Sleep(5);
-           
+        }
+        void MakeAMove(FollowMeCar followme, int DestinationVertex)     //just move to vertex
+        {
+            int timeInterval = 10;
+            double position = 0;
+            int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);
+            SendVisualizationMessage(followme, DestinationVertex, FollowMeCar.Speed);
             while (position < distance)                     //go
             {
                 position += FollowMeCar.Speed * timeInterval * TimeSpeedFactor;
                 Thread.Sleep(10);
             };
-            SendVisualizationMessage(followme,DestinationVertex,0);
-            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
-                new MotionPermissionRequest()
-                {
-                    Action=MotionAction.Free,
-                    DestinationVertex=DestinationVertex,
-                    Component=Component.FollowMe,
-                    ObjectId=followme.FollowMeId,
-                    StartVertex=followme.LocationVertex
-                });
+            SendVisualizationMessage(followme, DestinationVertex, 0);
             followme.LocationVertex = DestinationVertex;
-            followme.MotionPermitted = false;         
+            followme.MotionPermitted = false;
         }
         void SendVisualizationMessage(FollowMeCar followme, int DestinationVertex, int speed)
         {
@@ -139,5 +200,6 @@ namespace FollowMeComponent
                 Type = Component.FollowMe
             });
         }
+        //TODO how they will hide in garage
     }
 }
