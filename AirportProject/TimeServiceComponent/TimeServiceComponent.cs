@@ -20,6 +20,7 @@ namespace TimeServiceComponent
         public static readonly List<string> NewTimeSpeedFactorReceivers = new List<string>()
         {
             Component.TimeService + Component.Visualizer,
+            Component.TimeService + Component.Airplane,
             Component.TimeService + Component.Bus,
             Component.TimeService + Component.Baggage,
             Component.TimeService + Component.Catering,
