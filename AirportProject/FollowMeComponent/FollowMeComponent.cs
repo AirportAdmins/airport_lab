@@ -8,6 +8,7 @@ using RabbitMqWrapper;
 using AirportLibrary.DTO;
 using System.Threading;
 using AirportLibrary.Graph;
+using System.Collections.Concurrent;
 
 namespace FollowMeComponent
 {
@@ -16,7 +17,7 @@ namespace FollowMeComponent
     {
         Dictionary<string, string> queuesFrom;
         Dictionary<string, string> queuesTo;
-        Dictionary<string, FollowMeCar> cars;
+        ConcurrentDictionary<string, FollowMeCar> cars;
         RabbitMqClient MqClient;
         Map map = new Map();
 
@@ -85,9 +86,9 @@ namespace FollowMeComponent
             if (followme == null)
             {
                 followme = new FollowMeCar(commonIdCounter);
-                followme.LocationVertex = GetHomeVertex();//to appear in one of vertexes
+                followme.LocationVertex = GetHomeVertex();  //to appear in one of vertexes
                 commonIdCounter++;
-                cars.Add(followme.FollowMeId, followme);
+                cars.TryAdd(followme.FollowMeId, followme);  
             }
             followme.Status = Status.Busy;            
             followme.PlaneId = cmd.PlaneId;
