@@ -7,5 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
   </ItemGroup>
 </Project>
