@@ -34,6 +34,8 @@ namespace ScheduleComponent
                 //Console.WriteLine($"Queue thread id: {Thread.CurrentThread.ManagedThreadId}");
                 if (countOfSleepingThreads < NUMBER_OF_SLEEPS && new Random().NextDouble() < 0.9)
                 {
+                    // Usage of Delay
+                    // To check it working you need to run TimeServiceComponent
                     Task.Run(() =>
                     {
                         try
