@@ -37,13 +37,21 @@ namespace TimetableComponent
 
             mqClient.SubscribeTo<CurrentPlayTime>(TimeServiceToTimetableQueue, (mes) =>
             {
-                timetable.SetCurrentTime(mes.PlayTime);
-                timetable.Draw();
+                lock (timetable)
+                {
+                    timetable.SetCurrentTime(mes.PlayTime);
+                    timetable.Draw();
+                }
             });
 
             mqClient.SubscribeTo<FlightStatusUpdate>(ScheduleToTimetableQueue, (mes) =>
             {
-                timetable.UpdateFlight(mes);
+                lock (timetable)
+                {
+                    // TODO if flight is departed, then remove it in N minutes
+                    timetable.UpdateFlight(mes);
+                    mqClient.Send(TimetableToPassengerQueue, timetable.GetTimetable());
+                }
             });
         }
     }
