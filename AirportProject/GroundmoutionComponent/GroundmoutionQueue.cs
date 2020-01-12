@@ -6,11 +6,11 @@ using AirportLibrary;
 
 namespace GroundmoutionComponent
 {
-    class GroundmoutionQueues
+    class GroundmoutionQueue
     {
         public Dictionary<Edge<int>, Queue<MotionPermissionRequest>> dictBusyEdges { get; }
 
-        public GroundmoutionQueues()
+        public GroundmoutionQueue()
         {
             dictBusyEdges = new Dictionary<Edge<int>, Queue<MotionPermissionRequest>>();
             foreach (var edge in new Map().Graph.Edges)
@@ -24,6 +24,11 @@ namespace GroundmoutionComponent
                     return edge;
             return null;
         }
+        public bool IsFree(MotionPermissionRequest request)
+        {
+            var edge = FindEdge(request.StartVertex, request.DestinationVertex);
+            return (edge != null) ? dictBusyEdges[edge].Count==0 : false;
+        }
 
         public bool Enqueue(MotionPermissionRequest request)
         {
@@ -35,15 +40,28 @@ namespace GroundmoutionComponent
             return edge!=null;
         }
 
-        public MotionPermissionRequest Dequeue(int vertexFrom, int vertexTo)
+        public MotionPermissionRequest Dequeue(MotionPermissionRequest request)
         {
-            var edge = FindEdge(vertexFrom, vertexTo);
+            var edge = FindEdge(request.StartVertex, request.DestinationVertex);
             if (edge != null)
             {
                 return dictBusyEdges[edge].Dequeue();
             }
             return null;
         }
-
+        public MotionPermissionRequest Peek(MotionPermissionRequest request)
+        {
+            var edge = FindEdge(request.StartVertex, request.DestinationVertex);
+            MotionPermissionRequest peek;
+            try
+            {
+                peek = dictBusyEdges[edge].Peek();
+            }
+            catch
+            {
+                peek = null;
+            }
+            return peek;
+        }
     }
 }

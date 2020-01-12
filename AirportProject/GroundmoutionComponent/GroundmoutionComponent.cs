@@ -8,7 +8,8 @@ namespace GroundmoutionComponent
 {
     public class GroundmoutionComponent
     {
-        public static readonly string SendersToGroundmoutionQueue = Component.GroundMotion;
+        public static readonly string ComponentName = Component.GroundMotion;
+        public static readonly string SendersToGroundmoutionQueue = ComponentName;
 
         public static readonly List<string> MotionPermissionSenders = new List<string>()
         {
@@ -22,9 +23,11 @@ namespace GroundmoutionComponent
 
         public static readonly List<string> MotionPermissionReceivers = MotionPermissionSenders;
 
+        private readonly object lockObj = new object();
+
         RabbitMqClient mqClient = new RabbitMqClient();
 
-        GroundmoutionQueues groundmoution = new GroundmoutionQueues();
+        GroundmoutionQueue groundmoution = new GroundmoutionQueue();
 
         public GroundmoutionComponent()
         {
@@ -37,10 +40,40 @@ namespace GroundmoutionComponent
             //declare queues GroundmoutionToReceivers
             foreach (var receiver in MotionPermissionReceivers)
             {
-                mqClient.DeclareQueues(receiver + Component.GroundMotion);
+                mqClient.DeclareQueues(ComponentName + receiver);
             }
 
-            mqClient.SubscribeTo<MotionPermissionRequest>(SendersToGroundmoutionQueue, )
+            mqClient.SubscribeTo<MotionPermissionRequest>(SendersToGroundmoutionQueue, (message) =>
+            {
+                lock (lockObj)
+                {
+                    switch (message.Action)
+                    {
+                        case MotionAction.Occupy:
+                            if (groundmoution.IsFree(message))
+                            {
+                                MotionPermissionResponse response = new MotionPermissionResponse();
+                                response.ObjectId = message.ObjectId;
+                                mqClient.Send<MotionPermissionResponse>(ComponentName + message.Component, response);
+                            }
+                            groundmoution.Enqueue(message);
+                            break;
+                        case MotionAction.Free:
+                            groundmoution.Dequeue(message);
+                            if (!groundmoution.IsFree(message))
+                            {
+                                var next = groundmoution.Peek(message);
+                                MotionPermissionResponse response = new MotionPermissionResponse();
+                                response.ObjectId = next.ObjectId;
+                                mqClient.Send<MotionPermissionResponse>(ComponentName + next.Component, response);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            );
 
         }
     }
