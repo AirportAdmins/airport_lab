@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AirportLibrary;
 using RabbitMqWrapper;
-using PassengerComponent.Passenger;
 using PassengerComponent.Passengers;
+using AirportLibrary.Delay;
 
 namespace PassengerComponent
 {
@@ -14,8 +14,8 @@ namespace PassengerComponent
     {
         public const string PassengerToCashboxQueue = Component.Passenger + Component.Cashbox;
         public const string PassengerToRegistrationQueue = Component.Passenger + Component.Registration;
-        public const string PassengerToLogsQueue = Component.Passenger + Component.Logs; 
-                      
+        public const string PassengerToLogsQueue = Component.Passenger + Component.Logs;
+
         public const string TimetableToPassengerQueue = Component.Timetable + Component.Passenger;
         public const string CashboxToPassengerQueue = Component.Cashbox + Component.Passenger;
         public const string RegistrationToPassengerQueue = Component.Registration + Component.Passenger;
@@ -36,6 +36,10 @@ namespace PassengerComponent
             TimeServiceToPassengerQueue
         };
 
+        public const int PASSENGER_CREATION_PERIOD_MS = 60 * 1000;
+
+        public static double timeFactor = 1.0;
+
         public void Start()
         {
             var mqClient = new RabbitMqClient();
@@ -50,12 +54,15 @@ namespace PassengerComponent
 
             var cancellationSource = new CancellationTokenSource();
             var cancellationToken = cancellationSource.Token;
+            var playDelaySource = new PlayDelaySource(timeFactor);
 
             Task.Run(() =>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     // generate passengers
+
+                    playDelaySource.CreateToken().Sleep(PASSENGER_CREATION_PERIOD_MS);
                 }
             }, cancellationToken);
 
@@ -67,6 +74,8 @@ namespace PassengerComponent
                     // send passengers to do something
                 }
             }, cancellationToken);
+
+            mqClient.SubscribeTo<Timetable>()
 
             Console.ReadLine();
             cancellationSource.Cancel();
