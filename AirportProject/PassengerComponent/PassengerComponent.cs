@@ -57,6 +57,7 @@ namespace PassengerComponent
                 }
             }, cancellationToken);
 
+            // Own run for every queue (e.g. waiting-for-response-passengers-from-cashbox)
             Task.Run(() =>
             {
                 while (!cancellationToken.IsCancellationRequested)
