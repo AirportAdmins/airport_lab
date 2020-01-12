@@ -1,3 +1,2 @@
 ScheduleComponent
-TimetableComponent
 TimeServiceComponent
