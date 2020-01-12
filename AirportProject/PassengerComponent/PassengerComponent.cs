@@ -75,7 +75,7 @@ namespace PassengerComponent
                 }
             }, cancellationToken);
 
-            mqClient.SubscribeTo<Timetable>()
+            //mqClient.SubscribeTo<Timetable>();
 
             Console.ReadLine();
             cancellationSource.Cancel();
