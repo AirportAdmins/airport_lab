@@ -305,9 +305,9 @@ namespace AirportLibrary.DTO
     {
         Occupy, Free
     }
-    public enum MotionPermissionResponse
+    public class MotionPermissionResponse
     {
-        Positive
+        public string ObjectId { get; set; }
     }
     // ===================================
 
