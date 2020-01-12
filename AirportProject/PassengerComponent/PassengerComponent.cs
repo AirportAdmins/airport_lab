@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AirportLibrary;
 using RabbitMqWrapper;
+using PassengerComponent.Passenger;
+using PassengerComponent.Passengers;
 
 namespace PassengerComponent
 {
@@ -65,6 +67,10 @@ namespace PassengerComponent
                     // send passengers to do something
                 }
             }, cancellationToken);
+
+            Console.ReadLine();
+            cancellationSource.Cancel();
+            mqClient.Dispose();
         }
     }
 }
