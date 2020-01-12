@@ -23,7 +23,6 @@ namespace FollowMeComponent
 
         double TimeSpeedFactor = 1;
         int commonIdCounter = 0;
-        object lockerCars = new object();
         public FollowMeComponent()
         {
             MqClient = new RabbitMqClient();
@@ -59,23 +58,16 @@ namespace FollowMeComponent
         void Subscribe()
         {
             MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                        TimeSpeedFactor = mes.Factor);
+                    TimeSpeedFactor = mes.Factor);
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotTransferRequest(cmd));
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
-                    {
-                        lock (lockerCars)
-                        {
-                            cars[response.ObjectId].MotionPermitted = true;
-                        }
-                    });
+                    cars[response.ObjectId].MotionPermitted = true);
+
             MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>
                     {
                         FollowMeCar followme = null;
-                        lock (lockerCars)               
-                        {
-                            followme = cars[mes.FollowMeId];
-                        }
+                        followme = cars[mes.FollowMeId];
                         if (followme.PlaneId == mes.PlaneId)            //TODO maybe remove LocationVertex
                             followme.GotAirplaneResponse = true;
                     });
