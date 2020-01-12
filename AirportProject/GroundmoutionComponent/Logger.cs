@@ -7,7 +7,7 @@ namespace GroundmoutionComponent
         void Info(string mes);
         void Error(string mes);
     }
-    public class Logger
+    public class Logger:ILogger
     {
         public event Action<string> Write;
         public string ComponentName;
