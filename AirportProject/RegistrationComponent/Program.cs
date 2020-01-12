@@ -22,7 +22,7 @@ namespace RegistrationComponent
     {
         public List<Flight> Flights { get; set; } = new List<Flight>();
         public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
-        public RabbitMqClient MqClient { get; set; } = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "registration", "166e7343t");
+        public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
         private readonly object pasLock = new object();
         const int MIN_ERR_10000 = 1; // задержка от 10 секунд
         const int MAX_ERR_10000 = 60; // до 10 минут
