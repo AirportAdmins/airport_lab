@@ -29,6 +29,7 @@ namespace AirportLibrary
     {
         public const string AirplaneTypes = "airplanetypes";
         public const string Baggage = "baggage";
+        public const string Status = "status";
     }
     public class Map
     {
