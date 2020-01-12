@@ -230,19 +230,39 @@ namespace AirportLibrary.DTO
     }
     // ===================================
 
-    // GroundService Component
+    // Storage Component
     // ===================================
-    // With Storage
-    public class FlightStorageInfoRequest
+    // From Bus
+    public class PassengersFromStorageRequest
     {
         public string FlightId { get; set; }
+        public string BusId { get; set; }
+        public int Capacity { get; set; }
     }
-    public class FlightStorageInfoResponse
+    // To Bus
+    public class PassengersFromStorageResponse
+    {
+        public string BusId { get; set; }
+        public int PassengersCount { get; set; }
+        public List<string> PassengersIds { get; set; }
+    }
+    // From Baggage
+    public class BaggageFromStorageRequest
     {
         public string FlightId { get; set; }
-        public int PassengersCount { get; set; }
+        public string CarId { get; set; }
+        public int Capacity { get; set; }
+    }
+    // To Baggage
+    public class BaggageFromStorageResponse
+    {
+        public string BaggageCarId { get; set; }
         public int BaggageCount { get; set; }
     }
+    // ===================================
+
+    // GroundService Component
+    // ===================================
     // Common to Service Commands
     public class ServiceCommand
     {
