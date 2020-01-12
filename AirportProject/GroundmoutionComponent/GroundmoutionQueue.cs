@@ -17,12 +17,16 @@ namespace GroundmoutionComponent
                 dictBusyEdges.Add(edge, new Queue<MotionPermissionRequest>());
         }
 
-        private Edge<int> FindEdge(int vertexFrom, int vertexTo)
+        public Edge<int> FindEdge(int vertexFrom, int vertexTo)
         {
             foreach (var edge in dictBusyEdges.Keys)
                 if (edge.ConnVertices.Item1.Id == vertexFrom && edge.ConnVertices.Item2.Id == vertexTo || edge.ConnVertices.Item2.Id == vertexFrom && edge.ConnVertices.Item1.Id == vertexTo)
                     return edge;
             return null;
+        }
+        public bool ContainsEdge(MotionPermissionRequest request)
+        {
+            return FindEdge(request.StartVertex, request.DestinationVertex) != null;
         }
         public bool IsFree(MotionPermissionRequest request)
         {
