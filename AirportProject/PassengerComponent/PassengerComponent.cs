@@ -7,6 +7,7 @@ using AirportLibrary;
 using RabbitMqWrapper;
 using PassengerComponent.Passengers;
 using AirportLibrary.Delay;
+using AirportLibrary.DTO;
 
 namespace PassengerComponent
 {
@@ -19,8 +20,7 @@ namespace PassengerComponent
         public const string TimetableToPassengerQueue = Component.Timetable + Component.Passenger;
         public const string CashboxToPassengerQueue = Component.Cashbox + Component.Passenger;
         public const string RegistrationToPassengerQueue = Component.Registration + Component.Passenger;
-        public const string StorageToPassengerQueue = Component.Storage + Component.Passenger;
-        public const string BusToPassengerQueue = Component.Bus + Component.Passenger;
+        public const string BusStorageToPassengerQueue = Component.Passenger + Subject.Status;
         public const string TimeServiceToPassengerQueue = Component.TimeService + Component.Passenger;
 
         public static readonly List<string> queues = new List<string>
@@ -31,8 +31,7 @@ namespace PassengerComponent
             TimetableToPassengerQueue,
             CashboxToPassengerQueue,
             RegistrationToPassengerQueue,
-            StorageToPassengerQueue,
-            BusToPassengerQueue,
+            BusStorageToPassengerQueue,
             TimeServiceToPassengerQueue
         };
 
@@ -75,7 +74,30 @@ namespace PassengerComponent
                 }
             }, cancellationToken);
 
-            //mqClient.SubscribeTo<Timetable>();
+            mqClient.SubscribeTo<Timetable>(TimeServiceToPassengerQueue, (mes) =>
+            {
+
+            });
+
+            mqClient.SubscribeTo<TicketResponse>(CashboxToPassengerQueue, (mes) =>
+            {
+                
+            });
+
+            mqClient.SubscribeTo<CheckInResponse>(RegistrationToPassengerQueue, (mes) =>
+            {
+
+            });
+
+            mqClient.SubscribeTo<PassengerPassMessage>(BusStorageToPassengerQueue, (mes) =>
+            {
+
+            });
+
+            mqClient.SubscribeTo<NewTimeSpeedFactor>(TimeServiceToPassengerQueue, (mes) =>
+            {
+                playDelaySource.TimeFactor = mes.Factor;
+            });
 
             Console.ReadLine();
             cancellationSource.Cancel();
