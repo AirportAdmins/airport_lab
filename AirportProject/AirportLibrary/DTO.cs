@@ -230,6 +230,52 @@ namespace AirportLibrary.DTO
     }
     // ===================================
 
+    // Passenger Component
+    // ===================================
+    // With Cashbox
+    public class TicketRequest
+    {
+        public string PassengerId { get; set; }
+        public string FlightId { get; set; }
+        public TicketAction Action { get; set; }
+    }
+    public enum TicketAction
+    {
+        Buy, Return
+    }
+
+    public class TicketResponse
+    {
+        public string PassengerId { get; set; }
+        public TicketStatus Status { get; set; }
+    }
+    public enum TicketStatus
+    {
+        AlreadyHasTicket, // already has ticket, can't buy one more
+        HasTicket, // bought a ticket
+        NoTicketsLeft, // no tickets left for this flight
+        Late, // late to buy a ticket
+        TicketReturn, // returned a ticket
+        LateReturn, // late to return a ticket
+        ReturnError // can't return a ticket he doesn't have
+    }
+    // With Storage, Bus
+    public class PassengerPassMessage {
+        public string ObjectId { get; set; }
+        public PassengerStatus Status{ get;set; }
+        public List<string> PassengersIds { get; set; }
+    }
+    public enum PassengerStatus
+    {
+        NoTicket, HasTicket, Registered, InStorage, InBus, InAriplane, FlewAway
+    }
+    // With Timetable
+    public class Timetable
+    {
+        public List<FlightStatusUpdate> Flights { get; set; }
+    }
+    // ===================================
+
     // Storage Component
     // ===================================
     // From Bus
