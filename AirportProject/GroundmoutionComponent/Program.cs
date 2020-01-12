@@ -6,7 +6,9 @@ namespace GroundmoutionComponent
     {
         static void Main(string[] args)
         {
-            new GroundmoutionComponent().Start();
+            Logger logger = new Logger();
+            logger.Write += Console.WriteLine;
+            new GroundmoutionComponent(logger).Start();
         }
     }
 }
