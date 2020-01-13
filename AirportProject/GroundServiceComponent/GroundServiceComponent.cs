@@ -48,6 +48,8 @@ namespace GroundServiceComponent
         }
         public void Start()
         {
+            foreach (var receiver in Receivers)
+                mqClient.DeclareQueues(ComponentName+receiver);
             foreach (var sender in Senders)
                 mqClient.DeclareQueues(sender+ComponentName);
 
