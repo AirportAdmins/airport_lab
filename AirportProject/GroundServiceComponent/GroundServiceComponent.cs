@@ -1,5 +1,6 @@
 ﻿using System;
 using AirportLibrary;
+using AirportLibrary.DTO;
 using System.Collections.Generic;
 using RabbitMqWrapper;
 
@@ -50,6 +51,21 @@ namespace GroundServiceComponent
             foreach (var sender in Senders)
                 mqClient.DeclareQueues(sender+ComponentName);
 
+            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Airplane + ComponentName, (mes) =>
+            {
+                FisrtCycle();
+            }
+            );
+            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Registration + ComponentName, (mes) =>
+            {
+                SecondCycle();
+            }
+            );
+            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Timetable + ComponentName, (mes) =>
+            {
+                //Some
+            }
+            );
         }
     }
 }
