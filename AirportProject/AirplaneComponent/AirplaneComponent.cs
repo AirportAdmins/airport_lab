@@ -18,6 +18,7 @@ namespace AirplaneComponent
         ConcurrentDictionary<string, Airplane> airplanes;
         Dictionary<string, string> queuesTo;
         Dictionary<string, string> queuesFrom;
+        Map map = new Map();
         double TimeSpeedFactor = 1;
         public AirplaneComponent()
         {
@@ -29,7 +30,7 @@ namespace AirplaneComponent
             MqClient = new RabbitMqClient();
             CreateQueues();
             DeclareQueues();
-            MqClient.PurgeQueues();
+            MqClient.PurgeQueues(queuesFrom[Component.Schedule],queuesTo[Component.Schedule]);
             Subscribe();
             //Console.WriteLine("Okay");            
         }
@@ -44,6 +45,7 @@ namespace AirplaneComponent
                 { Component.FollowMe, Component.Airplane + Component.FollowMe },
                 { Component.Logs, Component.Airplane + Component.Logs },
                 { Component.Visualizer, Component.Airplane + Component.Visualizer },
+                {Component.GroundMotion, Component.Airplane+Component.GroundMotion }
             };
             queuesFrom = new Dictionary<string, string>()
             {
@@ -85,8 +87,14 @@ namespace AirplaneComponent
                      airplanes[mes.PlaneId].FoodList = mes.FoodList);
             MqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
                      Departure(mes));
-
+            MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
+            {
+                airplanes[mes.ObjectId].MotionPermitted = true;
+            });
         }
+        ///<summary>
+        ///Responses
+        ///<summary
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
@@ -98,6 +106,9 @@ namespace AirplaneComponent
                         FlightId = req.FlightId,
                         PlaneId = airplane.PlaneID
                     });
+                airplane.LocationVertex = GetVertexToLand();
+                Land(airplane);
+                AirplaneServiceCommand(airplane);
             }
         }
         void BusTransferResponse(PassengerTransferRequest req)
@@ -134,14 +145,13 @@ namespace AirplaneComponent
                 plane.BaggageAmount += req.BaggageCount;
             }
         }
-        void AirplaneServiceCommand(string planeID)
+        void AirplaneServiceCommand(Airplane plane)
         {
-            Airplane plane = airplanes[planeID];
             MqClient.Send<AirplaneServiceCommand>(queuesTo[Component.GroundService],
                 new AirplaneServiceCommand()
                 {
                     LocationVertex = plane.LocationVertex,
-                    PlaneId = planeID,
+                    PlaneId = plane.PlaneID,
                     Needs = new List<Tuple<AirplaneNeeds, int>>()
                     {
                         Tuple.Create(AirplaneNeeds.PickUpPassengers,plane.Passengers),
@@ -156,15 +166,15 @@ namespace AirplaneComponent
             double position = 0;
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
-            SendVisualizationMessage(plane, cmd, Airplane.Speed);
+            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);
             Task task = Task.Run(() =>
             {
                 while (position < distance)
                 {
-                    position += Airplane.Speed * timeInterval * TimeSpeedFactor;
+                    position += Airplane.SpeedOnGround/3.6/1000 * timeInterval * TimeSpeedFactor;
                     Thread.Sleep(10);
                 };
-                SendVisualizationMessage(plane, cmd, 0);
+                SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
                 MqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
                 {
                     PlaneId = plane.PlaneID,
@@ -174,27 +184,86 @@ namespace AirplaneComponent
                 plane.LocationVertex = cmd.DestinationVertex;
             });
         }
-
-        void SendVisualizationMessage(Airplane plane, FollowMeCommand cmd, int speed)
+        void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)
         {
             MqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
             {
                 StartVertex = plane.LocationVertex,
-                DestinationVertex = cmd.DestinationVertex,
+                DestinationVertex = DestinationVertex,
                 Speed = speed,
                 ObjectId = plane.PlaneID,
                 Type = plane.Model.Model
             });
         }
 
-        int GetDistance(int locationVertex, int destinationVertex)    //TODO will return distance from graph library
+        void Departure(DepartureSignal signal)  
         {
-            return 0;
+            FlyAway(airplanes[signal.PlaneId]);
         }
-        void Departure(DepartureSignal signal)    //TODO departure signal
-        {
 
+        void FlyAway(Airplane plane)
+        {
+            MoveByItself(plane, plane.LocationVertex - 4);
         }
+        void Land(Airplane plane)
+        {
+            MoveByItself(plane, plane.LocationVertex + 4);
+        }
+
+        void MoveByItself(Airplane plane, int DestinationVertex)
+        {
+            int timeInterval = 100;
+            double position = 0;
+            int distance = GetDistance(plane.LocationVertex, DestinationVertex);
+            WaitForMotionPermission(plane,DestinationVertex);
+            SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
+            Task task = Task.Run(() =>
+            {
+                while (position < distance)
+                {
+                    position += Airplane.SpeedFly/3.6/1000 * timeInterval * TimeSpeedFactor; //m/ms
+                    Thread.Sleep(100);
+                };
+                SendVisualizationMessage(plane, DestinationVertex, 0);
+                MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
+                {
+                    Action = MotionAction.Free,
+                    Component = Component.Airplane,
+                    DestinationVertex = DestinationVertex,
+                    ObjectId = plane.PlaneID,
+                    StartVertex = plane.LocationVertex
+                });
+                plane.LocationVertex = DestinationVertex;
+                plane.MotionPermitted = false;
+            });
+        }
+        void WaitForMotionPermission(Airplane airplane, int DestinationVertex)
+        {
+            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion],
+                new MotionPermissionRequest()
+                {
+                    Action = MotionAction.Occupy,
+                    Component = Component.Airplane,
+                    DestinationVertex = DestinationVertex,
+                    ObjectId = airplane.PlaneID,
+                    StartVertex = airplane.LocationVertex
+                });
+
+            while (!airplane.MotionPermitted)               
+                Thread.Sleep(5);
+        }
+
+        int GetDistance(int locationVertex, int destinationVertex)   
+        {
+            return map.Graph.GetWeightBetweenNearVerties(locationVertex, destinationVertex);
+        }
+        int GetVertexToLand()
+        {
+            Random rand = new Random();
+            List<int> vertexes = new List<int>() { 1, 2, 3 };
+            return vertexes[rand.Next(0, 2)];
+        }
+        
     }
 }
 

@@ -14,14 +14,16 @@ namespace AirplaneComponent.AirplaneGenerator
         {
             this.model = model;
             this.airplaneID = "Plane-" + id;
+            MotionPermitted = false;
         }
         public AirplaneModel Model { get => model; }
         public string PlaneID { get => airplaneID; }
         public string FlightID { get; set; }
 
         //for motion
-        public static int Speed { get; }         //TODO returns const
+        public static int SpeedOnGround { get => 15; }         // km/hour
         public int LocationVertex { get; set; }
+        public bool MotionPermitted { get; set; }
 
         //properties to be filled
         public int Passengers { get; set; }
