@@ -115,11 +115,11 @@ namespace FollowMeComponent
                 var token = tokens[followme.FollowMeId].Token;
                 Task.Run(() =>
                 { 
-                    GoPathHome(GoToVertexAlone, followme, GetHomeVertex(), token);
+                    GoPathHome(followme, GetHomeVertex(), token);
                 });
             });                                                         
         }
-        void GoPathHome(GoToVertexAction action, FollowMeCar followme, int destinationVertex,
+        void GoPathHome(FollowMeCar followme, int destinationVertex,
             CancellationToken cancellationToken)
         {
             var path = map.FindShortcut(followme.LocationVertex, destinationVertex);
@@ -135,7 +135,7 @@ namespace FollowMeComponent
             var path = map.FindShortcut(followme.LocationVertex, destinationVertex);
             for (int i = 0; i < path.Count - 1; i++)
             {
-                GoToVertexAlone(followme, path[i + 1]);
+                action(followme, path[i + 1]);
             }
         }
         int GetHomeVertex()
