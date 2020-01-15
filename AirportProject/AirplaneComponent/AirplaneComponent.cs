@@ -162,7 +162,7 @@ namespace AirplaneComponent
         }
         void FollowAction(FollowMeCommand cmd)
         {
-            int timeInterval = 10;
+            int timeInterval = 100;
             double position = 0;
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
@@ -172,16 +172,16 @@ namespace AirplaneComponent
                 while (position < distance)
                 {
                     position += Airplane.SpeedOnGround/3.6/1000 * timeInterval * TimeSpeedFactor;
-                    Thread.Sleep(10);
+                    Thread.Sleep(timeInterval);
                 };
                 SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
+                plane.LocationVertex = cmd.DestinationVertex;
                 MqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
                 {
                     PlaneId = plane.PlaneID,
                     FollowMeId = cmd.FollowMeId,
                     LocationVertex = plane.LocationVertex
-                });
-                plane.LocationVertex = cmd.DestinationVertex;
+                });                
             });
         }
         void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)

@@ -21,7 +21,8 @@ namespace AirplaneComponent.AirplaneGenerator
         public string FlightID { get; set; }
 
         //for motion
-        public static int SpeedOnGround { get => 15; }         // km/hour
+        public static int SpeedOnGround { get => 40; }         // km/hour
+        public static int SpeedFly { get => 230; }
         public int LocationVertex { get; set; }
         public bool MotionPermitted { get; set; }
 
