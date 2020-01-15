@@ -78,7 +78,7 @@ namespace FollowMeComponent
         }
         void GotTransferRequest(AirplaneTransferCommand cmd)
         {
-            var followme = cars.Values.First(car => car.Status == Status.Free);
+            var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
             if (followme != null)
             {
                 CancellationTokenSource cancellationToken = new CancellationTokenSource();
