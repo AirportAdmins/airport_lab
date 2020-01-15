@@ -18,7 +18,7 @@ namespace GroundServiceComponent
             Component.FuelTruck,
             Component.Catering,
             Component.Deicing,
-            Component.Timetable
+            Component.Schedule
         };
         public static readonly List<string> Senders = new List<string>()
         {
@@ -29,8 +29,17 @@ namespace GroundServiceComponent
             Component.FuelTruck,
             Component.Catering,
             Component.Deicing,
-            Component.Timetable,
+            Component.Schedule,
             Component.Registration
+        };
+        public static readonly List<string> GroundTransport = new List<string>()
+        {
+            Component.FollowMe,
+            Component.Bus,
+            Component.Baggage,
+            Component.FuelTruck,
+            Component.Catering,
+            Component.Deicing
         };
 
         RabbitMqClient mqClient = new RabbitMqClient();
@@ -38,36 +47,50 @@ namespace GroundServiceComponent
         public GroundServiceComponent()
         {
         }
-        public void FisrtCycle()
+        public void FisrtCycle(AirplaneServiceCommand mes)
         {
 
         }
-        public void SecondCycle()
+        public void SecondCycle(FlightInfo mes)
         {
 
         }
         public void Start()
         {
+            //Declare queues
             foreach (var receiver in Receivers)
                 mqClient.DeclareQueues(ComponentName+receiver);
             foreach (var sender in Senders)
                 mqClient.DeclareQueues(sender+ComponentName);
 
-            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Airplane + ComponentName, (mes) =>
+            //Receieve from airplane that fisrt cycle begin
+            mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
             {
-                FisrtCycle();
+                FisrtCycle(mes);
             }
             );
-            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Registration + ComponentName, (mes) =>
+
+            //Receieve from registration that second cycle begin 
+            mqClient.SubscribeTo<FlightInfo>(Component.Registration + ComponentName, (mes) =>
             {
-                SecondCycle();
+                SecondCycle(mes);
             }
             );
-            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Timetable + ComponentName, (mes) =>
+
+            //Receieve from Schedule that time to Departure
+            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Schedule + ComponentName, (mes) =>
             {
-                //Some
+                //
             }
             );
+
+            //Subscribe to receive from GroundTransport
+            foreach (var car in GroundTransport)
+                mqClient.SubscribeTo<ServiceCompletionMessage>(car + ComponentName, (mes) =>
+                  {
+
+                  }
+                );
         }
     }
 }
