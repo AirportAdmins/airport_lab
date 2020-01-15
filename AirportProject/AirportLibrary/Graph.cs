@@ -75,7 +75,7 @@ namespace AirportLibrary.Graph
                 var currEdge = new Edge<T>(new Tuple<Vertex<T>, Vertex<T>>(vertex1, vertex2), weight);
                 Edges.Add(currEdge);
                 vertex1.AddEdge(currEdge);
-                vertex1.AddEdge(currEdge);
+                vertex2.AddEdge(currEdge);
             }
         }
         public int GetWeightBetweenNearVerties(T v1, T v2)
@@ -172,7 +172,7 @@ namespace AirportLibrary.Graph
             var shortcut = new List<T>() { vertex2.Id };
             for (var i = 0; i < Vertices.Count * (Vertices.Count - 1) / 2; i++)
             {
-                if (vertex1 == vertex2)
+                if (vertex1.Equals(vertex2))
                     return shortcut;
                 vertex2 = GetDijkstraVertex(vertex2).PrevVertex;
                 shortcut.Insert(0, vertex2.Id);
