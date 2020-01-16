@@ -8,7 +8,9 @@ namespace PassengerComponent.Passengers
     class Passenger
     {
         public string PassengerId { get; set; }
-        public bool HasTicket { get; set; }
+        public PassengerStatus Status { get; set; }
+        public string FlightId { get; set; }
         public bool HasBaggage { get; set; }
+        public Food FoodType { get; set; }
     }
 }
