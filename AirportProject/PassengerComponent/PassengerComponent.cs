@@ -221,7 +221,61 @@ namespace PassengerComponent
 
         private void HandleCashboxResponse(TicketResponse mes)
         {
-            throw new NotImplementedException();
+            var status = mes.Status;
+
+            Action<string> log = (action) => {
+                Console.WriteLine($"Passenger {mes.PassengerId} {action}");
+            };
+
+            // AlreadyHasTicket - go to idle
+            // Late - go to idle
+            // NoTicketsLeft - go to idle
+
+            // HasTicket - change status & go to idle
+            // TicketReturn - change status & go to idle
+
+            // LateReturn - get lost
+            // ReturnError - get lost
+            if (waitingForResponsePassengers.TryRemove(mes.PassengerId, out var passenger))
+            {
+                switch (status)
+                {
+                    case TicketStatus.AlreadyHasTicket:
+                        // TODO change something here - you can't remember both the first and the second
+                        // (that attempt was made for buying) tickets for a passenger at the same time
+                        // so you need change the way you store flightId (return it in message, store separately, etc.)
+                        // or make algorithm generating "bad" events (like buying ticket twice) smarter (read "harder")
+                        log($"already has a ticket");
+                        idlePassengers.TryAdd(passenger.PassengerId, passenger);
+                        break;
+                    case TicketStatus.Late:
+                        log($"is late for buying ticket for flight {passenger.FlightId}");
+                        idlePassengers.TryAdd(passenger.PassengerId, passenger);
+                        break;
+                    case TicketStatus.NoTicketsLeft:
+                        log($"is too late, no tickets left for flight {passenger.FlightId}");
+                        idlePassengers.TryAdd(passenger.PassengerId, passenger);
+                        break;
+                    case TicketStatus.HasTicket:
+                        log($"has bought a ticket for flight {passenger.FlightId} successfully");
+                        passenger.Status = PassengerStatus.HasTicket;
+                        idlePassengers.TryAdd(passenger.PassengerId, passenger);
+                        break;
+                    case TicketStatus.TicketReturn:
+                        log($"returned a ticket for flight {passenger.FlightId} successfully");
+                        passenger.Status = PassengerStatus.NoTicket;
+                        idlePassengers.TryAdd(passenger.PassengerId, passenger);
+                        break;
+                    case TicketStatus.LateReturn:
+                        log($"was late returning a ticket for flight {passenger.FlightId}");
+                        break;
+                    case TicketStatus.ReturnError:
+                        log($"cannot return a ticket for flight {passenger.FlightId}");
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         private void TryToSendPassengerSomewhere(Passenger passenger)
