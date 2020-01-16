@@ -35,6 +35,7 @@ namespace FollowMeComponent
         {
             CreateQueues();
             DeclareQueues();
+            MqClient.PurgeQueues(queuesFrom.Values.ToArray());
             Subscribe();
         }
         void CreateQueues()
@@ -78,14 +79,14 @@ namespace FollowMeComponent
         }
         void GotTransferRequest(AirplaneTransferCommand cmd)
         {
+            SendToLogs($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} "+
+                $"to {cmd.DestinationVertex}");
             var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
             if (followme != null)
-            {
-                CancellationTokenSource cancellationToken = new CancellationTokenSource();
-                if (tokens.TryGetValue(followme.FollowMeId, out cancellationToken))
+            {                
+                if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
                 {
                     cancellationToken.Cancel();
-                    Thread.Sleep(motionInterval);                       //so followme manage to reach the vertex
                 }
             }
             else
@@ -111,12 +112,10 @@ namespace FollowMeComponent
                     Component = Component.FollowMe,
                     PlaneId = followme.PlaneId
                 });
+                SendToLogs("Completed servicing airplane ID " + cmd.PlaneId);                
                 followme.Status = Status.Free;
                 var token = tokens[followme.FollowMeId].Token;
-                Task.Run(() =>
-                { 
-                    GoPathHome(followme, GetHomeVertex(), token);
-                });
+                GoPathHome(followme, GetHomeVertex(), token);
             });                                                         
         }
         void GoPathHome(FollowMeCar followme, int destinationVertex,
@@ -219,6 +218,14 @@ namespace FollowMeComponent
                 Speed = speed,
                 StartVertex = followme.LocationVertex,
                 Type = Component.FollowMe
+            });
+        }
+        void SendToLogs(string message)
+        {
+            MqClient.Send<LogMessage>(queuesTo[Component.Logs], new LogMessage()
+            {
+                Component = Component.FollowMe,
+                Message = message
             });
         }
     }

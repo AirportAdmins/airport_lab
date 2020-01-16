@@ -13,6 +13,7 @@ namespace ScheduleComponent
 {
     class Program
     {
+
         static double timeFactor = 1.0;
         static readonly PlayDelaySource delaySource = new PlayDelaySource(timeFactor);
 
@@ -21,16 +22,25 @@ namespace ScheduleComponent
 
         static int countOfSleepingThreads = 0;
         
+
+        const string QUEUE_NAME = "schedule-cashbox";
+        const string QUEUE_NAME1 = "hello";
+
         static void Main(string[] args)
         {
             var mqClient = new RabbitMqClient();
+
 
             var timeQueue = Component.TimeService + Component.Schedule;
             var factorQueue = timeQueue + "factor";
             mqClient.DeclareQueues(timeQueue, factorQueue);
 
+            mqClient.PurgeQueues(QUEUE_NAME, QUEUE_NAME1);
+
+
             mqClient.SubscribeTo<CurrentPlayTime>(timeQueue, (mes) =>
             {
+
                 //Console.WriteLine($"Queue thread id: {Thread.CurrentThread.ManagedThreadId}");
                 if (countOfSleepingThreads < NUMBER_OF_SLEEPS && new Random().NextDouble() < 0.9)
                 {
@@ -58,6 +68,7 @@ namespace ScheduleComponent
                 Console.WriteLine("New Time Factor: {0}", mes.Factor);
                 delaySource.TimeFactor = mes.Factor;
             });
+
 
             Console.ReadLine();
             mqClient.Dispose();
