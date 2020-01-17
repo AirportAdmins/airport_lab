@@ -20,15 +20,10 @@ namespace AirportLibrary.DTO
         New, CheckIn, Boarding, Delayed, Departed
     }
     // With GroundService
-    public class AirplaneServiceSignal
+    public class AirplaneDepartureTimeSignal
     {
-        public ServiceSignal Signal { get; set; }
         public string PlaneId { get; set; }
         public string FlightId { get; set; }
-    }
-    public enum ServiceSignal
-    {
-        Boarding, Departure
     }
     public class AirplaneServiceStatus
     {
