@@ -5,6 +5,7 @@ using AirportLibrary;
 using AirportLibrary.DTO;
 using System.Threading;
 using System.Collections.Concurrent;
+using AirportLibrary.Delay;
 
 namespace RegistrationComponent
 {
@@ -23,10 +24,11 @@ namespace RegistrationComponent
         public List<Flight> Flights { get; set; } = new List<Flight>();
         public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
         public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
+        public PlayDelaySource DelaySource { get; set; } = new PlayDelaySource(1);
         private readonly object pasLock = new object();
-        const int MIN_ERR_10000 = 1; // задержка от 10 секунд
-        const int MAX_ERR_10000 = 60; // до 10 минут
-        const int REG_TIME_1000 = 2;
+        const int MIN_ERR_MS = 10000; // задержка пассажира от 10 секунд 
+        const int MAX_ERR_MS = 600000; // до 10 минут игрового времени
+        const int REG_TIME_MS = 5000; // регистрация - 5 секунд игрового времени
         public double TimeCoef { get; set; } = 1;
 
         const string timeReg = Component.TimeService + Component.Registration;
@@ -53,7 +55,7 @@ namespace RegistrationComponent
 
             reg.MqClient.SubscribeTo<NewTimeSpeedFactor>(timeReg, (mes) =>
             {
-                reg.TimeCoef = mes.Factor;
+                reg.DelaySource.TimeFactor = mes.Factor;
             });
 
             reg.MqClient.SubscribeTo<FlightStatusUpdate>(scheduleReg, (mes) =>
@@ -65,7 +67,7 @@ namespace RegistrationComponent
             reg.MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
             {
                 Console.WriteLine($"Received from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
-                Thread.Sleep((int)(REG_TIME_1000 * 1000 / reg.TimeCoef));
+                reg.DelaySource.CreateToken().Sleep(REG_TIME_MS);
                 reg.Registrate(mes.PassengerId, mes.FlightId, mes.HasBaggage, mes.FoodType);
             });
 
@@ -142,10 +144,10 @@ namespace RegistrationComponent
         public void PassToTerminal(string passengerId, string flightId, bool baggage, Food food)
         {
             var rand = new Random().Next(1, 10);
-            if (rand < 3)
+            if (rand < 3) // Вероятность лагания пассажира - 20%
             {
-                var errorTime = new Random().Next(MIN_ERR_10000, MAX_ERR_10000);
-                Thread.Sleep((int)(errorTime * 10000 / TimeCoef));
+                var errorTime = new Random().Next(MIN_ERR_MS, MAX_ERR_MS);
+                DelaySource.CreateToken().Sleep(errorTime);
 
                 var status = Flights.Find(e => e.FlightId == flightId).Status;
                 if (status == FlightStatus.Boarding || status == FlightStatus.Departed)
