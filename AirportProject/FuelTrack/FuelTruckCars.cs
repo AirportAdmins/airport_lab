@@ -10,17 +10,13 @@ namespace FuelTruck
     }
     class FuelTruckCars
     {
-        public int CarID { get; }
+        public string CarID { get; set;  }
         public Status Status { get; set; }
         public int Position { get; set; }
         public int FuelOnBoard;
         public const int MaxFuelOnBoard = 1000;
 
-        public FuelTruckCars(int id, int pos)
-        {
-            CarID = id;
-            Position = pos;
-        }
+        
 
     }
 }

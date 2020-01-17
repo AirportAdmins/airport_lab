@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Collections.Concurrent;
 using RabbitMqWrapper;
 using AirportLibrary;
 using AirportLibrary.DTO;
+using System.Threading;
 
 namespace FuelTruck
 {
@@ -21,28 +23,63 @@ namespace FuelTruck
         const string queueToGroundService = Component.FuelTruck + Component.GroundService;
         const string queueToVisualizer = Component.FuelTruck + Component.Visualizer;
 
-        public RabbitMqClient mqClient = new RabbitMqClient();
         
         public double timeCoef { get; set; } = 1.0;
-        public int motionInterval = 100; //ms
+        public RabbitMqClient mqClient;
+        Dictionary<int, FuelTruckCars> cars;
+        //public int motionInterval = 100; //ms
         public string planeID;
         public int planeLocationVertex;
         public int fuel;
-        public string logMessage = "Проинициализировались";
+        const int carCount = 3; //Количество машинок
+        public string logMessage = "Проинициализировались, кол-во машинок: " + carCount;
 
-        //Проверка свободных машинок
-        public int CheckFreeFuelTruckCar()
+        public FuelTruck()
         {
-            int numOfCar = -1;
+            mqClient = new RabbitMqClient();
+            Dictionary<int, FuelTruckCars> cars = new Dictionary<int, FuelTruckCars>();
+            //переделать в словарь
+            for (int i=1; i <= carCount; i++)
+            {
+                cars.Add(i, new FuelTruckCars() { CarID = "FuelTruck #" + i, Position = 19 });
+            }
+
+        }        
+        
+
+        
+
+        //Проверка свободных машинок. Возвращает id машинки
+        public string CheckFreeFuelTruckCar()
+        {
+            string numOfCar = "ALL BUSY";
+            while (true)
+            {                
+                foreach (FuelTruckCars ftc in cars.Values)
+                {
+                    if (ftc.Status == Status.Free) //Free
+                    {
+                        numOfCar = ftc.CarID;
+                        ftc.Status = Status.Busy;
+                    }
+                }
+                if (numOfCar == "ALL BUSY")
+                {
+                    /* ВАЖНО ПОНЯТЬ СКОЛЬКО ОЖИДАТЬ И КАК ЧАСТО ОТПРАВЛЯТЬ ЛОГИ */
+                    logMessage = "Все машины заняты, подождем 5 секунд * коэф. времени";
+                    Console.WriteLine(logMessage);
+                    SendLogMessage(logMessage);
+                    Thread.Sleep(Convert.ToInt32(5000 * timeCoef));
+                }
+            }
             return numOfCar;
         }
         //необходима постоянная проверка времени
         public void FuelTruckJob(string planeID, int fuel, int planeLocationVertex)
         {
-            //запрашивает номер свободной машины
-            //делает статус этой машины занятая
-            //едет заправлять самолет         
-
+            string currentlyCar;
+            currentlyCar = CheckFreeFuelTruckCar();
+            
         }
 
         public void SendLogMessage(string message)
@@ -57,10 +94,14 @@ namespace FuelTruck
 
         public void Start()
         {
+            
             //объявление запросов
             mqClient.DeclareQueues(queueFromTimeService, queueFromGroundService, queueFromGroundMotion,
                 queueToAirPlane, queueToLogs, queueToGroundMotion, queueToGroundService, queueToVisualizer);
 
+            SendLogMessage(logMessage);
+
+            
             //время
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queueFromTimeService, (mes) =>
             {
@@ -79,10 +120,6 @@ namespace FuelTruck
                 Console.WriteLine(logMessage);
 
             });
-
-
-
-
         }
 
         
