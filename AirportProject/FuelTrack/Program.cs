@@ -1,65 +1,19 @@
 ﻿using System;
-using RabbitMqWrapper;
-using AirportLibrary;
-using AirportLibrary.DTO;
+using System.Collections.Generic;
+using System.Text;
 
 
 
-namespace FuelTruckComponent
+
+
+namespace FuelTruck
 {
-    class FuelTruck
+    class Program
     {
-        //Получает сообщения
-        const string queueFromTimeService = Component.TimeService + Component.FuelTruck;
-        const string queueFromGroundService = Component.GroundService + Component.FuelTruck;
-        const string queueFromGroundMotion = Component.GroundMotion + Component.FuelTruck;
-
-        //Отправляет сообщения
-        const string queueToAirPlane = Component.FuelTruck + Component.Airplane;
-        const string queueToLogs = Component.FuelTruck + Component.Logs;
-        const string queueToGroundMotion = Component.FuelTruck + Component.GroundMotion;
-        const string queueToGroundService = Component.FuelTruck + Component.GroundService;
-
-        public RabbitMqClient mqClient { get; set; } = new RabbitMqClient();
-        public double timeCoef { get; set; } = 1;
-        public string planeID;
-        public int planeLocationVertex;
-        public int fuel;
         static void Main(string[] args)
         {
-
-            var ft = new FuelTruck();
-
-            ft.mqClient.DeclareQueues(queueFromTimeService, queueFromGroundService, queueFromGroundMotion,
-                queueToAirPlane, queueToLogs, queueToGroundMotion, queueToGroundService);
-
-            ft.mqClient.SubscribeTo<NewTimeSpeedFactor>(queueFromTimeService, (mes) =>
-            {
-                ft.timeCoef = mes.Factor;
-                Console.WriteLine("Коэффициент времени изменился и стал: " + ft.timeCoef);
-            });
-
-            //НУЖНО ДОБАВИТЬ МЕСТО САМОЛЕТА В ДТО
-            ft.mqClient.SubscribeTo<RefuelServiceCommand>(queueFromGroundService, (mes) =>
-            {
-                ft.fuel = mes.Fuel;
-                ft.planeID = mes.PlaneId;
-                ft.planeLocationVertex = mes.PlaneLocationVertex;
-                ft.FuelTruckJob(ft.planeID, ft.fuel, ft.planeLocationVertex, ft.timeCoef);
-                Console.WriteLine("Топливозаправщик поехал");
-               
-            });
+            new FuelTruck().Start();
             //ft.mqClient.Dispose();
         }
-        
-        //Работа Топливозаправщика
-        public void FuelTruckJob(string planeID, int fuel, int planeLocationVertex, double timeCoef)
-        {
-            //постоянная проверка времени
-
-        }
-
-        //что с графом???
-        //Топливозаправщиков несколько и они инициализируются в самом начале? 
     }
 }

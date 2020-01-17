@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuelTrack", "FuelTrack\FuelTrack.csproj", "{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuelTruck", "FuelTrack\FuelTruck.csproj", "{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
