@@ -6,6 +6,62 @@ using RabbitMqWrapper;
 
 namespace GroundServiceComponent
 {
+    public enum ActionStatus
+    {
+        NotStarted, Started, Finished
+    }
+    public class AirplaneServiceCycle
+    {
+        public readonly List<Tuple<string, ActionStatus>> FirstCycleSequence = new List<Tuple<string, ActionStatus>>()
+        {
+
+        };
+        public static readonly List<Action> SecondCycleSequence = new List<Action>()
+        {
+
+        };
+        public int PlaneId { get; }
+        public int FilghtId { get; }
+
+        public int PlaneLocationVertex;
+        public AirplaneServiceCycle()
+        {
+
+        }
+        void Start()
+        {
+
+        }
+        void FisrtCycle()
+        {
+
+        }
+        void SecondCycle()
+        {
+
+        }
+        void FollowMe()
+        {
+
+        }
+        void Bus()
+        {
+
+        }
+        void Baggage()
+        {
+
+        }
+        void Catering()
+        {
+
+        }
+        void Deicing()
+        {
+
+        }
+
+    }
     public class GroundServiceComponent
     {
         public static readonly string ComponentName = Component.GroundService;
@@ -47,14 +103,6 @@ namespace GroundServiceComponent
         public GroundServiceComponent()
         {
         }
-        public void FisrtCycle(AirplaneServiceCommand mes)
-        {
-
-        }
-        public void SecondCycle(FlightInfo mes)
-        {
-
-        }
         public void Start()
         {
             //Declare queues
@@ -66,14 +114,14 @@ namespace GroundServiceComponent
             //Receieve from airplane that fisrt cycle begin
             mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
             {
-                FisrtCycle(mes);
+                
             }
             );
 
             //Receieve from registration that second cycle begin 
             mqClient.SubscribeTo<FlightInfo>(Component.Registration + ComponentName, (mes) =>
             {
-                SecondCycle(mes);
+                
             }
             );
 
