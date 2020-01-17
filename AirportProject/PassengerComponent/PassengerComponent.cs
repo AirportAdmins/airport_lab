@@ -172,9 +172,9 @@ namespace PassengerComponent
             {
                 if (waitingForResponsePassengers.TryRemove(passId, out var passenger))
                 {
-                    passenger.Status = PassengerStatus.InStorage;
                     if (passivePassengers.TryAdd(passenger.PassengerId, passenger))
                     {
+                        passenger.Status = PassengerStatus.InStorage;
                         Console.WriteLine($"Passenger {passId} has been placed in terminal");
                     }
                 }
@@ -389,7 +389,7 @@ namespace PassengerComponent
                     Action = TicketAction.Buy
                 });
             },
-            "is going to buy a ticket for invalid flight...");
+            $"is going to buy a ticket for flight {flight.FlightId}...");
             
         }
 
@@ -409,7 +409,7 @@ namespace PassengerComponent
                     HasBaggage = passenger.HasBaggage
                 });
             },
-            "is going to check in for invalid flight...");
+            $"is going to check in for flight {flight.FlightId}...");
         }
 
         private void GoReturnTicketToAnyOfFlights(Passenger passenger, List<FlightStatusUpdate> flights)
@@ -420,15 +420,14 @@ namespace PassengerComponent
 
             MovePassengerFromIdleToWaitingAndDoAction(passenger, () =>
             {
-                mqClient.Send(PassengerToRegistrationQueue, new CheckInRequest()
+                mqClient.Send(PassengerToCashboxQueue, new TicketRequest()
                 {
                     PassengerId = passenger.PassengerId,
                     FlightId = flight.FlightId,
-                    FoodType = passenger.FoodType,
-                    HasBaggage = passenger.HasBaggage
+                    Action = TicketAction.Return
                 });
             },
-            "is going to return a ticket for invalid flight...");
+            $"is going to return a ticket for flight {flight.FlightId}...");
         }
 
         private void MovePassengerFromIdleToWaitingAndDoAction(Passenger passenger, Action action, string message = null)
