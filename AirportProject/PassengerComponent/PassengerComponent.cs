@@ -9,6 +9,7 @@ using PassengerComponent.Passengers;
 using AirportLibrary.Delay;
 using AirportLibrary.DTO;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace PassengerComponent
 {
@@ -43,6 +44,7 @@ namespace PassengerComponent
 
         public const double CHANCE_TO_MISTAKE = 0.001;
         public const double CHANCE_TO_DO_NORMAL_ACTION = 0.05 + CHANCE_TO_MISTAKE;
+        public const double CHANCE_TO_RETURN_TICKET = 0.005 + CHANCE_TO_MISTAKE;
 
         public static double timeFactor = 1.0;
 
@@ -56,9 +58,10 @@ namespace PassengerComponent
         ConcurrentDictionary<string, Passenger> waitingForResponsePassengers = new ConcurrentDictionary<string, Passenger>();
         ConcurrentDictionary<string, Passenger> passivePassengers = new ConcurrentDictionary<string, Passenger>();
 
+        RabbitMqClient mqClient = new RabbitMqClient();
+
         public void Start()
         {
-            var mqClient = new RabbitMqClient();
 
             mqClient.DeclareQueues(
                 queues.ToArray()
@@ -108,6 +111,8 @@ namespace PassengerComponent
 
             mqClient.SubscribeTo<Timetable>(TimetableToPassengerQueue, (mes) =>
             {
+                // Careful: do not change to "updating" of timetable, just replace it
+                // Otherwise it can be modified at the same time it's being traversed
                 timetable = mes; 
             });
 
@@ -280,7 +285,167 @@ namespace PassengerComponent
 
         private void TryToSendPassengerSomewhere(Passenger passenger)
         {
+            var tt = timetable;
+            if (tt == null || tt.Flights.Count == 0)
+                return;
+
             var chance = random.NextDouble();
+            if (passenger.Status == PassengerStatus.NoTicket)
+            {
+                if (chance < CHANCE_TO_MISTAKE)
+                {
+                    var option = random.Next(3);
+                    switch (option)
+                    {
+                        case 0:
+                            var invalidFlights = tt.Flights.Where(
+                                f => f.Status != FlightStatus.New && f.Status != FlightStatus.CheckIn
+                            ).ToList();
+                            GoBuyTicketToAnyOfFlights(passenger, invalidFlights);
+                            break;
+                        case 1:
+                            GoCheckInToAnyOfFlights(passenger, tt.Flights);
+                            break;
+                        case 2:
+                            GoReturnTicketToAnyOfFlights(passenger, tt.Flights);
+                            break;
+                    }
+                } else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
+                {
+                    var goodFlights = tt.Flights.Where(
+                        f => f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn
+                    ).ToList();
+                    GoBuyTicketToAnyOfFlights(passenger, goodFlights);
+                }
+            } else if (passenger.Status == PassengerStatus.HasTicket)
+            {
+                if (chance < CHANCE_TO_MISTAKE)
+                {
+                    var option = random.Next(3);
+                    switch (option)
+                    {
+                        case 0:
+                            // Important: AlreadyHasTicket should only be returned to a passenger
+                            // that want to buy a ticket that he already has (see TODO above)
+                            var passengersFlight = tt.Flights.Where(
+                                f => f.FlightId == passenger.FlightId
+                            ).ToList();
+                            GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                            break;
+                        case 1:
+                            var notPassengersFlights = tt.Flights.Where(
+                                f => f.FlightId != passenger.FlightId
+                            ).ToList();
+                            GoCheckInToAnyOfFlights(passenger, notPassengersFlights);
+                            break;
+                        case 2:
+                            var invalidFlights = tt.Flights.Where(
+                                f => f.FlightId != passenger.FlightId
+                            ).ToList();
+                            GoReturnTicketToAnyOfFlights(passenger, invalidFlights);
+                            break;
+                    }
+                }
+                else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
+                {
+                    var passengersFlight = tt.Flights.Where(
+                        f => f.FlightId == passenger.FlightId && (f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn)
+                    ).ToList();
+                    if (passengersFlight.Count == 0)
+                    {
+                        // TODO throw this passenger out
+                        // or what?
+                        return;
+                    }
+                    if (chance < CHANCE_TO_RETURN_TICKET)
+                    {
+                        GoReturnTicketToAnyOfFlights(passenger, passengersFlight);
+                    } else
+                    {
+                        var passFlight = passengersFlight[0];
+                        if (passFlight.Status == FlightStatus.CheckIn)
+                            GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                    }
+                }
+            } else
+            {
+                throw new ArgumentException($"Cannot send passenger with status {passenger.Status} anywhere");
+            }
+        }
+
+        private void GoBuyTicketToAnyOfFlights(Passenger passenger, List<FlightStatusUpdate> flights)
+        {
+            if (flights.Count == 0)
+                return;
+            var flight = flights[random.Next(0, flights.Count)];
+
+            MovePassengerFromIdleToWaitingAndDoAction(passenger, () =>
+            {
+                passenger.FlightId = flight.FlightId;
+                mqClient.Send(PassengerToCashboxQueue, new TicketRequest()
+                {
+                    PassengerId = passenger.PassengerId,
+                    FlightId = flight.FlightId,
+                    Action = TicketAction.Buy
+                });
+            },
+            "is going to buy a ticket for invalid flight...");
+            
+        }
+
+        private void GoCheckInToAnyOfFlights(Passenger passenger, List<FlightStatusUpdate> flights)
+        {
+            if (flights.Count == 0)
+                return;
+            var flight = flights[random.Next(0, flights.Count)];
+
+            MovePassengerFromIdleToWaitingAndDoAction(passenger, () =>
+            {
+                mqClient.Send(PassengerToRegistrationQueue, new CheckInRequest()
+                {
+                    PassengerId = passenger.PassengerId,
+                    FlightId = flight.FlightId,
+                    FoodType = passenger.FoodType,
+                    HasBaggage = passenger.HasBaggage
+                });
+            },
+            "is going to check in for invalid flight...");
+        }
+
+        private void GoReturnTicketToAnyOfFlights(Passenger passenger, List<FlightStatusUpdate> flights)
+        {
+            if (flights.Count == 0)
+                return;
+            var flight = flights[random.Next(0, flights.Count)];
+
+            MovePassengerFromIdleToWaitingAndDoAction(passenger, () =>
+            {
+                mqClient.Send(PassengerToRegistrationQueue, new CheckInRequest()
+                {
+                    PassengerId = passenger.PassengerId,
+                    FlightId = flight.FlightId,
+                    FoodType = passenger.FoodType,
+                    HasBaggage = passenger.HasBaggage
+                });
+            },
+            "is going to return a ticket for invalid flight...");
+        }
+
+        private void MovePassengerFromIdleToWaitingAndDoAction(Passenger passenger, Action action, string message = null)
+        {
+            Action<string> log = (action) => {
+                Console.WriteLine($"Passenger {passenger.PassengerId} {action}");
+            };
+            if (idlePassengers.TryRemove(passenger.PassengerId, out passenger))
+            {
+                log("was removed from idle");
+                if (waitingForResponsePassengers.TryAdd(passenger.PassengerId, passenger))
+                {
+                    log("was added to waiting");
+                    if (message != null) log(message);
+                    action();
+                }
+            }
         }
     }
 }
