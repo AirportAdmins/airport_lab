@@ -82,6 +82,7 @@ namespace AirportLibrary.DTO
     public class AirplaneServiceCommand
     {
         public string PlaneId { get; set; }
+        public string FlightId { get; set; }
         public int LocationVertex { get; set; }
         public List<Tuple<AirplaneNeeds, int>> Needs { get; set; }
     }
