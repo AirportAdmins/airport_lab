@@ -44,7 +44,7 @@ namespace PassengerComponent
 
         public const double CHANCE_TO_MISTAKE = 0.001;
         public const double CHANCE_TO_DO_NORMAL_ACTION = 0.05 + CHANCE_TO_MISTAKE;
-        public const double CHANCE_TO_RETURN_TICKET = 0.005 + CHANCE_TO_MISTAKE;
+        public const double CHANCE_TO_RETURN_TICKET = 0.0025 + CHANCE_TO_MISTAKE;
 
         public static double timeFactor = 1.0;
 
@@ -346,7 +346,7 @@ namespace PassengerComponent
                             break;
                         case 1:
                             var notPassengersFlights = tt.Flights.Where(
-                                f => f.FlightId != passenger.FlightId
+                                f => f.FlightId != passenger.FlightId || f.Status != FlightStatus.CheckIn
                             ).ToList();
                             GoCheckInToAnyOfFlights(passenger, notPassengersFlights);
                             break;
@@ -365,8 +365,7 @@ namespace PassengerComponent
                     ).ToList();
                     if (passengersFlight.Count == 0)
                     {
-                        // TODO throw this passenger out
-                        // or what?
+                        // throw this passenger out
                         if (idlePassengers.TryRemove(passenger.PassengerId, out passenger)) {
                             Console.WriteLine($"Passenger {passenger.PassengerId} has missed check in - he sadly goes away");
                         }
