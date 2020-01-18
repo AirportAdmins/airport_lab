@@ -30,7 +30,8 @@ namespace TimeServiceComponent
             Component.TimeService + Component.Passenger,
             Component.TimeService + Component.Storage,
             Component.TimeService + Component.Cashbox,
-            Component.TimeService + Component.Registration
+            Component.TimeService + Component.Registration,
+            Component.TimeService + Component.Timetable + Subject.Factor
         };
         public static double TimeSpeedFactor = 1.0;
         public const int SEND_CURRENT_TIME_PERIOD_MS = 100;
