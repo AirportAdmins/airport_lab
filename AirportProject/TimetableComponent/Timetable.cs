@@ -1,6 +1,7 @@
 ﻿using AirportLibrary.DTO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace TimetableComponent
@@ -57,6 +58,11 @@ namespace TimetableComponent
         public List<FlightStatusUpdate> GetTimetable()
         {
             return new List<FlightStatusUpdate>(flights);
+        }
+
+        public void RemoveFlight(string flightId)
+        {
+            flights.Remove(flights.Single(f => f.FlightId == flightId));
         }
     }
 }
