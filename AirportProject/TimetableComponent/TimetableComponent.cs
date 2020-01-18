@@ -16,6 +16,8 @@ namespace TimetableComponent
             Component.Schedule + Component.Timetable;
         public const string TimeServiceToTimetableQueue =
             Component.TimeService + Component.Timetable;
+        public const string TimeServiceToTimetableFactorQueue =
+            Component.TimeService + Component.Timetable + Subject.Factor;
 
         public void Start()
         {
@@ -43,6 +45,8 @@ namespace TimetableComponent
                     timetable.Draw();
                 }
             });
+
+            mqClient.SubscribeTo<NewTimeSpeedFactor>()
 
             mqClient.SubscribeTo<FlightStatusUpdate>(ScheduleToTimetableQueue, (mes) =>
             {
