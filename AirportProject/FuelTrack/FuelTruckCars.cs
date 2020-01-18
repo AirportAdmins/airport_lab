@@ -11,7 +11,9 @@ namespace FuelTruck
     class FuelTruckCars
     {
         public string CarID { get; set;  }
-        public Status Status { get; set; }
+        public int intCarID { get; set; }
+        
+        public Status Status { get; set; } //0 - свободна
         public int Position { get; set; }
         public int FuelOnBoard;
         public const int MaxFuelOnBoard = 1000;
