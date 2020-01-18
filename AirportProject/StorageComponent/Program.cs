@@ -18,23 +18,19 @@ namespace StorageComponent
     class Storage
     {
         public List<Flight> Flights { get; set; } = new List<Flight>();
-
-
-        public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
         public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
         public PlayDelaySource DelaySource { get; set; } = new PlayDelaySource(1);
         private readonly object flightLock = new object();
-        const int MIN_ERR_MS = 10000; // задержка пассажира от 10 секунд 
-        const int MAX_ERR_MS = 600000; // до 10 минут игрового времени
-        const int REG_TIME_MS = 5000; // регистрация - 5 секунд игрового времени
-        public double TimeCoef { get; set; } = 1;
+
+        const int PASS_TIME_MS = 10000; // передача пассажиров - 10 секунд игрового времени
+        const int BAGGAGE_TIME_MS = 3000; // передача пассажиров - 3 секунд игрового времени
 
         const string timeStorage = Component.TimeService + Component.Storage;
         const string regStorage = Component.Registration + Component.Storage;
         const string regStorageBaggage = Component.Registration + Component.Storage + Subject.Baggage;
         const string busStorage = Component.Bus + Component.Storage;
         const string baggageStorage = Component.Baggage + Component.Storage;
-        const string storagePas = Component.Registration + Component.Passenger + Subject.Status;
+        const string storagePas = Component.Passenger + Subject.Status;
         const string storageBus = Component.Storage + Component.Bus;
         const string storageBaggage = Component.Storage + Component.Baggage;
 
@@ -70,36 +66,17 @@ namespace StorageComponent
             storage.MqClient.SubscribeTo<PassengersFromStorageRequest>(busStorage, (mes) =>
             {
                 Console.WriteLine($"Received from Bus: {mes.BusId}, {mes.FlightId}, {mes.Capacity}");
-                storage.DelaySource.CreateToken().Sleep(REG_TIME_MS);
+                storage.DelaySource.CreateToken().Sleep(PASS_TIME_MS);
                 storage.PassPassengers(mes.BusId, mes.FlightId, mes.Capacity);
             });
 
-            // Ответ кассы
-            storage.MqClient.SubscribeTo<CheckTicketResponse>(cashReg, (mes) =>
+            storage.MqClient.SubscribeTo<BaggageFromStorageRequest>(busStorage, (mes) =>
             {
-                lock (storage.flightLock)
-                {
-                    var match = storage.PasList.Find(e => (e.PassengerId == mes.PassengerId));
-                    if (match != null)
-                    {
-                        if (mes.HasTicket) // Если билет верный
-                        {
-                            storage.MqClient.Send<CheckInResponse>(regPas,
-                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registered });
-                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.Registered}");
-                            storage.PassToTerminal(match.PassengerId, match.FlightId, match.HasBaggage, match.FoodType);
-                        }
-                        else // Если билет неверный
-                        {
-                            storage.MqClient.Send<CheckInResponse>(regPas,
-                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.WrongTicket });
-                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.WrongTicket}");
-                        }
-
-                        storage.PasList.Remove(match);
-                    }
-                }
+                Console.WriteLine($"Received from Baggage car: {mes.CarId}, {mes.FlightId}, {mes.Capacity}");
+                storage.DelaySource.CreateToken().Sleep(BAGGAGE_TIME_MS);
+                storage.PassBaggage(mes.CarId, mes.FlightId, mes.Capacity);
             });
+
             //reg.MqClient.Dispose();
         }
 
@@ -148,7 +125,10 @@ namespace StorageComponent
             Console.WriteLine($"Sent to Bus: {busId}, {passCount}, {passengers}");
 
             flight.Passengers.RemoveRange(0, passCount);
-            // отклик пассажиру
+
+            MqClient.Send<PassengerPassMessage>(storagePas,
+               new PassengerPassMessage() { ObjectId = busId, Status = PassengerStatus.InBus, PassengersIds = passengers });
+            Console.WriteLine($"Sent to Passenger: {busId}, {PassengerStatus.InBus}, {passengers}");
 
             TryToRemove(flightId);
         }
@@ -166,7 +146,6 @@ namespace StorageComponent
             Console.WriteLine($"Sent to Baggage car: {carId}, {count}");
 
             flight.Baggage -= count;
-            // отклик пассажиру
 
             TryToRemove(flightId);
         }
