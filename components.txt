@@ -1,3 +1,6 @@
 ScheduleComponent
+<<<<<<< HEAD
 TimetableComponent
+=======
+>>>>>>> 41b64aef65eae1b973e4bfe1aa3ab5d7d76fef9c
 TimeServiceComponent
