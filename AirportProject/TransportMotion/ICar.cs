@@ -7,7 +7,7 @@ namespace TransportMotion
 
     public interface ICar
     {
-        public string CarId { get => CarId; }
+        public string CarId { get; }
         public string PlaneId { get; set; }
 
         //motion
