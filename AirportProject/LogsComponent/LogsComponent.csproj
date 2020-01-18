@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,10 +8,16 @@
   <ItemGroup>
     <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
     <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
+    <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
     <PackageReference Include="NLog" Version="4.6.5" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.5.1" />
+    <PackageReference Include="NLog.Targets.Loggly" Version="4.8.24" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{39065107-bd7c-4988-bd93-201709d0cf62}" />
   </ItemGroup>
 
   <ItemGroup>

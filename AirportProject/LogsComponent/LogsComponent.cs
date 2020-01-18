@@ -16,7 +16,6 @@ namespace LogsComponent
         //private readonly ILogger<>
 
         RabbitMqClient MqClient;
-        Dictionary<string, string> queuesTo;
         Dictionary<string, string> queuesFrom;
         
         public void Start()
