@@ -58,6 +58,8 @@ namespace PassengerComponent
         ConcurrentDictionary<string, Passenger> waitingForResponsePassengers = new ConcurrentDictionary<string, Passenger>();
         ConcurrentDictionary<string, Passenger> passivePassengers = new ConcurrentDictionary<string, Passenger>();
 
+        ConcurrentDictionary<string, FlightStatusUpdate> departedFlights = new ConcurrentDictionary<string, FlightStatusUpdate>();
+
         RabbitMqClient mqClient = new RabbitMqClient();
 
         public void Start()
@@ -113,7 +115,17 @@ namespace PassengerComponent
             {
                 // Careful: do not change to "updating" of timetable, just replace it
                 // Otherwise it can be modified at the same time it's being traversed
-                timetable = mes; 
+                timetable = mes;
+                var flights = mes.Flights.Select(f => f.FlightId);
+                foreach (var passenger in passivePassengers.Values)
+                {
+                    if (!flights.Contains(passenger.FlightId))
+                    {
+                        passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger) {
+                            Console.WriteLine($"Passenger {depPassenger.PassengerId} has departed with flight {depPassenger.FlightId}");
+                        };
+                    }
+                }
             });
 
             mqClient.SubscribeTo<TicketResponse>(CashboxToPassengerQueue, (mes) =>
@@ -355,9 +367,10 @@ namespace PassengerComponent
                     {
                         // TODO throw this passenger out
                         // or what?
-                        return;
-                    }
-                    if (chance < CHANCE_TO_RETURN_TICKET)
+                        if (idlePassengers.TryRemove(passenger.PassengerId, out passenger)) {
+                            Console.WriteLine($"Passenger {passenger.PassengerId} has missed check in - he sadly goes away");
+                        }
+                    } else if (chance < CHANCE_TO_RETURN_TICKET)
                     {
                         GoReturnTicketToAnyOfFlights(passenger, passengersFlight);
                     } else
