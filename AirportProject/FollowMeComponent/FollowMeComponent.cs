@@ -77,7 +77,10 @@ namespace FollowMeComponent
         void Subscribe()
         {
             MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                    timeFactor = mes.Factor);
+            {
+                timeFactor = mes.Factor;
+                source.TimeFactor = timeFactor;
+            });
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotTransferRequest(cmd));
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
