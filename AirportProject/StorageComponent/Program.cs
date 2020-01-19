@@ -109,52 +109,61 @@ namespace StorageComponent
                 Flights.Add(new Flight() { FlightId = flightId, Baggage = 1 });
             }            
         }
-
+        
         public void PassPassengers(string busId, string flightId, int capacity)
         {
-            var flight = Flights.Find(e => e.FlightId == flightId);
-            if (flight == null)
-                return;
+            lock (flightLock)
+            {
+                var flight = Flights.Find(e => e.FlightId == flightId);
+                if (flight == null)
+                    return;
 
-            int count = flight.Passengers.Count;
-            int passCount = (count > capacity) ? capacity : count;
-            var passengers = flight.Passengers.GetRange(0, passCount);
+                int count = flight.Passengers.Count;
+                int passCount = (count > capacity) ? capacity : count;
+                var passengers = flight.Passengers.GetRange(0, passCount);
 
-            MqClient.Send<PassengersFromStorageResponse>(storageBus,
-                new PassengersFromStorageResponse() { BusId = busId, PassengersCount = passCount, PassengersIds = passengers });
-            Console.WriteLine($"Sent to Bus: {busId}, {passCount}, {passengers}");
+                MqClient.Send<PassengersFromStorageResponse>(storageBus,
+                    new PassengersFromStorageResponse() { BusId = busId, PassengersCount = passCount, PassengersIds = passengers });
+                Console.WriteLine($"Sent to Bus: {busId}, {passCount}, {passengers}");
 
-            flight.Passengers.RemoveRange(0, passCount);
+                flight.Passengers.RemoveRange(0, passCount);
 
-            MqClient.Send<PassengerPassMessage>(storagePas,
-               new PassengerPassMessage() { ObjectId = busId, Status = PassengerStatus.InBus, PassengersIds = passengers });
-            Console.WriteLine($"Sent to Passenger: {busId}, {PassengerStatus.InBus}, {passengers}");
+                MqClient.Send<PassengerPassMessage>(storagePas,
+                   new PassengerPassMessage() { ObjectId = busId, Status = PassengerStatus.InBus, PassengersIds = passengers });
+                Console.WriteLine($"Sent to Passenger: {busId}, {PassengerStatus.InBus}, {passengers}");
 
-            TryToRemove(flightId);
+                TryToRemove(flightId);
+            }
         }
 
         public void PassBaggage(string carId, string flightId, int capacity)
         {
-            var flight = Flights.Find(e => e.FlightId == flightId);
-            if (flight == null)
-                return;
+            lock (flightLock)
+            {
+                var flight = Flights.Find(e => e.FlightId == flightId);
+                if (flight == null)
+                    return;
 
-            int count = (flight.Baggage > capacity) ? capacity : flight.Baggage;
+                int count = (flight.Baggage > capacity) ? capacity : flight.Baggage;
 
-            MqClient.Send<BaggageFromStorageResponse>(storageBaggage,
-                new BaggageFromStorageResponse() { BaggageCarId = carId, BaggageCount = count });
-            Console.WriteLine($"Sent to Baggage car: {carId}, {count}");
+                MqClient.Send<BaggageFromStorageResponse>(storageBaggage,
+                    new BaggageFromStorageResponse() { BaggageCarId = carId, BaggageCount = count });
+                Console.WriteLine($"Sent to Baggage car: {carId}, {count}");
 
-            flight.Baggage -= count;
+                flight.Baggage -= count;
 
-            TryToRemove(flightId);
+                TryToRemove(flightId);
+            }
         }
 
         public void TryToRemove(string id)
         {
-            var flight = Flights.Find(e => e.FlightId == id);
-            if (flight.Baggage == 0 && flight.Passengers.Count == 0)
-                Flights.Remove(flight);
+            lock (flightLock)
+            {
+                var flight = Flights.Find(e => e.FlightId == id);
+                if (flight.Baggage == 0 && flight.Passengers.Count == 0)
+                    Flights.Remove(flight);
+            }
         }
     }
 }
