@@ -121,7 +121,7 @@ namespace PassengerComponent
                 {
                     if (!flights.Contains(passenger.FlightId))
                     {
-                        passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger) {
+                        if (passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger)) {
                             Console.WriteLine($"Passenger {depPassenger.PassengerId} has departed with flight {depPassenger.FlightId}");
                         };
                     }
