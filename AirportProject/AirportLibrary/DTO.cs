@@ -38,7 +38,9 @@ namespace AirportLibrary.DTO
     public class AirplaneModel
     {
         public static readonly IList<AirplaneModel> Models = new List<AirplaneModel>() {
-            new AirplaneModel("Boeing 737", 60, 1000)
+            new AirplaneModel("Boeing 737", 60, 1000),
+            new AirplaneModel("Airbus A320", 50, 800),
+            new AirplaneModel("MRJ 70", 30, 700)
         };
         public int Seats { get; set; }
         public int BaggagePlaces { get; set; }
@@ -263,7 +265,7 @@ namespace AirportLibrary.DTO
     }
     public enum PassengerStatus
     {
-        NoTicket, HasTicket, Registered, InStorage, InBus, InAriplane, FlewAway
+        NoTicket, HasTicket, Registered, InStorage, InBus, InAirplane, FlewAway
     }
     // With Timetable
     public class Timetable
@@ -319,7 +321,6 @@ namespace AirportLibrary.DTO
     // With Bus
     public class PassengersServiceCommand : ServiceCommand
     {
-        public int StorageVertex { get; set; }
         public TransferAction Action { get; set; }
         public int PassengersCount { get; set; }
         public string FlightId { get; set; }
@@ -327,7 +328,6 @@ namespace AirportLibrary.DTO
     // With Baggage
     public class BaggageServiceCommand : ServiceCommand
     {
-        public int StorageVertex { get; set; }
         public TransferAction Action { get; set; }
         public int BaggageCount { get; set; }
         public string FlightId { get; set; }
