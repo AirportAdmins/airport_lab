@@ -321,7 +321,6 @@ namespace AirportLibrary.DTO
     // With Bus
     public class PassengersServiceCommand : ServiceCommand
     {
-        public int StorageVertex { get; set; }
         public TransferAction Action { get; set; }
         public int PassengersCount { get; set; }
         public string FlightId { get; set; }
@@ -329,7 +328,6 @@ namespace AirportLibrary.DTO
     // With Baggage
     public class BaggageServiceCommand : ServiceCommand
     {
-        public int StorageVertex { get; set; }
         public TransferAction Action { get; set; }
         public int BaggageCount { get; set; }
         public string FlightId { get; set; }
