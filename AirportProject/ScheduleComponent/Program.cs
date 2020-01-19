@@ -20,11 +20,8 @@ namespace ScheduleComponent
         const int NUMBER_OF_SLEEPS = 10;
 
         static int countOfSleepingThreads = 0;
-<<<<<<< HEAD
         
-=======
 
->>>>>>> cb5042b6b9ec60dfa20241d90462353702e435c0
         static void Main(string[] args)
         {
             var mqClient = new RabbitMqClient();
