@@ -9,6 +9,7 @@ using AirportLibrary.DTO;
 using System.Threading;
 using AirportLibrary.Graph;
 using System.Collections.Concurrent;
+using AirportLibrary.Delay;
 
 namespace FollowMeComponent
 {
@@ -21,15 +22,17 @@ namespace FollowMeComponent
         ConcurrentDictionary<string, CancellationTokenSource> tokens;
         RabbitMqClient MqClient;
         Map map = new Map();
+        PlayDelaySource source;
 
-        double TimeSpeedFactor = 1;
-        int commonIdCounter = 0;
+        double timeFactor = 1;
         int motionInterval = 100;       //ms
-        public FollowMeComponent()
+        int countCars = 4;
+        public FollowMeComponent()  //TODO sleep в машинке
         {
             MqClient = new RabbitMqClient();
             cars = new ConcurrentDictionary<string, FollowMeCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
+            source = new PlayDelaySource(timeFactor);
         }
         public void Start()
         {
@@ -37,6 +40,16 @@ namespace FollowMeComponent
             DeclareQueues();
             MqClient.PurgeQueues(queuesFrom.Values.ToArray());
             Subscribe();
+            FillCollections();
+        }
+        void FillCollections()
+        {
+            for (int i = 0; i < countCars; i++)
+            {
+                var followme = new FollowMeCar(i);
+                cars.TryAdd(followme.FollowMeId, followme);
+                tokens.TryAdd(followme.FollowMeId, new CancellationTokenSource());
+            }
         }
         void CreateQueues()
         {
@@ -64,7 +77,7 @@ namespace FollowMeComponent
         void Subscribe()
         {
             MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                    TimeSpeedFactor = mes.Factor);
+                    timeFactor = mes.Factor);
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotTransferRequest(cmd));
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
@@ -77,26 +90,22 @@ namespace FollowMeComponent
                             followme.GotAirplaneResponse = true;
                     });
         }
-        void GotTransferRequest(AirplaneTransferCommand cmd)
+        public void GotTransferRequest(AirplaneTransferCommand cmd)
         {
             SendToLogs($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} "+
                 $"to {cmd.DestinationVertex}");
             var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
-            if (followme != null)
-            {                
-                if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
-                {
-                    cancellationToken.Cancel();
-                }
-            }
-            else
+            while(followme==null)       //waits for a free car
             {
-                followme = new FollowMeCar(commonIdCounter);
-                followme.LocationVertex = GetHomeVertex();  //to appear in one of vertexes
-                commonIdCounter++;
-                cars.TryAdd(followme.FollowMeId, followme);
-                tokens.TryAdd(followme.FollowMeId, new CancellationTokenSource());
+                source.CreateToken().Sleep(100);
+                followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
             }
+              
+            if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
+            {
+                cancellationToken.Cancel();
+            }
+                        
             followme.Status = Status.Busy;            
             followme.PlaneId = cmd.PlaneId;
             TransferAirplane(followme,cmd).Start();
@@ -154,7 +163,7 @@ namespace FollowMeComponent
             });
             MakeAMove(followme, DestinationVertex);
             while (!followme.GotAirplaneResponse)           //wait for airplane response
-                Thread.Sleep(10);
+                source.CreateToken().Sleep(10);
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
             {
@@ -193,7 +202,7 @@ namespace FollowMeComponent
                 });
 
             while (!followme.MotionPermitted)               //check if followme can go
-                Thread.Sleep(5);
+                source.CreateToken().Sleep(10);
         }
         void MakeAMove(FollowMeCar followme, int DestinationVertex)     //just move to vertex
         {
@@ -202,8 +211,8 @@ namespace FollowMeComponent
             SendVisualizationMessage(followme, DestinationVertex, FollowMeCar.Speed);
             while (position < distance)                     //go
             {
-                position += FollowMeCar.Speed/3.6/1000 * motionInterval * TimeSpeedFactor;
-                Thread.Sleep(motionInterval);
+                position += FollowMeCar.Speed/3.6/1000 * motionInterval * timeFactor;
+                source.CreateToken().Sleep(motionInterval);
             };
             SendVisualizationMessage(followme, DestinationVertex, 0);
             followme.LocationVertex = DestinationVertex;
