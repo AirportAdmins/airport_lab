@@ -146,7 +146,6 @@ namespace CateringComponent
             }
             return count;
         }
-
         Task DoCatering(CateringCar car, AutoResetEvent wakeEvent)      //car work
         {
             while (true)
@@ -159,7 +158,8 @@ namespace CateringComponent
                     {
                         FoodList = command.FoodList,
                         PlaneId = car.PlaneId
-                    });                    
+                    });
+                    completionEvents[car.PlaneId].Signal();
                     transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), wakeEvent);
                 }
                 wakeEvent.Reset();                      //turn to wait again
