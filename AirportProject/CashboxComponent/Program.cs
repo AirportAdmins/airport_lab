@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Cashbox
+namespace CashboxComponent
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            new CashboxComponent().Start();
         }
     }
 }

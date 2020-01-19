@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cashbox", "Cashbox\Cashbox.csproj", "{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CashboxComponent", "CashboxComponent\CashboxComponent.csproj", "{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
