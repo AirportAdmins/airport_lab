@@ -6,6 +6,7 @@ using AirportLibrary.DTO;
 using System.Threading;
 using System.Collections.Concurrent;
 using AirportLibrary.Delay;
+using System.Threading.Tasks;
 
 namespace RegistrationComponent
 {
@@ -25,11 +26,10 @@ namespace RegistrationComponent
         public List<CheckInRequest> PasList { get; set; } = new List<CheckInRequest>();
         public RabbitMqClient MqClient { get; set; } = new RabbitMqClient();
         public PlayDelaySource DelaySource { get; set; } = new PlayDelaySource(1);
-        private readonly object pasLock = new object();
-        const int MIN_ERR_MS = 10000; // задержка пассажира от 10 секунд 
-        const int MAX_ERR_MS = 600000; // до 10 минут игрового времени
-        const int REG_TIME_MS = 5000; // регистрация - 5 секунд игрового времени
-        public double TimeCoef { get; set; } = 1;
+
+        const int MIN_ERR_MS = 10 * 1000; // задержка пассажира от 10 секунд 
+        const int MAX_ERR_MS = 10 * 60 * 1000; // до 10 минут игрового времени
+        const int REG_TIME_MS = 15 * 1000; // регистрация - 15 секунд игрового времени
 
         const string timeReg = Component.TimeService + Component.Registration;
         const string scheduleReg = Component.Schedule + Component.Registration;
@@ -46,179 +46,248 @@ namespace RegistrationComponent
             timeReg, scheduleReg, pasReg, regPas, regStorage, regStorageBaggage, regCash, cashReg, regGrServ
         };
 
+        readonly ConcurrentQueue<CheckInRequest> checkInRequests = new ConcurrentQueue<CheckInRequest>();
+        readonly AutoResetEvent checkInEvent = new AutoResetEvent(false);
+
         static void Main(string[] args)
         {
-            var reg = new Registration();
+            new Registration().Start();
+        }
 
-            reg.MqClient.DeclareQueues(queues.ToArray());
-            reg.MqClient.PurgeQueues(queues.ToArray());
+        public void Start()
+        {
+            MqClient.DeclareQueues(queues.ToArray());
+            MqClient.PurgeQueues(queues.ToArray());
 
-            reg.MqClient.SubscribeTo<NewTimeSpeedFactor>(timeReg, (mes) =>
+            MqClient.SubscribeTo<NewTimeSpeedFactor>(timeReg, (mes) =>
             {
-                reg.DelaySource.TimeFactor = mes.Factor;
+                DelaySource.TimeFactor = mes.Factor;
             });
 
-            reg.MqClient.SubscribeTo<FlightStatusUpdate>(scheduleReg, (mes) =>
+            MqClient.SubscribeTo<FlightStatusUpdate>(scheduleReg, (mes) =>
             {
                 Console.WriteLine($"Received from Schedule: {mes.FlightId} - {mes.Status}");
-                reg.UpdateFlightStatus(mes.FlightId, mes.Status);
+                UpdateFlightStatus(mes.FlightId, mes.Status);
             });
 
-            reg.MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
+            Task.Run(() =>
             {
-                Console.WriteLine($"Received from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
-                reg.DelaySource.CreateToken().Sleep(REG_TIME_MS);
-                reg.Registrate(mes.PassengerId, mes.FlightId, mes.HasBaggage, mes.FoodType);
-            });
-
-            // Ответ кассы
-            reg.MqClient.SubscribeTo<CheckTicketResponse>(cashReg, (mes) =>
-            {
-                lock (reg.pasLock)
+                while (true)
                 {
-                    var match = reg.PasList.Find(e => (e.PassengerId == mes.PassengerId));
-                    if (match != null)
-                    {
-                        if (mes.HasTicket) // Если билет верный
-                        {
-                            reg.MqClient.Send<CheckInResponse>(regPas,
-                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registered });
-                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.Registered}");
-                            reg.PassToTerminal(match.PassengerId, match.FlightId, match.HasBaggage, match.FoodType);
-                        }
-                        else // Если билет неверный
-                        {
-                            reg.MqClient.Send<CheckInResponse>(regPas,
-                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.WrongTicket });
-                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.WrongTicket}");
-                        }
+                    checkInEvent.WaitOne();
 
-                        reg.PasList.Remove(match);
+                    while (checkInRequests.TryDequeue(out var request))
+                    {
+                        DelaySource.CreateToken().Sleep(REG_TIME_MS);
+                        Registrate(
+                            request.PassengerId, 
+                            request.FlightId, 
+                            request.HasBaggage,
+                            request.FoodType
+                        );
                     }
                 }
             });
 
-            //reg.MqClient.Dispose();
+            MqClient.SubscribeTo<CheckInRequest>(pasReg, (mes) =>
+            {
+                Console.WriteLine($"Received from Passenger: {mes.PassengerId}, {mes.FlightId}, {mes.HasBaggage}, {mes.FoodType}");
+                checkInRequests.Enqueue(mes);
+                checkInEvent.Set();
+            });
+
+            // Ответ кассы
+            MqClient.SubscribeTo<CheckTicketResponse>(cashReg, (mes) =>
+            {
+                lock (PasList)
+                {
+                    var match = PasList.Find(e => (e.PassengerId == mes.PassengerId));
+                    if (match != null)
+                    {
+                        if (mes.HasTicket) // Если билет верный
+                        {
+                            MqClient.Send(regPas,
+                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.Registered }
+                            );
+                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.Registered}");
+                            Task.Run(() =>
+                            {
+                                PassToTerminal(match.PassengerId, match.FlightId, match.HasBaggage, match.FoodType);
+                            });
+                        }
+                        else // Если билет неверный
+                        {
+                            MqClient.Send(regPas,
+                                new CheckInResponse() { PassengerId = mes.PassengerId, Status = CheckInStatus.WrongTicket }
+                            );
+                            Console.WriteLine($"Sent to Passenger: {mes.PassengerId}, {CheckInStatus.WrongTicket}");
+                        }
+
+                        PasList.Remove(match);
+                    }
+                }
+            });
+
+            //MqClient.Dispose();
         }
 
         public void UpdateFlightStatus(string id, FlightStatus status)
         {
-            switch (status)
+            lock (Flights)
             {
-                case FlightStatus.New:
-                    Flights.Add(new Flight() { FlightId = id, Status = status });
-                    Console.WriteLine($"Added new flight {id}");
-                    break;
-                case FlightStatus.CheckIn:
-                    Flights.Find(e => (e.FlightId == id)).Status = status;
-                    Console.WriteLine($"Added check-in: {id} - {status}");
-                    break;
-                case FlightStatus.Boarding:
-                    var boarding = Flights.Find(e => (e.FlightId == id));
-                    boarding.Status = status;
-                    Console.WriteLine($"Added boarding: {id} - {status}");
-                    MqClient.Send<FlightInfo>(regGrServ,
-                        new FlightInfo()
-                        {
-                            FlightId = id,
-                            PassengerCount = boarding.PasCount,
-                            BaggageCount = boarding.BagCount,
-                            FoodList = new List<Tuple<Food, int>>()
+                switch (status)
+                {
+                    case FlightStatus.New:
+                        Flights.Add(new Flight() { FlightId = id, Status = status });
+                        Console.WriteLine($"Added new flight {id}");
+                        break;
+                    case FlightStatus.CheckIn:
+                        Flights.Find(e => (e.FlightId == id)).Status = status;
+                        Console.WriteLine($"Added check-in: {id} - {status}");
+                        break;
+                    case FlightStatus.Boarding:
+                        var boarding = Flights.Find(e => (e.FlightId == id));
+                        boarding.Status = status;
+                        Console.WriteLine($"Added boarding: {id} - {status}");
+                        MqClient.Send(
+                            regGrServ,
+                            new FlightInfo()
                             {
-                                Tuple.Create(Food.Standard, boarding.StandardFood),
-                                Tuple.Create(Food.Vegan, boarding.VeganFood),
-                                Tuple.Create(Food.Child, boarding.ChildFood),
+                                FlightId = id,
+                                PassengerCount = boarding.PasCount,
+                                BaggageCount = boarding.BagCount,
+                                FoodList = new List<Tuple<Food, int>>()
+                                {
+                                    Tuple.Create(Food.Standard, boarding.StandardFood),
+                                    Tuple.Create(Food.Vegan, boarding.VeganFood),
+                                    Tuple.Create(Food.Child, boarding.ChildFood),
+                                }
                             }
-                        });
-                    Console.WriteLine($"Sent to Ground Service: {id}, {boarding.PasCount}, {boarding.BagCount}, {boarding.StandardFood}, {boarding.VeganFood}, {boarding.ChildFood}");
-                    break;
-                case FlightStatus.Departed:
-                    Flights.Find(e => (e.FlightId == id)).Status = status;
-                    Console.WriteLine($"Added departed: {id} - {status}");
-                    break;
-                default:
-                    break;
+                        );
+                        Console.WriteLine($"Sent to Ground Service: {id}, {boarding.PasCount}, {boarding.BagCount}, {boarding.StandardFood}, {boarding.VeganFood}, {boarding.ChildFood}");
+                        break;
+                    case FlightStatus.Departed:
+                        Flights.Find(e => (e.FlightId == id)).Status = status;
+                        Console.WriteLine($"Added departed: {id} - {status}");
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
         public void PassToTerminal(string passengerId, string flightId, bool baggage, Food food)
         {
-            var rand = new Random().Next(1, 10);
-            if (rand < 3) // Вероятность лагания пассажира - 20%
+            var rand = new Random().NextDouble();
+            if (rand < 0.2) // Вероятность лагания пассажира - 20%
             {
                 var errorTime = new Random().Next(MIN_ERR_MS, MAX_ERR_MS);
                 DelaySource.CreateToken().Sleep(errorTime);
+            }
 
-                var status = Flights.Find(e => e.FlightId == flightId).Status;
+            lock (Flights)
+            {
+                var flight = Flights.Find(e => e.FlightId == flightId);
+                var status = flight.Status;
+
                 if (status == FlightStatus.Boarding || status == FlightStatus.Departed)
                 {
-                    MqClient.Send<CheckInResponse>(regPas,
-                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.LateForTerminal });
+                    MqClient.Send(
+                        regPas,
+                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.LateForTerminal }
+                    );
                     Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.LateForTerminal}");
                     return;
                 }
-            }
 
-            var flight = Flights.Find(e => e.FlightId == flightId);
+                // Отправить пассажира в накопитель
+                MqClient.Send(regStorage,
+                        new PassengerStoragePass() { PassengerId = passengerId, FlightId = flightId });
+                flight.PasCount++;
 
-            // Отправить пассажира в накопитель
-            MqClient.Send<PassengerStoragePass>(regStorage,
-                    new PassengerStoragePass() { PassengerId = passengerId, FlightId = flightId });
-            flight.PasCount++;
+                if (baggage)
+                {
+                    // Отправить багаж в накопитель - Накопитель(flightId)
+                    MqClient.Send(regStorageBaggage,
+                        new BaggageStoragePass() { FlightId = flightId });
+                    flight.BagCount++;
+                }
 
-            if (baggage)
-            {
-                // Отправить багаж в накопитель - Накопитель(flightId)
-                MqClient.Send<BaggageStoragePass>(regStorageBaggage,
-                    new BaggageStoragePass() { FlightId = flightId });
-                flight.BagCount++;
-            }
-
-            // Добавить еду для рейса
-            switch (food)
-            {
-                case Food.Standard:
-                    flight.StandardFood++;
-                    break;
-                case Food.Vegan:
-                    flight.VeganFood++;
-                    break;
-                case Food.Child:
-                    flight.ChildFood++;
-                    break;
-                default:
-                    break;
+                // Добавить еду для рейса
+                switch (food)
+                {
+                    case Food.Standard:
+                        flight.StandardFood++;
+                        break;
+                    case Food.Vegan:
+                        flight.VeganFood++;
+                        break;
+                    case Food.Child:
+                        flight.ChildFood++;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
         public void Registrate(string passengerId, string flightId, bool hasBaggage, Food foodType)
         {
-            switch (Flights.Find(e => e.FlightId == flightId).Status)
+            Flight flight;
+            lock (Flights)
             {
-                case (FlightStatus.New):
-                    MqClient.Send<CheckInResponse>(regPas,
-                    new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Early });
+                flight = Flights.Find(e => e.FlightId == flightId);
+            }
+
+            if (flight == null)
+            {
+                MqClient.Send(
+                        regPas,
+                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.NoSuchFlight }
+                    );
+                Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.NoSuchFlight}");
+                return;
+            }
+
+            switch (flight.Status)
+            {
+                case FlightStatus.New:
+                    MqClient.Send(
+                        regPas,
+                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Early }
+                    );
                     Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.Early}");
                     break;
 
-                case (FlightStatus.Boarding):
-                    MqClient.Send<CheckInResponse>(regPas,
-                    new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Late });
+                case FlightStatus.Boarding:
+                case FlightStatus.Delayed:
+                case FlightStatus.Departed:
+                    MqClient.Send(
+                        regPas,
+                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Late }
+                    );
                     Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.Late}");
                     break;
 
-                case (FlightStatus.CheckIn):
-                    PasList.Add(new CheckInRequest()
-                    { PassengerId = passengerId, FlightId = flightId, HasBaggage = hasBaggage, FoodType = foodType });
+                case FlightStatus.CheckIn:
+                    lock (PasList)
+                    {
+                        PasList.Add(
+                            new CheckInRequest()
+                            {
+                                PassengerId = passengerId,
+                                FlightId = flightId,
+                                HasBaggage = hasBaggage,
+                                FoodType = foodType
+                            }
+                        );
+                    }
                     // Отправить запрос кассе на проверку билета
-                    MqClient.Send<CheckTicketRequest>(regCash,
-                    new CheckTicketRequest() { PassengerId = passengerId, FlightId = flightId });
+                    MqClient.Send(
+                        regCash,
+                        new CheckTicketRequest() { PassengerId = passengerId, FlightId = flightId }
+                    );
                     Console.WriteLine($"Sent to CashBox: {passengerId}, {flightId}");
-                    break;
-                default:
-                    MqClient.Send<CheckInResponse>(regPas,
-                    new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.NoSuchFlight });
-                    Console.WriteLine($"Sent to Passenger: {passengerId}, {CheckInStatus.NoSuchFlight}");
                     break;
             }
         }
