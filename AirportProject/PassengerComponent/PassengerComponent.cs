@@ -163,7 +163,7 @@ namespace PassengerComponent
                 case PassengerStatus.InBus:
                     obj = "bus";
                     break;
-                case PassengerStatus.InAriplane:
+                case PassengerStatus.InAirplane:
                     obj = "plane";
                     break;
                 default:
