@@ -8,23 +8,26 @@ using AirportLibrary.DTO;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using AirportLibrary.Delay;
 
 namespace TransportMotion
 {
     public class TransportMotion
     {
-        RabbitMqClient MqClient;
+        RabbitMqClient mqClient;
         string component;
         Dictionary<string, string> queuesFrom;
         Dictionary<string, string> queuesTo;
         Map map = new Map();
-        double TimeSpeedFactor;
+        double timeFactor;
         int motionInterval = 100;
+        PlayDelaySource source;
 
         public TransportMotion(string Component,RabbitMqClient MqClient)
         {
             this.component = Component;
-            this.MqClient = MqClient;
+            this.mqClient = MqClient;
+            source = new PlayDelaySource(timeFactor);
             CreateQueues();
             DeclareQueues();
             MqClient.PurgeQueues(queuesFrom.Values.ToArray());
@@ -46,13 +49,13 @@ namespace TransportMotion
         }
         void DeclareQueues()
         {
-            MqClient.DeclareQueues(queuesFrom.Values.ToArray());
-            MqClient.DeclareQueues(queuesTo.Values.ToArray());
+            mqClient.DeclareQueues(queuesFrom.Values.ToArray());
+            mqClient.DeclareQueues(queuesTo.Values.ToArray());
         }
         void Subscribe()
         {
-            MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                    TimeSpeedFactor = mes.Factor);       
+            mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
+                    timeFactor = mes.Factor);       
         }
        
         public void GoPath(ICar car, int destinationVertex)     
@@ -82,13 +85,13 @@ namespace TransportMotion
             SendVisualizationMessage(car, StartVertex,DestinationVertex, car.Speed);
             while (position < distance)                     //go
             {
-                position += car.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
+                position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
                 Thread.Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
             car.MotionPermitted = false;
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
-            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
+            mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
             {
                 Action = MotionAction.Free,
@@ -100,7 +103,7 @@ namespace TransportMotion
         }
         void WaitForMotionPermission(ICar car, int StartVertex,int DestinationVertex)
         {
-            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //permission request
+            mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -122,7 +125,7 @@ namespace TransportMotion
         }
         void SendVisualizationMessage(ICar car, int StartVertex, int DestinationVertex, int speed)
         {
-            MqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
+            mqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
             {
                 ObjectId = car.CarId,
                 DestinationVertex = DestinationVertex,
