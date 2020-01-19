@@ -66,13 +66,12 @@ namespace TransportMotion
                 GoToVertex(car, path[i + 1]);
             }
         }
-        public void GoPathFree(ICar car, int destinationVertex, CancellationToken token) 
+        public void GoPathFree(ICar car, int destinationVertex, AutoResetEvent breakEvent) 
         {
             var path = map.FindShortcut(car.LocationVertex, destinationVertex);
             for (int i = 0; i < path.Count - 1; i++)
             {
-                if (token.IsCancellationRequested)
-                    break;
+                breakEvent.WaitOne((int)(5*timeFactor));  //
                 GoToVertex(car, path[i + 1]);
             }
         }
@@ -89,7 +88,7 @@ namespace TransportMotion
                 Thread.Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermitted = false;
+            car.MotionPermission = new AutoResetEvent(false);
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
@@ -113,8 +112,8 @@ namespace TransportMotion
                     StartVertex = StartVertex
                 });
 
-            while (!car.MotionPermitted)               //check if car can go
-                Thread.Sleep(5);
+            car.MotionPermission.WaitOne();
+            car.MotionPermission.Reset();
         }
 
         public int GetHomeVertex()

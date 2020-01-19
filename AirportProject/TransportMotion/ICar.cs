@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace TransportMotion
 {
@@ -11,7 +12,7 @@ namespace TransportMotion
         public string PlaneId { get; set; }
 
         //motion
-        public bool MotionPermitted { get; set; }        
+        public AutoResetEvent MotionPermission { get; set; }        
         public int Speed { get; set; }
         public int LocationVertex { get; set; }
     }
