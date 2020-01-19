@@ -93,7 +93,7 @@ namespace Baggage
         }
         void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
         {
-            mqClient.Send<MotionPermissionRequest>(Component.GroundMotion, //permission request
+            mqClient.Send<MotionPermissionRequest>(Component.Baggage, //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,

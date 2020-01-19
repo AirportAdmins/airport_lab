@@ -10,7 +10,7 @@ namespace Baggage
     {
 
         //С САМОЛЁТОМ
-        public void TakeOrGiveBaggageFromPlane(string planeId, string carId, TransferAction action, int baggageCount)
+        private void TakeOrGiveBaggageFromPlane(string planeId, string carId, TransferAction action, int baggageCount)
         {
             BaggageTransferRequest btr = new BaggageTransferRequest()
             {
@@ -22,14 +22,10 @@ namespace Baggage
 
             mqClient.Send(queueToAirPlane, btr); //отправляем сообщение самолёту о переданном багаже или о том, сколько вмещается в машину
 
-            if(action == TransferAction.Take)
-            {
-                TakeBaggageFromPlane();
-            }
-            //теперь надо как-то уехать отсюдова на стоянку
+            
         }
 
-        public void TakeBaggageFromPlane()
+        private void TakeBaggageFromPlane()
         {
             mqClient.SubscribeTo<BaggageTransfer>(queueFromAirPlane, (bt)=>
             {
@@ -44,26 +40,10 @@ namespace Baggage
                 
             });
 
-            //теперь надо отдать багаж накопителю
         }
 
-
-        //public void BaggageToCar(BaggageTransfer bt)
-        //{
-        //    for(int i = 0; i < cars.Count; i++)
-        //    {
-        //        if (bt.BaggageCarId.Equals(cars[i].BaggageCarID))
-        //        {
-        //            cars[i].CountOfBaggage += bt.BaggageCount;
-        //            break;
-        //        }
-        //    }
-        //    //теперь надо отдать багаж накопителю
-        //}
-
         //С БАГАЖНЫМ НАКОПИТЕЛЕМ
-
-        public void ToStorageRequest(string carId, string flightId, int capacity)
+        private void ToStorageRequest(string carId, string flightId, int capacity)
         {
             BaggageFromStorageRequest bfr = new BaggageFromStorageRequest()
             {
@@ -72,11 +52,9 @@ namespace Baggage
                 Capacity = capacity
             };
             mqClient.Send(queuetoStorage, bfr);
-
-            //потом получаем багаж от накопителя
         }
 
-        public void TakeBaggageFromStorage()
+        private void TakeBaggageFromStorage()
         {
             mqClient.SubscribeTo<BaggageFromStorageResponse>(queuetoStorage, (bfsr) =>
             {
@@ -89,8 +67,64 @@ namespace Baggage
                     }
                 }
             });
+        }
 
-            //едем к самолёту
+        //C СЛУЖБОЙ НАЗЕМНОГО ОБСЛУЖИВАНИЯ
+        private void MessageFromGroundService() //забрать/сдать багаж на самолет
+        {
+            mqClient.SubscribeTo<BaggageServiceCommand>(queueFromGroundService, (bsc) =>
+            {
+                int numOfCars = Convert.ToInt32(Math.Ceiling((double)(bsc.BaggageCount / BaggageCar.MaxCountOfBaggage))); //сколько машин нужно выделить под задачу
+
+                
+
+                if (bsc.Action == TransferAction.Give)
+                {
+                    while (numOfCars > 0)
+                    {
+                        BaggageCar car = SearchFreeCar();
+
+                        //поехать к накопителю TODO
+                        ToStorageRequest(car.BaggageCarID, bsc.FlightId, BaggageCar.MaxCountOfBaggage );
+                        //поехать к самолёту TODO
+                        TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
+                        car.CountOfBaggage = 0;
+                        car.Status = Status.Free;
+                        //вернуться на стоянку TODO
+                        numOfCars--;
+                    }
+
+                }
+                else if(bsc.Action == TransferAction.Take)
+                {
+                    while (numOfCars > 0)
+                    {
+                        BaggageCar car = SearchFreeCar();
+
+                        //поехать к самолёту TODO
+                        TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
+                        //поехать к накопителю (багаж отдавать не надо) TODO
+                        car.CountOfBaggage = 0;
+                        car.Status = Status.Free;
+                        //едем на стоянку TODO
+                        numOfCars--;
+                    }
+                }
+            });
+        }
+
+        private BaggageCar SearchFreeCar()
+        {
+            foreach (BaggageCar bc in cars)
+            {
+                if (bc.Status == Status.Free)
+                {
+                    bc.Status = Status.Busy;
+                    return bc;
+                }
+            }
+            //если не нашли свободную машину, начинаем поиск заново
+            return SearchFreeCar();
         }
 
     }
