@@ -9,28 +9,32 @@ using AirportLibrary.DTO;
 using AirportLibrary;
 using System.Linq;
 using System.Collections.Concurrent;
+using AirportLibrary.Delay;
 
 namespace AirplaneComponent
 {
     public class AirplaneComponent
     {
-        RabbitMqClient MqClient;
+        RabbitMqClient mqClient;
         ConcurrentDictionary<string, Airplane> airplanes;
         Dictionary<string, string> queuesTo;
         Dictionary<string, string> queuesFrom;
         Map map = new Map();
-        double TimeSpeedFactor = 1;
+        PlayDelaySource source;
+        double timeFactor = 1;
+        
         public AirplaneComponent()
         {
             airplanes = new ConcurrentDictionary<string, Airplane>();
+            source = new PlayDelaySource(timeFactor);
         }
 
         public void Start()
         {
-            MqClient = new RabbitMqClient();
+            mqClient = new RabbitMqClient();
             CreateQueues();
             DeclareQueues();
-            MqClient.PurgeQueues(queuesFrom[Component.Schedule],queuesTo[Component.Schedule]);
+            mqClient.PurgeQueues(queuesFrom[Component.Schedule],queuesTo[Component.Schedule]);
             Subscribe();
             //Console.WriteLine("Okay");            
         }
@@ -64,30 +68,33 @@ namespace AirplaneComponent
 
         void DeclareQueues()
         {
-            MqClient.DeclareQueues(queuesTo.Values.ToArray());
-            MqClient.DeclareQueues(queuesFrom.Values.ToArray());
+            mqClient.DeclareQueues(queuesTo.Values.ToArray());
+            mqClient.DeclareQueues(queuesFrom.Values.ToArray());
         }
         void Subscribe()
         {
-            MqClient.SubscribeTo<AirplaneGenerationRequest>(queuesFrom[Component.Schedule], mes =>   //schedule
+            mqClient.SubscribeTo<AirplaneGenerationRequest>(queuesFrom[Component.Schedule], mes =>   //schedule
                      ScheduleResponse(mes));
-            MqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
+            mqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
-            MqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
+            mqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
                      BaggageTransferResponse(mes));
-            MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //time speed
-                     TimeSpeedFactor = mes.Factor);
-            MqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
+            mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //time speed
+                {
+                    timeFactor = mes.Factor;
+                    source.TimeFactor = timeFactor;
+                });
+            mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
                      FollowAction(mes));
-            MqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
+            mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
                      airplanes[mes.PlaneId].IsDeiced = true);
-            MqClient.SubscribeTo<RefuelCompletion>(queuesFrom[Component.FuelTruck], mes =>  //fueltruck
+            mqClient.SubscribeTo<RefuelCompletion>(queuesFrom[Component.FuelTruck], mes =>  //fueltruck
                      airplanes[mes.PlaneId].FuelAmount += mes.Fuel);
-            MqClient.SubscribeTo<CateringCompletion>(queuesFrom[Component.Catering], mes => //catering
+            mqClient.SubscribeTo<CateringCompletion>(queuesFrom[Component.Catering], mes => //catering
                      airplanes[mes.PlaneId].FoodList = mes.FoodList);
-            MqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
+            mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
                      Departure(mes));
-            MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
+            mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
             {
                 airplanes[mes.ObjectId].MotionPermitted = true;
             });
@@ -100,7 +107,7 @@ namespace AirplaneComponent
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
             if (airplanes.TryAdd(airplane.PlaneID, airplane))
             {
-                MqClient.Send<AirplaneGenerationResponse>(queuesTo[Component.Schedule],
+                mqClient.Send<AirplaneGenerationResponse>(queuesTo[Component.Schedule],
                     new AirplaneGenerationResponse()
                     {
                         FlightId = req.FlightId,
@@ -116,7 +123,7 @@ namespace AirplaneComponent
             Airplane plane = airplanes[req.PlaneId];
             if (req.Action == TransferAction.Take)
             {
-                MqClient.Send<PassengersTransfer>(queuesTo[Component.Bus], new PassengersTransfer()
+                mqClient.Send<PassengersTransfer>(queuesTo[Component.Bus], new PassengersTransfer()
                 {
                     BusId = req.BusId,
                     PassengerCount = req.PassengersCount
@@ -133,7 +140,7 @@ namespace AirplaneComponent
             Airplane plane = airplanes[req.PlaneId];
             if (req.Action == TransferAction.Take)
             {
-                MqClient.Send<BaggageTransfer>(queuesTo[Component.Baggage], new BaggageTransfer()
+                mqClient.Send<BaggageTransfer>(queuesTo[Component.Baggage], new BaggageTransfer()
                 {
                     BaggageCarId = req.BaggageCarId,
                     BaggageCount = req.BaggageCount
@@ -147,11 +154,12 @@ namespace AirplaneComponent
         }
         void AirplaneServiceCommand(Airplane plane)
         {
-            MqClient.Send<AirplaneServiceCommand>(queuesTo[Component.GroundService],
+            mqClient.Send<AirplaneServiceCommand>(queuesTo[Component.GroundService],
                 new AirplaneServiceCommand()
                 {
                     LocationVertex = plane.LocationVertex,
                     PlaneId = plane.PlaneID,
+                    FlightId= plane.FlightID,
                     Needs = new List<Tuple<AirplaneNeeds, int>>()
                     {
                         Tuple.Create(AirplaneNeeds.PickUpPassengers,plane.Passengers),
@@ -171,12 +179,12 @@ namespace AirplaneComponent
             {
                 while (position < distance)
                 {
-                    position += Airplane.SpeedOnGround/3.6/1000 * timeInterval * TimeSpeedFactor;
-                    Thread.Sleep(timeInterval);
+                    position += Airplane.SpeedOnGround/3.6/1000 * timeInterval * timeFactor;
+                    source.CreateToken().Sleep(timeInterval);
                 };
                 SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
                 plane.LocationVertex = cmd.DestinationVertex;
-                MqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
+                mqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
                 {
                     PlaneId = plane.PlaneID,
                     FollowMeId = cmd.FollowMeId,
@@ -186,7 +194,7 @@ namespace AirplaneComponent
         }
         void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)
         {
-            MqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
+            mqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
             {
                 StartVertex = plane.LocationVertex,
                 DestinationVertex = DestinationVertex,
@@ -221,11 +229,11 @@ namespace AirplaneComponent
             {
                 while (position < distance)
                 {
-                    position += Airplane.SpeedFly/3.6/1000 * timeInterval * TimeSpeedFactor; //m/ms
-                    Thread.Sleep(100);
+                    position += Airplane.SpeedFly/3.6/1000 * timeInterval * timeFactor; //m/ms
+                    source.CreateToken().Sleep(timeInterval);
                 };
                 SendVisualizationMessage(plane, DestinationVertex, 0);
-                MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
+                mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
                 {
                     Action = MotionAction.Free,
                     Component = Component.Airplane,
@@ -239,7 +247,7 @@ namespace AirplaneComponent
         }
         void WaitForMotionPermission(Airplane airplane, int DestinationVertex)
         {
-            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion],
+            mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion],
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -249,8 +257,8 @@ namespace AirplaneComponent
                     StartVertex = airplane.LocationVertex
                 });
 
-            while (!airplane.MotionPermitted)               
-                Thread.Sleep(5);
+            while (!airplane.MotionPermitted)
+                source.CreateToken().Sleep(5);
         }
 
         int GetDistance(int locationVertex, int destinationVertex)   
