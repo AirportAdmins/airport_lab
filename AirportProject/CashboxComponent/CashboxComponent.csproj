@@ -5,4 +5,9 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
+    <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
+  </ItemGroup>
+
 </Project>
