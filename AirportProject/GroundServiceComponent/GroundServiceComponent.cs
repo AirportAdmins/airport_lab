@@ -1,67 +1,12 @@
 ﻿using System;
 using AirportLibrary;
-using AirportLibrary.DTO;
-using System.Collections.Generic;
 using RabbitMqWrapper;
+using AirportLibrary.DTO;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace GroundServiceComponent
 {
-    public enum ActionStatus
-    {
-        NotStarted, Started, Finished
-    }
-    public class AirplaneServiceCycle
-    {
-        public readonly List<Tuple<string, ActionStatus>> FirstCycleSequence = new List<Tuple<string, ActionStatus>>()
-        {
-
-        };
-        public static readonly List<Action> SecondCycleSequence = new List<Action>()
-        {
-
-        };
-        public int PlaneId { get; }
-        public int FilghtId { get; }
-
-        public int PlaneLocationVertex;
-        public AirplaneServiceCycle()
-        {
-
-        }
-        void Start()
-        {
-
-        }
-        void FisrtCycle()
-        {
-
-        }
-        void SecondCycle()
-        {
-
-        }
-        void FollowMe()
-        {
-
-        }
-        void Bus()
-        {
-
-        }
-        void Baggage()
-        {
-
-        }
-        void Catering()
-        {
-
-        }
-        void Deicing()
-        {
-
-        }
-
-    }
     public class GroundServiceComponent
     {
         public static readonly string ComponentName = Component.GroundService;
@@ -98,7 +43,11 @@ namespace GroundServiceComponent
             Component.Deicing
         };
 
+        readonly object airplaneLock = new object();
+
+        List<GroundServiceCycles> serviceAirplanes = new List<GroundServiceCycles>();
         RabbitMqClient mqClient = new RabbitMqClient();
+        
         
         public GroundServiceComponent()
         {
@@ -111,24 +60,59 @@ namespace GroundServiceComponent
             foreach (var sender in Senders)
                 mqClient.DeclareQueues(sender+ComponentName);
 
-            //Receieve from airplane that fisrt cycle begin
+            //Receieve from airplane to parking
             mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
             {
-                
+                GroundServiceCycles cycle;
+                lock (airplaneLock)
+                {
+                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                    if (cycle == null)
+                    {
+                        cycle = new GroundServiceCycles(mqClient, mes.PlaneId, mes.FlightId, mes.LocationVertex);
+                        serviceAirplanes.Add(cycle);
+                    }
+                    else
+                    {
+                        cycle.PlaneId = mes.PlaneId;
+                        cycle.PlaneLocationVertex = mes.LocationVertex;
+                    }
+                }
+                new Task(cycle.StartFisrtCycle,mes.Needs).Start();
             }
             );
 
             //Receieve from registration that second cycle begin 
             mqClient.SubscribeTo<FlightInfo>(Component.Registration + ComponentName, (mes) =>
             {
-                
+                GroundServiceCycles cycle;
+                lock (airplaneLock)
+                {
+                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                    if (cycle == null)
+                    {
+                        cycle = new GroundServiceCycles(mqClient, mes.FlightId);
+                        serviceAirplanes.Add(cycle);
+                    }
+                }
+                new Task(cycle.StartSecondCycle, mes).Start();
             }
             );
 
             //Receieve from Schedule that time to Departure
-            mqClient.SubscribeTo<AirplaneServiceSignal>(Component.Schedule + ComponentName, (mes) =>
+            mqClient.SubscribeTo<AirplaneDepartureTimeSignal>(Component.Schedule + ComponentName, (mes) =>
             {
-                //
+                GroundServiceCycles cycle;
+                lock (airplaneLock)
+                {
+                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                    if (cycle == null)
+                    {
+                        cycle = new GroundServiceCycles(mqClient, mes.FlightId);
+                        serviceAirplanes.Add(cycle);
+                    }
+                }
+                new Task(cycle.StartDeparture).Start();
             }
             );
 
@@ -136,9 +120,18 @@ namespace GroundServiceComponent
             foreach (var car in GroundTransport)
                 mqClient.SubscribeTo<ServiceCompletionMessage>(car + ComponentName, (mes) =>
                   {
-
+                      GroundServiceCycles cycle;
+                      lock (airplaneLock)
+                          cycle = serviceAirplanes.Find(x => x.PlaneId == mes.PlaneId);
+                      if (cycle == null)
+                      {
+                          //log
+                          throw new Exception();
+                      } 
+                      new Task(cycle.FinishAction, mes.Component).Start();
                   }
                 );
         }
+        //free Cycles???
     }
 }

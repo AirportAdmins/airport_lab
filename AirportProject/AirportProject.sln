@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundServiceComponent", "GroundServiceComponent\GroundServiceComponent.csproj", "{60CF7C50-CD3F-4040-BC25-F68469AEE279}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundServiceComponent", "GroundServiceComponent\GroundServiceComponent.csproj", "{A88B5A12-3359-4398-84B5-33E56C2F69C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
-		{60CF7C50-CD3F-4040-BC25-F68469AEE279}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{60CF7C50-CD3F-4040-BC25-F68469AEE279}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{60CF7C50-CD3F-4040-BC25-F68469AEE279}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{60CF7C50-CD3F-4040-BC25-F68469AEE279}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A88B5A12-3359-4398-84B5-33E56C2F69C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A88B5A12-3359-4398-84B5-33E56C2F69C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A88B5A12-3359-4398-84B5-33E56C2F69C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A88B5A12-3359-4398-84B5-33E56C2F69C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
