@@ -26,9 +26,10 @@ namespace FuelTruck
         Map mapAirport = new Map();
         
         public double timeCoef { get; set; } = 1.0;
+        public int sleepingTime;
         public RabbitMqClient mqClient;
         Dictionary<int, FuelTruckCars> cars;
-        //public int motionInterval = 100; //ms
+        public int motionInterval = 100; //ms
         public string planeID;
         public int planeLocationVertex;
         public int fuel;
@@ -68,16 +69,18 @@ namespace FuelTruck
                     /* ВАЖНО ПОНЯТЬ СКОЛЬКО ОЖИДАТЬ И КАК ЧАСТО ОТПРАВЛЯТЬ ЛОГИ */
                     logMessage = "Все машины заняты, подождем 5 секунд * коэф. времени";                    
                     SendLogMessage(logMessage);
-                    Thread.Sleep(Convert.ToInt32(5000 * timeCoef));
+                    Thread.Sleep(Convert.ToInt32(5000 * timeCoef)); ///////////ВРЕМЯ СНА
                 }
             }
             return numOfCar;
         }
 
-        //Проверяем свободен ли граф
-        public bool canFuelTruckGo(int f1rs, int s3cond, int currCar, int status) //0-полная, 1 done
+        //Проверяем свободен ли граф. Отмечает что блокируем его
+        public bool canFuelTruckGo(int f1rs, int s3cond, int currCar) //0-полная, 1 done
         {
             bool yesNo = false;
+
+            //Можно ли проехать по графу?
             var newMotionPermissionRequest = new MotionPermissionRequest()
             {
                 Component = "FuelTruck",
@@ -87,12 +90,16 @@ namespace FuelTruck
                 Action = MotionAction.Occupy,
             };
             mqClient.Send(queueToGroundMotion, newMotionPermissionRequest);
-            
+
             ///////////тут я получаю ответ
-            
+            mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
+            {
+                yesNo = true;
+            });
+            //ВОПРОС! МЕТОД ЖДЕТ ОТВЕТА ИЛИ СРАЗУ ВОЗВРАЩАЕТ ЧТО-ТО? Он же понимает какой именно машинке даёт ответ
+
             return yesNo;
         }
-
 
 
         //необходима постоянная проверка времени
@@ -103,9 +110,16 @@ namespace FuelTruck
 
             var shortCut = mapAirport.FindShortcut(cars[currentlyCar].Position, planeLocationVertex);//Нашел кротчайший путь
             shortCut.Add(1000);
-            foreach (int i in shortCut)
-            {
+            var shortCutArray = shortCut.ToArray();
 
+            for (int i = 0; i < shortCutArray.Length; i++) //идём по нашему пути
+            {
+                while (!canFuelTruckGo(i, i+1, currentlyCar))//проверяем свободно ли
+                {
+                    Thread.Sleep(Convert.ToInt32(5000 * timeCoef)); //ВРЕМЯ СНА ????????????????????????????
+                }
+                
+                //ТУТ ДВИЖЕНИЕ МАШИНКИ В СТОРОНУ САМОЛЕТА. НУЖНО РАЗОБРАТЬСЯ С ДЕЛЕЕМ
             }
         }
 
