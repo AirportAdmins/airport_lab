@@ -9,27 +9,28 @@ using System.Threading.Tasks;
 using System.Threading;
 using AirportLibrary.Graph;
 using System.Collections.Concurrent;
+using AirportLibrary.Delay;
 
 namespace Baggage
 {
+    /// <summary>
+    /// Здесь описаны методы, которые нужны всем машинам.
+    /// Главный метод -- Start().
+    /// </summary>
     public partial class Baggage
     {
         delegate void GoToVertexAction(BaggageCar baggage, int DestinationVertex);
 
+        PlayDelaySource source;
 
-        List<BaggageCar> cars;
+        ConcurrentDictionary<string, BaggageCar> cars;
+        int countOfCars = 6;
         ConcurrentDictionary<string, CancellationTokenSource> tokens;
         Map map = new Map();
 
         double TimeSpeedFactor = 1;
         int commonIdCounter = 0;
         int motionInterval = 100;       //ms
-        public Baggage()
-        {
-            cars = new List<BaggageCar>();
-            tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-        }
-
 
         const string queueFromTimeService = Component.TimeService + Component.Baggage;
         const string queueFromGroundService = Component.GroundService + Component.Baggage;
@@ -44,8 +45,9 @@ namespace Baggage
         const string queueToGroundService = Component.Baggage + Component.GroundService;
         const string queuetoStorage = Component.Baggage + Component.Storage;
         const string queueToVisualizer = Component.Baggage + Component.Visualizer;
-        public RabbitMqClient mqClient { get; set; } = new RabbitMqClient();
-        public double timeCoef { get; set; } = 1;
+
+        public RabbitMqClient mqClient;
+
         public string planeID;
         public int baggageCount;
         public string BcarId;
@@ -53,31 +55,69 @@ namespace Baggage
         public int PlaneVertex;
         public readonly List<string> queues = new List<string>
         {
-            queueFromTimeService, queueFromGroundService, queueFromGroundMotion,  queueFromStorage ,queueToAirPlane, queueToLogs, queueToGroundMotion,queueToGroundService, queuetoStorage,queueFromAirPlane
+            queueFromTimeService, queueFromGroundService, queueFromGroundMotion,  queueFromStorage, queueFromAirPlane, queueToAirPlane, queueToLogs, queueToGroundMotion,queueToGroundService, queuetoStorage, queueToVisualizer
         };
 
+        public Baggage()
+        {
+            cars = new ConcurrentDictionary<string, BaggageCar>();
+            tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
+            mqClient = new RabbitMqClient();
+            source = new PlayDelaySource(TimeSpeedFactor);
+        }
+
+        public void Start()
+        {
+            DeclareQueues();
+            FillCollections();
+            Subscribe();
+        }
+
+        private void FillCollections()
+        {
+            for (int i = 0; i < countOfCars; i++)
+            {
+                BaggageCar car = new BaggageCar(i);
+                cars.TryAdd(car.BaggageCarID, car);
+                tokens.TryAdd(car.BaggageCarID, new CancellationTokenSource());
+            }
+        }
+
+        private void Subscribe()
+        {
+            TakeBaggageFromPlane();
+            TakeBaggageFromStorage();
+            MessageFromGroundService();
+            MotionPermissionResponse();
+            TakeTimeSpeedFactor();
+        }
+
+        private void DeclareQueues()
+        {
+            mqClient.DeclareQueues(queues.ToArray());
+        }
 
         // ответ 
-        void GoPath(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex)
+        private void GoPath(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex)
         {
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
             for (int i = 0; i < path.Count - 1; i++)
             {
-                GoToVertexAlone(baggageCar, path[i + 1]);
+                action(baggageCar, path[i + 1]);
             }
         }
-        void GoPathHome(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex,
-       CancellationToken cancellationToken)
+        private void GoPathHome(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex,
+        CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
             for (int i = 0; i < path.Count - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
-                GoToVertexAlone(baggageCar, path[i + 1]);
+                action(baggageCar, path[i + 1]);
             }
         }
-        void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
+        private void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
         {
             WaitForMotionPermission(baggageCar, DestinationVertex);
             MakeAMove(baggageCar, DestinationVertex);
@@ -91,7 +131,7 @@ namespace Baggage
                 StartVertex = baggageCar.LocationVertex
             });
         }
-        void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
+        private void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
         {
             mqClient.Send<MotionPermissionRequest>(Component.Baggage, //permission request
                 new MotionPermissionRequest()
@@ -104,9 +144,18 @@ namespace Baggage
                 });
 
             while (!baggageCar.MotionPermitted)               //check if baggacar can go
-                Thread.Sleep(5);
+                source.CreateToken().Sleep(5);
         }
-        void MakeAMove(BaggageCar baggageCar, int DestinationVertex)     //just move to vertex
+
+        private void MotionPermissionResponse()
+        {
+            mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
+            {
+                cars[mpr.ObjectId].MotionPermitted = true;
+            });
+        }
+
+        private void MakeAMove(BaggageCar baggageCar, int DestinationVertex)     //just move to vertex
         {
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(baggageCar.LocationVertex, DestinationVertex);
@@ -114,13 +163,13 @@ namespace Baggage
             while (position < distance)                     //go
             {
                 position += BaggageCar.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
-                Thread.Sleep(motionInterval);
+                source.CreateToken().Sleep(motionInterval);
             };
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
         }
-        void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
+        private void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
         {
             mqClient.Send<VisualizationMessage>(queueToVisualizer, new VisualizationMessage()
             {
@@ -132,13 +181,16 @@ namespace Baggage
             });
         }
 
-
-
-
-        public void BaggageJob(string planeID, int bagCount)
+        /// <summary>
+        /// Получаем новый коэффициент времени от службы времени
+        /// </summary>
+        private void TakeTimeSpeedFactor()
         {
-
-
+            mqClient.SubscribeTo<NewTimeSpeedFactor>(queueFromTimeService, (ntsf) =>
+            {
+                TimeSpeedFactor = ntsf.Factor;
+                source.TimeFactor = TimeSpeedFactor;
+            });
         }
 
 

@@ -3,11 +3,19 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using AirportLibrary;
 
 namespace Baggage
 {
+    /// <summary>
+    /// Здесь описаны методы только багажной машины
+    /// Главный метод -- MessageFromGroundService(). С него-то всё и начинается, ага
+    /// </summary>
     partial class Baggage
     {
+        static object locker = new object(); //При поиске свободной машины блокируем поиск для других потоков
 
         //С САМОЛЁТОМ
         private void TakeOrGiveBaggageFromPlane(string planeId, string carId, TransferAction action, int baggageCount)
@@ -29,14 +37,7 @@ namespace Baggage
         {
             mqClient.SubscribeTo<BaggageTransfer>(queueFromAirPlane, (bt)=>
             {
-                for (int i = 0; i < cars.Count; i++)
-                {
-                    if (bt.BaggageCarId.Equals(cars[i].BaggageCarID))
-                    {
-                        cars[i].CountOfBaggage += bt.BaggageCount;
-                        break;
-                    }
-                }
+                cars[bt.BaggageCarId].CountOfBaggage += bt.BaggageCount;
                 
             });
 
@@ -58,15 +59,9 @@ namespace Baggage
         {
             mqClient.SubscribeTo<BaggageFromStorageResponse>(queuetoStorage, (bfsr) =>
             {
-                for (int i = 0; i < cars.Count; i++)
-                {
-                    if (bfsr.BaggageCarId.Equals(cars[i].BaggageCarID))
-                    {
-                        cars[i].CountOfBaggage += bfsr.BaggageCount;
-                        break;
-                    }
-                }
+                cars[bfsr.BaggageCarId].CountOfBaggage += bfsr.BaggageCount;
             });
+            
         }
 
         //C СЛУЖБОЙ НАЗЕМНОГО ОБСЛУЖИВАНИЯ
@@ -74,57 +69,115 @@ namespace Baggage
         {
             mqClient.SubscribeTo<BaggageServiceCommand>(queueFromGroundService, (bsc) =>
             {
-                int numOfCars = Convert.ToInt32(Math.Ceiling((double)(bsc.BaggageCount / BaggageCar.MaxCountOfBaggage))); //сколько машин нужно выделить под задачу
+                new Task(() =>
+                {
+                    int numOfCars = Convert.ToInt32(Math.Ceiling((double)(bsc.BaggageCount / BaggageCar.MaxCountOfBaggage))); //сколько машин нужно выделить под задачу
 
+                    int carsEndWork = numOfCars;
+
+                    Task[] tasks = new Task[numOfCars];
+
+                    if (bsc.Action == TransferAction.Give)
+                    {
+                        for(int i=0;i<numOfCars;i++)
+                        {
+                            tasks[i] = ( new Task(() =>
+                            {
+                                BaggageCar car = SearchFreeCar();
+
+                                //поехать к накопителю 
+                                GoPath(GoToVertexAlone, car, bsc.StorageVertex);
+
+                                ToStorageRequest(car.BaggageCarID, bsc.FlightId, BaggageCar.MaxCountOfBaggage);
+
+                                //поехать к самолёту 
+                                GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
+
+                                //отдаём багаж самолёту
+                                TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
+                                car.CountOfBaggage = 0;
+                                car.Status = Status.Free;
+
+                                carsEndWork--; //машина обслужила самолёт
+
+                                //вернуться на стоянку
+                                GoPathHome(GoToVertexAlone, car, 10, tokens[car.BaggageCarID]);
+
+
+
+                            }));
+                        }
+
+                    }
+                    else if (bsc.Action == TransferAction.Take)
+                    {
+                        for (int i = 0; i < numOfCars; i++)
+                        {
+                            tasks[i] = (new Task(() =>
+                            {
+                                BaggageCar car = SearchFreeCar();
+
+                                //поехать к самолёту 
+                                GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
+
+                                TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
+
+                                carsEndWork--; //машина обслужила самолёт
+
+                                //поехать к накопителю (багаж отдавать не надо) 
+                                GoPath(GoToVertexAlone, car, bsc.StorageVertex);
+
+                                car.CountOfBaggage = 0;
+                                car.Status = Status.Free;
+                                //едем на стоянку
+                                GoPathHome(GoToVertexAlone, car, 10, tokens[car.BaggageCarID]);
+                            }));
+                           
+
+                        }
+                    }
+
+                    foreach(Task t in tasks)
+                    {
+                        t.Start();
+                    }
+
+                    //ждём, пока все машины не завершат работу
+                    while (carsEndWork != 0)
+                    {
+                        source.CreateToken().Sleep(100);
+                    }
+                    //отправляем СНО сообщение о том, что обслуживание самолёта завершено
+                    ServiceCompletionMessage mes = new ServiceCompletionMessage()
+                    {
+                        Component = Component.Baggage,
+                        PlaneId = bsc.PlaneId
+                    };
+                    mqClient.Send<ServiceCompletionMessage>(queueToGroundService, mes);
+                });
                 
-
-                if (bsc.Action == TransferAction.Give)
-                {
-                    while (numOfCars > 0)
-                    {
-                        BaggageCar car = SearchFreeCar();
-
-                        //поехать к накопителю TODO
-                        ToStorageRequest(car.BaggageCarID, bsc.FlightId, BaggageCar.MaxCountOfBaggage );
-                        //поехать к самолёту TODO
-                        TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
-                        car.CountOfBaggage = 0;
-                        car.Status = Status.Free;
-                        //вернуться на стоянку TODO
-                        numOfCars--;
-                    }
-
-                }
-                else if(bsc.Action == TransferAction.Take)
-                {
-                    while (numOfCars > 0)
-                    {
-                        BaggageCar car = SearchFreeCar();
-
-                        //поехать к самолёту TODO
-                        TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
-                        //поехать к накопителю (багаж отдавать не надо) TODO
-                        car.CountOfBaggage = 0;
-                        car.Status = Status.Free;
-                        //едем на стоянку TODO
-                        numOfCars--;
-                    }
-                }
             });
         }
 
         private BaggageCar SearchFreeCar()
         {
-            foreach (BaggageCar bc in cars)
+            //При поиске свободной машины блокируем поиск для других потоков
+            lock (locker)
             {
-                if (bc.Status == Status.Free)
+                BaggageCar car = cars.Values.First(car => car.Status == Status.Free);
+                car.Status = Status.Busy;
+
+                //если не нашли свободную машину, начинаем поиск заново
+                if (car == null)
                 {
-                    bc.Status = Status.Busy;
-                    return bc;
+                    source.CreateToken().Sleep(15);
+                    return SearchFreeCar();
+                }
+                else
+                {
+                    return car;
                 }
             }
-            //если не нашли свободную машину, начинаем поиск заново
-            return SearchFreeCar();
         }
 
     }

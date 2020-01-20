@@ -32,7 +32,7 @@ namespace Baggage
             BaggageCarID = "Baggage-" + id;
             MotionPermitted = false;
             GotAirplaneResponse = false;
-
+            Status = Status.Free;
         }
     }
 }
