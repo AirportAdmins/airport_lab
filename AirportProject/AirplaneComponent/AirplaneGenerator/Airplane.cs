@@ -15,6 +15,12 @@ namespace AirplaneComponent.AirplaneGenerator
             this.model = model;
             this.airplaneID = "Plane-" + id;
             MotionPermitted = false;
+            FoodList = new Dictionary<Food, int>()
+            {
+                { Food.Child, 0},
+                { Food.Standard, 0},
+                { Food.Vegan, 0}
+            };
         }
         public AirplaneModel Model { get => model; }
         public string PlaneID { get => airplaneID; }
@@ -31,7 +37,8 @@ namespace AirplaneComponent.AirplaneGenerator
         public int BaggageAmount { get; set; }
         public int FuelAmount { get; set; }
         public bool IsDeiced { get; set; }
-        public List<Tuple<Food,int>> FoodList { get; set; }
+
+        public Dictionary<Food,int> FoodList { get; set; }
 
     }
 }

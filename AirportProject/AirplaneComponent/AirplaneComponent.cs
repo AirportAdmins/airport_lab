@@ -87,16 +87,38 @@ namespace AirplaneComponent
             mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
                      FollowAction(mes));
             mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
-                     airplanes[mes.PlaneId].IsDeiced = true);
+            {
+                lock (airplanes[mes.PlaneId])
+                {
+                    airplanes[mes.PlaneId].IsDeiced = true;
+                }
+            });
             mqClient.SubscribeTo<RefuelCompletion>(queuesFrom[Component.FuelTruck], mes =>  //fueltruck
-                     airplanes[mes.PlaneId].FuelAmount += mes.Fuel);
+            {
+                lock (airplanes[mes.PlaneId])
+                {
+                    airplanes[mes.PlaneId].FuelAmount += mes.Fuel;
+                }
+            });
             mqClient.SubscribeTo<CateringCompletion>(queuesFrom[Component.Catering], mes => //catering
-                     airplanes[mes.PlaneId].FoodList = mes.FoodList);
+            {
+                lock(airplanes[mes.PlaneId])
+                { 
+                    var foodList = airplanes[mes.PlaneId].FoodList;
+                    foreach(var foodInput in mes.FoodList)
+                    {
+                        foodList[foodInput.Item1] += foodInput.Item2;
+                    }
+                }
+            });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
                      Departure(mes));
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
             {
-                airplanes[mes.ObjectId].MotionPermitted = true;
+                lock (airplanes[mes.ObjectId])
+                {
+                    airplanes[mes.ObjectId].MotionPermitted = true;
+                }
             });
         }
         ///<summary>
@@ -121,35 +143,41 @@ namespace AirplaneComponent
         void BusTransferResponse(PassengerTransferRequest req)
         {
             Airplane plane = airplanes[req.PlaneId];
-            if (req.Action == TransferAction.Take)
+            lock (plane)
             {
-                mqClient.Send<PassengersTransfer>(queuesTo[Component.Bus], new PassengersTransfer()
+                if (req.Action == TransferAction.Take)
                 {
-                    BusId = req.BusId,
-                    PassengerCount = req.PassengersCount
-                });
-                plane.Passengers -= req.PassengersCount;
-            }
-            else
-            {
-                plane.Passengers += req.PassengersCount;
+                    mqClient.Send<PassengersTransfer>(queuesTo[Component.Bus], new PassengersTransfer()
+                    {
+                        BusId = req.BusId,
+                        PassengerCount = req.PassengersCount
+                    });
+                    plane.Passengers -= req.PassengersCount;
+                }
+                else
+                {
+                    plane.Passengers += req.PassengersCount;
+                }
             }
         }
         void BaggageTransferResponse(BaggageTransferRequest req)
         {
             Airplane plane = airplanes[req.PlaneId];
-            if (req.Action == TransferAction.Take)
+            lock (plane)
             {
-                mqClient.Send<BaggageTransfer>(queuesTo[Component.Baggage], new BaggageTransfer()
+                if (req.Action == TransferAction.Take)
                 {
-                    BaggageCarId = req.BaggageCarId,
-                    BaggageCount = req.BaggageCount
-                });
-                plane.BaggageAmount -= req.BaggageCount;
-            }
-            else
-            {
-                plane.BaggageAmount += req.BaggageCount;
+                    mqClient.Send<BaggageTransfer>(queuesTo[Component.Baggage], new BaggageTransfer()
+                    {
+                        BaggageCarId = req.BaggageCarId,
+                        BaggageCount = req.BaggageCount
+                    });
+                    plane.BaggageAmount -= req.BaggageCount;
+                }
+                else
+                {
+                    plane.BaggageAmount += req.BaggageCount;
+                }
             }
         }
         void AirplaneServiceCommand(Airplane plane)
