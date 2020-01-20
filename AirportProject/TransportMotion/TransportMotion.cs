@@ -66,12 +66,13 @@ namespace TransportMotion
                 GoToVertex(car, path[i + 1]);
             }
         }
-        public void GoPathFree(ICar car, int destinationVertex, AutoResetEvent breakEvent) 
+        public void GoPathFree(ICar car, int destinationVertex, CancellationToken token) 
         {
             var path = map.FindShortcut(car.LocationVertex, destinationVertex);
             for (int i = 0; i < path.Count - 1; i++)
             {
-                breakEvent.WaitOne((int)(5*timeFactor));  //
+                if (token.IsCancellationRequested)
+                    break;
                 GoToVertex(car, path[i + 1]);
             }
         }
@@ -85,7 +86,7 @@ namespace TransportMotion
             while (position < distance)                     //go
             {
                 position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
-                Thread.Sleep(motionInterval);
+                source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
             car.MotionPermission = new AutoResetEvent(false);

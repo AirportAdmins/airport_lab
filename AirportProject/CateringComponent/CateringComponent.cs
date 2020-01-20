@@ -18,10 +18,11 @@ namespace CateringComponent
         Dictionary<string, string> queuesTo;
 
         ConcurrentDictionary<string, CateringCar> cars;
-        ConcurrentQueue<CateringServiceCommand> commands;
+        ConcurrentDictionary<string, CancellationTokenSource> tokens;   //to break if free car needed
+        ConcurrentQueue<CateringServiceCommand> commands;               //queue with tasks for cars
         TransportMotion.TransportMotion transportMotion;
-        List<AutoResetEvent> wakeEvents = new List<AutoResetEvent>();
-        ConcurrentDictionary<string, CountdownEvent> completionEvents;
+        List<AutoResetEvent> wakeEvents = new List<AutoResetEvent>();   //to wake all cars
+        ConcurrentDictionary<string, CountdownEvent> completionEvents;  //to know the command was completed
         RabbitMqClient mqClient;
         Map map = new Map();
         PlayDelaySource playDelaySource;
@@ -36,6 +37,7 @@ namespace CateringComponent
             cars = new ConcurrentDictionary<string, CateringCar>();
             commands = new ConcurrentQueue<CateringServiceCommand>();
             completionEvents = new ConcurrentDictionary<string, CountdownEvent>();
+            tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
             playDelaySource = new PlayDelaySource(timeFactor);
             transportMotion = new TransportMotion.TransportMotion(Component.Catering, mqClient);            
         }
@@ -54,6 +56,7 @@ namespace CateringComponent
                 wakeEvents.Add(new AutoResetEvent(false));
                 var cateringCar = new CateringCar(i);
                 cars.TryAdd(cateringCar.CarId, cateringCar);
+                tokens.TryAdd(cateringCar.CarId, new CancellationTokenSource());
                 DoCatering(cateringCar, wakeEvents[i]).Start();
             }
         }
@@ -160,7 +163,7 @@ namespace CateringComponent
                         PlaneId = car.PlaneId
                     });
                     completionEvents[car.PlaneId].Signal();
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), wakeEvent);
+                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
                 }
                 wakeEvent.Reset();                      //turn to wait again
             }
