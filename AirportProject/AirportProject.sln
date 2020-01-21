@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrappe
 EndProject
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeServiceComponent", "TimeServiceComponent\TimeServiceComponent.csproj", "{2C400E24-210C-4B5C-B314-C86F20DE0CEA}"
 =======
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerComponent", "PassengerComponent\PassengerComponent.csproj", "{FE0899DF-F007-44C7-9B8E-29D29040DFB1}"
@@ -16,6 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerComponent", "Passe
 =======
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StorageComponent", "StorageComponent\StorageComponent.csproj", "{21C197C5-2463-43A3-BD3D-B9EBA7B6BB75}"
 >>>>>>> 68bf725f48fb9f8cb77400e5d5987f0a1b539a14
+=======
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FollowMeComponent", "FollowMeComponent\FollowMeComponent.csproj", "{34B208FC-9B97-4E80-A801-88F30AAF8B7E}"
+>>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +35,7 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -53,6 +58,12 @@ Global
 		{21C197C5-2463-43A3-BD3D-B9EBA7B6BB75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21C197C5-2463-43A3-BD3D-B9EBA7B6BB75}.Release|Any CPU.Build.0 = Release|Any CPU
 >>>>>>> 68bf725f48fb9f8cb77400e5d5987f0a1b539a14
+=======
+		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Release|Any CPU.Build.0 = Release|Any CPU
+>>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
