@@ -22,7 +22,8 @@ namespace AirplaneComponent
         Map map = new Map();
         PlayDelaySource source;
         double timeFactor = 1;
-        
+        Random rand = new Random();
+
         public AirplaneComponent()
         {
             airplanes = new ConcurrentDictionary<string, Airplane>();
@@ -34,9 +35,11 @@ namespace AirplaneComponent
             mqClient = new RabbitMqClient();
             CreateQueues();
             DeclareQueues();
-            mqClient.PurgeQueues(queuesFrom[Component.Schedule],queuesTo[Component.Schedule]);
+            mqClient.PurgeQueues(queuesFrom.Values.ToArray());
+            mqClient.PurgeQueues(queuesTo.Values.ToArray());
             Subscribe();
-            //Console.WriteLine("Okay");            
+
+
         }
 
         void CreateQueues()
@@ -48,8 +51,9 @@ namespace AirplaneComponent
                 { Component.Baggage, Component.Airplane + Component.Baggage },
                 { Component.FollowMe, Component.Airplane + Component.FollowMe },
                 { Component.Logs, Component.Airplane + Component.Logs },
-                { Component.Visualizer, Component.Airplane + Component.Visualizer },
-                {Component.GroundMotion, Component.Airplane+Component.GroundMotion }
+                { Component.Visualizer, Component.Visualizer},
+                { Component.GroundMotion, Component.Airplane+Component.GroundMotion },
+                { Component.GroundService, Component.Airplane+Component.GroundService }
             };
             queuesFrom = new Dictionary<string, string>()
             {
@@ -102,10 +106,10 @@ namespace AirplaneComponent
             });
             mqClient.SubscribeTo<CateringCompletion>(queuesFrom[Component.Catering], mes => //catering
             {
-                lock(airplanes[mes.PlaneId])
-                { 
+                lock (airplanes[mes.PlaneId])
+                {
                     var foodList = airplanes[mes.PlaneId].FoodList;
-                    foreach(var foodInput in mes.FoodList)
+                    foreach (var foodInput in mes.FoodList)
                     {
                         foodList[foodInput.Item1] += foodInput.Item2;
                     }
@@ -126,6 +130,7 @@ namespace AirplaneComponent
         ///<summary
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
+            Console.WriteLine("Got request");
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
             if (airplanes.TryAdd(airplane.PlaneID, airplane))
             {
@@ -137,6 +142,7 @@ namespace AirplaneComponent
                     });
                 airplane.LocationVertex = GetVertexToLand();
                 Land(airplane);
+                Console.WriteLine("I landed in vertex " + airplane.LocationVertex);
                 AirplaneServiceCommand(airplane);
             }
         }
@@ -187,7 +193,7 @@ namespace AirplaneComponent
                 {
                     LocationVertex = plane.LocationVertex,
                     PlaneId = plane.PlaneID,
-                    FlightId= plane.FlightID,
+                    FlightId = plane.FlightID,
                     Needs = new List<Tuple<AirplaneNeeds, int>>()
                     {
                         Tuple.Create(AirplaneNeeds.PickUpPassengers,plane.Passengers),
@@ -202,12 +208,13 @@ namespace AirplaneComponent
             double position = 0;
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
-            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);
+            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);           
+            Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
             Task task = Task.Run(() =>
             {
                 while (position < distance)
                 {
-                    position += Airplane.SpeedOnGround/3.6/1000 * timeInterval * timeFactor;
+                    position += Airplane.SpeedOnGround / 3.6 / 1000 * timeInterval * timeFactor;
                     source.CreateToken().Sleep(timeInterval);
                 };
                 SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
@@ -217,7 +224,8 @@ namespace AirplaneComponent
                     PlaneId = plane.PlaneID,
                     FollowMeId = cmd.FollowMeId,
                     LocationVertex = plane.LocationVertex
-                });                
+                });
+                Console.WriteLine("In vertex " + plane.LocationVertex);
             });
         }
         void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)
@@ -232,7 +240,7 @@ namespace AirplaneComponent
             });
         }
 
-        void Departure(DepartureSignal signal)  
+        void Departure(DepartureSignal signal)
         {
             FlyAway(airplanes[signal.PlaneId]);
         }
@@ -252,7 +260,9 @@ namespace AirplaneComponent
             double position = 0;
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
-            SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
+            Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
+            SendVisualizationMessage(plane, DestinationVertex, 1);
+            Console.WriteLine("Send vs message");
             Task task = Task.Run(() =>
             {
                 while (position < distance)
@@ -261,6 +271,7 @@ namespace AirplaneComponent
                     source.CreateToken().Sleep(timeInterval);
                 };
                 SendVisualizationMessage(plane, DestinationVertex, 0);
+                Console.WriteLine("Send vs message");
                 mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
                 {
                     Action = MotionAction.Free,
@@ -271,6 +282,8 @@ namespace AirplaneComponent
                 });
                 plane.LocationVertex = DestinationVertex;
                 plane.MotionPermitted = false;
+                Console.WriteLine("In vertex " + DestinationVertex);
+
             });
         }
         void WaitForMotionPermission(Airplane airplane, int DestinationVertex)
@@ -289,17 +302,22 @@ namespace AirplaneComponent
                 source.CreateToken().Sleep(5);
         }
 
-        int GetDistance(int locationVertex, int destinationVertex)   
+        int GetDistance(int locationVertex, int destinationVertex)
         {
             return map.Graph.GetWeightBetweenNearVerties(locationVertex, destinationVertex);
         }
         int GetVertexToLand()
         {
-            Random rand = new Random();
-            List<int> vertexes = new List<int>() { 1, 2, 3 };
-            return vertexes[rand.Next(0, 2)];
+
+            lock (rand)
+            {
+                List<int> vertexes = new List<int>() { 1, 2, 3 };
+                return vertexes[rand.Next(0, 3)];
+            }
         }
-        
+        }
     }
-}
+
+    
+
 
