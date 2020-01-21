@@ -86,10 +86,10 @@ namespace TransportMotion
             while (position < distance)                     //go
             {
                 position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
-                Thread.Sleep(motionInterval);
+                source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermitted = false;
+            car.MotionPermission = new AutoResetEvent(false);
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
@@ -113,8 +113,8 @@ namespace TransportMotion
                     StartVertex = StartVertex
                 });
 
-            while (!car.MotionPermitted)               //check if car can go
-                Thread.Sleep(5);
+            car.MotionPermission.WaitOne();
+            car.MotionPermission.Reset();
         }
 
         public int GetHomeVertex()
