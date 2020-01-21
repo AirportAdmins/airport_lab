@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿using RabbitMqWrapper;
 using System;
 using System.Text;
