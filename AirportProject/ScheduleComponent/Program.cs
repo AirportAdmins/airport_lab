@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿using RabbitMqWrapper;
 using System;
 using System.Text;
@@ -109,6 +110,15 @@ namespace ScheduleComponent
         {
 
 >>>>>>> 7cd70f0cea4d36b1993df4833296854c218b4a34
+=======
+﻿namespace ScheduleComponent
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            new ScheduleComponent().Start();
+>>>>>>> 8a4d2c93d312db48d8849b1e37cd1a75ec23596c
         }
     }
 }
