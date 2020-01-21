@@ -16,11 +16,14 @@ namespace FuelTruck
         public Status Status { get; set; } //0 - свободна
 
         public static int Speed { get => 50; }
+        public bool MotionPermitted { get; set; }
         public int Position { get; set; }
         public int FuelOnBoard;
         public const int MaxFuelOnBoard = 1000;
 
-        public int LocationVertex { get; set; }
+        
+
+
 
     }
 }

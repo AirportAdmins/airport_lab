@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using RabbitMqWrapper;
 using AirportLibrary;
 using AirportLibrary.DTO;
+using AirportLibrary.Delay;
+using AirportLibrary.Graph;
 using System.Threading;
 
 namespace FuelTruck
@@ -36,17 +38,30 @@ namespace FuelTruck
         const int carCount = 3; //Количество машинок
         public string logMessage = "Проинициализировались, кол-во машинок: " + carCount;
 
+        delegate void GoToVertexAction(FuelTruckCars ftc, int DestinationVertex);
+        PlayDelaySource source;
+        ConcurrentDictionary<string, CancellationTokenSource> tokens;
+
 
         //Конструктор. Создаем машинки
         public FuelTruck()
         {
+            tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
+            source = new PlayDelaySource(timeCoef);
             mqClient = new RabbitMqClient();
             Dictionary<int, FuelTruckCars> cars = new Dictionary<int, FuelTruckCars>();
             //переделать в словарь
             for (int i=1; i <= carCount; i++)
             {
-                cars.Add(i, new FuelTruckCars() { intCarID = i, CarID = "FuelTruck #" + i,
-                    Position = 19, Status = Status.Free, FuelOnBoard = FuelTruckCars.MaxFuelOnBoard});
+                cars.Add(i, new FuelTruckCars()
+                {
+                    intCarID = i,
+                    CarID = "FuelTruck #" + i,
+                    Position = 19,
+                    Status = Status.Free,
+                    FuelOnBoard = FuelTruckCars.MaxFuelOnBoard,
+                    MotionPermitted = false
+                });
             }
         }    //ВАЖНАЯ ВЕЩЬ. В ДАННЫЙ МОМЕНТ НЕТ НЕОБХОДИМОСТИ В КОЛ-ВЕ ТОПЛИВА, Т.К. ОДИН МАШИНКА ЗАПРАВЛЯЕТ ОДИН САМОЛЕТ И ПОТОМ ЕДЕТ ДОМОЙ          
 
@@ -75,6 +90,34 @@ namespace FuelTruck
             return numOfCar;
         }
 
+        private void WaitForMotionPermission(int curCar, int DestinationVertex)
+        {
+            mqClient.Send<MotionPermissionRequest>(Component.FuelTruck, //permission request
+                new MotionPermissionRequest()
+                {
+                    Action = MotionAction.Occupy,
+                    Component = Component.FuelTruck,
+                    DestinationVertex = DestinationVertex,
+                    ObjectId = cars[curCar].CarID,
+                    StartVertex = cars[curCar].Position
+                }) ;
+
+            while (cars[curCar].MotionPermitted)               //check if baggacar can go
+                source.CreateToken().Sleep(5);
+        }
+
+        private void MotionPermissionResponse()
+        {
+            mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
+            {
+                for (int i = 1; i <= carCount; i++)
+                {
+                    if (cars[i].CarID == mpr.ObjectId)
+                        cars[i].MotionPermitted = true;
+                }
+            });
+        }
+
         //Проверяем свободен ли граф. Отмечает что блокируем его
         public bool canFuelTruckGo(int f1rs, int s3cond, int currCar) //0-полная, 1 done
         {
@@ -94,7 +137,10 @@ namespace FuelTruck
             ///////////тут я получаю ответ
             mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
             {
-                yesNo = true;
+                if (mpr.ObjectId == cars[currCar].CarID)
+                {
+                    yesNo = true;
+                }                
             });
             //ВОПРОС! МЕТОД ЖДЕТ ОТВЕТА ИЛИ СРАЗУ ВОЗВРАЩАЕТ ЧТО-ТО? Он же понимает какой именно машинке даёт ответ
 
@@ -112,14 +158,9 @@ namespace FuelTruck
             shortCut.Add(1000);
             var shortCutArray = shortCut.ToArray();
 
-            for (int i = 0; i < shortCutArray.Length; i++) //идём по нашему пути
+            for (int i = 0; i < shortCutArray.Length - 1; i++) //идём по нашему пути
             {
-                while (!canFuelTruckGo(i, i+1, currentlyCar))//проверяем свободно ли
-                {
-                    Thread.Sleep(Convert.ToInt32(5000 * timeCoef)); //ВРЕМЯ СНА ????????????????????????????
-                }
-                
-                //ТУТ ДВИЖЕНИЕ МАШИНКИ В СТОРОНУ САМОЛЕТА. НУЖНО РАЗОБРАТЬСЯ С ДЕЛЕЕМ
+                WaitForMotionPermission();
             }
         }
 
@@ -178,6 +219,15 @@ namespace FuelTruck
             });
         }
 
-        
+        private void TakeTimeSpeedFactor()
+        {
+            mqClient.SubscribeTo<NewTimeSpeedFactor>(queueFromTimeService, (ntsf) =>
+            {
+                timeCoef = ntsf.Factor;
+                source.TimeFactor = timeCoef;
+            });
+        }
+
+
     }
 }

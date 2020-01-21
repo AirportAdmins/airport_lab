@@ -40,9 +40,11 @@ namespace AirportLibrary.Graph
     public class Graph<T>
     {
         public List<Vertex<T>> Vertices { get; }
+        public List<Edge<T>> Edges { get; }
         public Graph()
         {
             Vertices = new List<Vertex<T>>();
+            Edges = new List<Edge<T>>();
         }
         public void AddVertex(T id)
         {
@@ -71,9 +73,22 @@ namespace AirportLibrary.Graph
             if (vertex1 != null && vertex2 != null)
             {
                 var currEdge = new Edge<T>(new Tuple<Vertex<T>, Vertex<T>>(vertex1, vertex2), weight);
+                Edges.Add(currEdge);
                 vertex1.AddEdge(currEdge);
-                vertex1.AddEdge(currEdge);
+                vertex2.AddEdge(currEdge);
             }
+        }
+        public int GetWeightBetweenNearVerties(T v1, T v2)
+        {
+            Vertex<T> vertex1 = FindVertex(v1);
+            Vertex<T> vertex2 = FindVertex(v2);
+
+            foreach (Edge<T> edge in FindVertex(v1).Edges)
+            {
+                if (edge.GetOppsiteVertex(vertex1) == vertex2)
+                    return edge.Weight;
+            }
+            return -1;
         }
     }
 
@@ -165,4 +180,8 @@ namespace AirportLibrary.Graph
             return null;
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> cdbd0e28891b5f543a94421de0cb78369a3c83d7
