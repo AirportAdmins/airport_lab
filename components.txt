@@ -1,2 +1,5 @@
+CashboxComponent
+PassengerComponent
+TimetableComponent
 ScheduleComponent
 TimeServiceComponent
