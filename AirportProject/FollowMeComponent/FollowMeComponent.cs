@@ -47,8 +47,7 @@ namespace FollowMeComponent
             for (int i = 0; i < countCars; i++)
             {
                 var followme = new FollowMeCar(i);
-                cars.TryAdd(followme.FollowMeId, followme);
-                tokens.TryAdd(followme.FollowMeId, new CancellationTokenSource());
+                cars.TryAdd(followme.FollowMeId, followme);                
             }
         }
         void CreateQueues()
@@ -66,7 +65,7 @@ namespace FollowMeComponent
                 { Component.Logs,Component.Logs+Component.FollowMe },
                 { Component.GroundService,Component.FollowMe+Component.GroundService },
                 { Component.GroundMotion,Component.FollowMe+Component.GroundMotion },
-                { Component.Visualizer,Component.FollowMe+Component.Visualizer }
+                { Component.Visualizer,Component.Visualizer }
             };
         }
         void DeclareQueues()
@@ -126,8 +125,11 @@ namespace FollowMeComponent
                 });
                 SendToLogs("Completed servicing airplane ID " + cmd.PlaneId);                
                 followme.Status = Status.Free;
-                var token = tokens[followme.FollowMeId].Token;
-                GoPathHome(followme, GetHomeVertex(), token);
+
+                var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
+                tokens.TryAdd(followme.FollowMeId, source);
+                GoPathHome(followme, GetHomeVertex(), source.Token);
+                tokens.Remove(followme.FollowMeId, out source);
             });                                                         
         }
         void GoPathHome(FollowMeCar followme, int destinationVertex,
