@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace DeicingComponent
 {
-    partial class DaicingComponent
+    partial class DeicingComponent
     {
         delegate void GoToVertexAction(DeicingCar baggage, int DestinationVertex);
 
@@ -24,28 +24,25 @@ namespace DeicingComponent
         int motionInterval = 100;       //ms
 
 
-        const string queueFromTimeService = Component.TimeService + Component.Baggage;
-        const string queueFromGroundService = Component.GroundService + Component.Baggage;
-        const string queueFromGroundMotion = Component.GroundMotion + Component.Baggage;
-        const string queueFromStorage = Component.Storage + Component.Baggage;
-        const string queueFromAirPlane = Component.Airplane + Component.Baggage;
+        const string queueFromTimeService = Component.TimeService + Component.Deicing;
+        const string queueFromGroundService = Component.GroundService + Component.Deicing;
+        const string queueFromGroundMotion = Component.GroundMotion + Component.Deicing;
 
-        const string queueToAirPlane = Component.Baggage + Component.Airplane;
-        const string queueToLogs = Component.Baggage + Component.Logs;
-        const string queueToGroundMotion = Component.Baggage + Component.GroundMotion;
-        const string queueToGroundService = Component.Baggage + Component.GroundService;
-        const string queuetoStorage = Component.Baggage + Component.Storage;
-        const string queueToVisualizer = Component.Baggage + Component.Visualizer;
+        const string queueToAirPlane = Component.Deicing + Component.Airplane;
+        const string queueToLogs = Component.Deicing + Component.Logs;
+        const string queueToGroundMotion = Component.Deicing + Component.GroundMotion;
+        const string queueToGroundService = Component.Deicing + Component.GroundService;
+        const string queueToVisualizer = Component.Deicing + Component.Visualizer;
 
         public RabbitMqClient mqClient;
 
         public readonly List<string> queues = new List<string>
         {
-            queueFromTimeService, queueFromGroundService, queueFromGroundMotion,  queueFromStorage, queueFromAirPlane, queueToAirPlane, queueToLogs, queueToGroundMotion,queueToGroundService, queuetoStorage, queueToVisualizer
+            queueFromTimeService, queueFromGroundService, queueFromGroundMotion, queueToAirPlane, queueToLogs, queueToGroundMotion,queueToGroundService, queueToVisualizer
         };
 
 
-        public DaicingComponent()
+        public DeicingComponent()
         {
             cars = new ConcurrentDictionary<string, DeicingCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
