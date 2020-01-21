@@ -43,8 +43,11 @@ namespace RabbitMqWrapper
         }
 <<<<<<< HEAD
 
+<<<<<<< HEAD
 =======
 >>>>>>> da26124704ff288c4d712cf9e44ffa68a655edfb
+=======
+>>>>>>> 263ed215ba5b69d9f8de844354180c6c63c7d5cc
         public void PurgeQueues(params string[] queues)
         {
             foreach (var queue in queues)
@@ -53,9 +56,12 @@ namespace RabbitMqWrapper
             }
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> da26124704ff288c4d712cf9e44ffa68a655edfb
+=======
+>>>>>>> 263ed215ba5b69d9f8de844354180c6c63c7d5cc
         public void Send<T>(string queueName, T message)
         {
             var json = JsonConvert.SerializeObject(message);
