@@ -12,6 +12,7 @@ namespace ScheduleComponent
     class Program
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
@@ -87,6 +88,11 @@ namespace ScheduleComponent
 
             Console.ReadLine();
             mqClient.Dispose();
+=======
+        static void Main(string[] args)
+        {
+
+>>>>>>> 7cd70f0cea4d36b1993df4833296854c218b4a34
         }
     }
 }
