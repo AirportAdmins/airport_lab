@@ -13,9 +13,12 @@ namespace ScheduleComponent
     {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
+=======
+>>>>>>> c477c3d1593fd85d1504cbdb24e7fce6808b38ba
         static double timeFactor = 1.0;
         static readonly PlayDelaySource delaySource = new PlayDelaySource(timeFactor);
 
@@ -23,6 +26,7 @@ namespace ScheduleComponent
         const int NUMBER_OF_SLEEPS = 10;
 
         static int countOfSleepingThreads = 0;
+<<<<<<< HEAD
         
 <<<<<<< HEAD
 =======
@@ -31,14 +35,20 @@ namespace ScheduleComponent
         const string QUEUE_NAME1 = "hello";
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
+=======
+
+>>>>>>> c477c3d1593fd85d1504cbdb24e7fce6808b38ba
         static void Main(string[] args)
         {
             var mqClient = new RabbitMqClient();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
+=======
+>>>>>>> c477c3d1593fd85d1504cbdb24e7fce6808b38ba
             var timeQueue = Component.TimeService + Component.Schedule;
             var factorQueue = timeQueue + "factor";
             mqClient.DeclareQueues(timeQueue, factorQueue);
@@ -46,6 +56,7 @@ namespace ScheduleComponent
 <<<<<<< HEAD
             mqClient.SubscribeTo<CurrentPlayTime>(timeQueue, (mes) =>
             {
+<<<<<<< HEAD
 =======
             mqClient.PurgeQueues(QUEUE_NAME, QUEUE_NAME1);
 
@@ -54,6 +65,8 @@ namespace ScheduleComponent
             {
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
+=======
+>>>>>>> c477c3d1593fd85d1504cbdb24e7fce6808b38ba
                 //Console.WriteLine($"Queue thread id: {Thread.CurrentThread.ManagedThreadId}");
                 if (countOfSleepingThreads < NUMBER_OF_SLEEPS && new Random().NextDouble() < 0.9)
                 {
@@ -82,9 +95,12 @@ namespace ScheduleComponent
                 delaySource.TimeFactor = mes.Factor;
             });
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 7d53ec5670118ce6a98767c53196f0530aefbd67
+=======
+>>>>>>> c477c3d1593fd85d1504cbdb24e7fce6808b38ba
 
             Console.ReadLine();
             mqClient.Dispose();
