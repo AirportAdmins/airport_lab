@@ -28,7 +28,7 @@ namespace Baggage
 
         public BaggageCar(int id)
         {
-            Position = 10; 
+            Position = RandomHomeVertex.GetHomeVertex(); 
             BaggageCarID = "Baggage-" + id;
             MotionPermitted = false;
             GotAirplaneResponse = false;

@@ -29,15 +29,14 @@ namespace Baggage
         Map map = new Map();
 
         double TimeSpeedFactor = 1;
-        int commonIdCounter = 0;
         int motionInterval = 100;       //ms
+
 
         const string queueFromTimeService = Component.TimeService + Component.Baggage;
         const string queueFromGroundService = Component.GroundService + Component.Baggage;
         const string queueFromGroundMotion = Component.GroundMotion + Component.Baggage;
         const string queueFromStorage = Component.Storage + Component.Baggage;
         const string queueFromAirPlane = Component.Airplane + Component.Baggage;
-        const string queueFromVisualizer = Component.Visualizer + Component.Baggage;
 
         const string queueToAirPlane = Component.Baggage + Component.Airplane;
         const string queueToLogs = Component.Baggage + Component.Logs;
@@ -48,11 +47,6 @@ namespace Baggage
 
         public RabbitMqClient mqClient;
 
-        public string planeID;
-        public int baggageCount;
-        public string BcarId;
-        public int StorVertex;
-        public int PlaneVertex;
         public readonly List<string> queues = new List<string>
         {
             queueFromTimeService, queueFromGroundService, queueFromGroundMotion,  queueFromStorage, queueFromAirPlane, queueToAirPlane, queueToLogs, queueToGroundMotion,queueToGroundService, queuetoStorage, queueToVisualizer
@@ -193,6 +187,6 @@ namespace Baggage
             });
         }
 
-
+        
     }
 }

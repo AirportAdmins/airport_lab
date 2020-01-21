@@ -101,7 +101,7 @@ namespace Baggage
                                 carsEndWork--; //машина обслужила самолёт
 
                                 //вернуться на стоянку
-                                GoPathHome(GoToVertexAlone, car, 10, tokens[car.BaggageCarID]);
+                                GoPathHome(GoToVertexAlone, car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
 
 
 
@@ -130,7 +130,7 @@ namespace Baggage
                                 car.CountOfBaggage = 0;
                                 car.Status = Status.Free;
                                 //едем на стоянку
-                                GoPathHome(GoToVertexAlone, car, 10, tokens[car.BaggageCarID]);
+                                GoPathHome(GoToVertexAlone, car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
                             }));
                            
 
