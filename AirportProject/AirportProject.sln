@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeServiceComponent", "Tim
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimetableComponent", "TimetableComponent\TimetableComponent.csproj", "{10D92438-7F96-4AE6-9DEF-CED862F87E8A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerComponent", "PassengerComponent\PassengerComponent.csproj", "{FE0899DF-F007-44C7-9B8E-29D29040DFB1}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CashboxComponent", "CashboxComponent\CashboxComponent.csproj", "{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}"
 EndProject
 Global

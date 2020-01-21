@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Text;
 
-namespace TimetableComponent
+namespace PassengerComponent
 {
     class Program
     {
         static void Main(string[] args)
         {
-            new TimetableComponent().Start();
+            new PassengerComponent().Start();
         }
     }
 }

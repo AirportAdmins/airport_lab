@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,8 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
     <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
+    <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
   </ItemGroup>
-
 </Project>
