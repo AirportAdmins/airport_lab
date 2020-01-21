@@ -127,11 +127,10 @@ namespace ScheduleComponent
                             Console.WriteLine($"DepartureTime: {flight.DepartureTime}");
                             Console.WriteLine($"TicketCount: {flight.Model.Seats}");
                             Console.WriteLine();
-                            mqClient.Send(ScheduleToGroundServiceQueue, new AirplaneServiceSignal()
+                            mqClient.Send(ScheduleToGroundServiceQueue, new AirplaneDepartureTimeSignal()
                             {
                                 FlightId = flight.FlightId,
-                                PlaneId = flight.PlaneId,
-                                Signal = ServiceSignal.Departure
+                                PlaneId = flight.PlaneId
                             });
                         }
                     } catch (Exception e)
