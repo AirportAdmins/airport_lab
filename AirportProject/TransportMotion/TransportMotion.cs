@@ -48,7 +48,10 @@ namespace TransportMotion
         void Subscribe()
         {
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                    timeFactor = mes.Factor);       
+            {
+                timeFactor = mes.Factor;
+                source.TimeFactor = timeFactor;
+                });       
         }
        
         public void GoPath(ICar car, int destinationVertex)     
@@ -79,7 +82,7 @@ namespace TransportMotion
             while (position < distance)                     //go
             {
                 position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
-                Thread.Sleep(motionInterval);
+                source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
             car.MotionPermitted = false;
@@ -107,7 +110,7 @@ namespace TransportMotion
                 });
 
             while (!car.MotionPermitted)               //check if car can go
-                Thread.Sleep(5);
+                source.CreateToken().Sleep(5);
         }
 
         public int GetHomeVertex()
