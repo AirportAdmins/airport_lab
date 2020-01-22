@@ -52,13 +52,19 @@ namespace RabbitMqWrapper
 
         public void Send<T>(string queueName, T message)
         {
-            var json = JsonConvert.SerializeObject(message);
-            var rawMessage = Encoding.UTF8.GetBytes(json);
+            try
+            {
+                var json = JsonConvert.SerializeObject(message);
+                var rawMessage = Encoding.UTF8.GetBytes(json);
 
-            mqChannel.BasicPublish(exchange: "",
-                routingKey: queueName,
-                basicProperties: null,
-                body: rawMessage);
+                mqChannel.BasicPublish(exchange: "",
+                    routingKey: queueName,
+                    basicProperties: null,
+                    body: rawMessage);
+            } catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public void SubscribeTo<T>(string queueName, Action<T> messageHandler)
@@ -66,10 +72,16 @@ namespace RabbitMqWrapper
             var consumer = new EventingBasicConsumer(mqChannel);
             consumer.Received += (model, ea) =>
             {
-                var respBody = ea.Body;
-                var respMessage = Encoding.UTF8.GetString(respBody);
-                var obj = JsonConvert.DeserializeObject<T>(respMessage);
-                messageHandler(obj);
+                try
+                {
+                    var respBody = ea.Body;
+                    var respMessage = Encoding.UTF8.GetString(respBody);
+                    var obj = JsonConvert.DeserializeObject<T>(respMessage);
+                    messageHandler(obj);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             };
             
             mqChannel.BasicConsume(queue: queueName,
