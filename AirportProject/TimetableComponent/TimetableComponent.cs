@@ -65,7 +65,7 @@ namespace TimetableComponent
                 {
                     // TODO if flight is departed, then remove it in N minutes
                     timetable.UpdateFlight(mes);
-                    mqClient.Send(TimetableToPassengerQueue, timetable.GetTimetable());
+                    mqClient.Send(TimetableToPassengerQueue, new Timetable() { Flights = timetable.GetTimetable() });
                     if (mes.Status == FlightStatus.Departed)
                     {
                         Task.Run(() =>
