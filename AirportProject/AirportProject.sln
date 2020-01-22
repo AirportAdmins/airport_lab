@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransportMotion", "Transport\TransportMotion.csproj", "{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransportMotion", "TransportMotion\TransportMotion.csproj", "{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
