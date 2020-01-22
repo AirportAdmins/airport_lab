@@ -11,7 +11,7 @@ namespace DeicingComponent
     }
     class DeicingCar
     {
-        public string BaggageCarID { get; }
+        public string DeicingCarID { get; }
         public string PlaneId { get; set; }
         public Status Status { get; set; }
 
@@ -23,7 +23,7 @@ namespace DeicingComponent
         public DeicingCar(int id)
         {
             LocationVertex = RandomHomeVertex.GetHomeVertex();
-            BaggageCarID = "Deicing-" + id;
+            DeicingCarID = "Deicing-" + id;
             MotionPermitted = false;
             Status = Status.Free;
         }

@@ -6,7 +6,8 @@ namespace DeicingComponent
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            DeicingComponent deicing = new DeicingComponent();
+            deicing.Start();
         }
     }
 }
