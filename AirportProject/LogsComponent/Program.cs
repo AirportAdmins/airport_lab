@@ -1,33 +1,39 @@
-﻿//using Microsoft.Extensions.Logging;
-using System;
-using Loggly;
-using Loggly.Config;
+﻿using System;
 using NLog;
+using NLog.Config;
 using NLog.Extensions.Logging;
-
+using AirportLibrary.DTO;
+using AirportLibrary;
 
 namespace LogsComponent
 {
+    public class MyMessage
+    {
+        public string message;
+    }
     class Program
     {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         static void Main(string[] args)
         {
-            var config = LogglyConfig.Instance;
-            config.CustomerToken = "39065107-bd7c-4988-bd93-201709d0cf62";
-            config.ApplicationName = $"MyApp-airport";
-
-            config.Transport.EndpointHostname = "logs-01.loggly.com";
-            config.Transport.EndpointPort = 443;
-            config.Transport.LogTransport = LogTransport.Https;
-
-            var ct = new ApplicationNameTag();
-            ct.Formatter = "application-{0}";
-            config.TagConfig.Tags.Add(ct);
-            ILogglyClient _loggly = new LogglyClient();
-            var logEvent = new LogglyEvent();
-            logEvent.Data.Add("message", "Simple message at {0}", DateTime.Now);
-            _loggly.Log(logEvent);
+            RabbitMqWrapper.RabbitMqClient client = new RabbitMqWrapper.RabbitMqClient();
+            LogsComponent logs = new LogsComponent();
+            logs.Start(client);
+            
+            client.Send<LogMessage>("logs", new LogMessage()
+            {
+                Component=Component.Airplane,
+                Message="airplane mazafaka"
+            });
+            client.Send<LogMessage>("logs", new LogMessage()
+            {
+                Component = Component.FollowMe,
+                Message = "go to vertex alone"
+            });
+            client.Send<LogMessage>("logs", new LogMessage()
+            {
+                Component = Component.Airplane,
+                Message = "aaa"
+            });
         }
         
     }

@@ -7,6 +7,8 @@ using RabbitMqWrapper;
 using System.Collections.Concurrent;
 using AirportLibrary.DTO;
 using NLog;
+using NLog.Config;
+using NLog.Extensions.Logging;
 
 
 namespace LogsComponent
@@ -17,47 +19,38 @@ namespace LogsComponent
 
         RabbitMqClient MqClient;
         Dictionary<string, string> queuesFrom;
-        
-        public void Start()
+        DateTime playTime = DateTime.Now;
+        Logger logger;
+        public void Start(RabbitMqClient client)
         {
-            MqClient = new RabbitMqClient();
+            LogManager.Configuration = new XmlLoggingConfiguration("NLog.config");
+            logger = LogManager.GetCurrentClassLogger();
+            MqClient = client;
             CreateQueues();
             DeclareQueues();
-            //MqClient.PurgeQueues(queuesFrom);
+            MqClient.PurgeQueues(queuesFrom.Values.ToArray());
             Subscribe();
         }
         void CreateQueues()
         {
             queuesFrom = new Dictionary<string, string>()
             {
-                { Component.GroundService, Component.GroundService + Component.Logs},
-                { Component.FollowMe, Component.FollowMe + Component.Logs},
-                { Component.Schedule, Component.Schedule + Component.Logs },
-                { Component.FuelTruck, Component.FuelTruck + Component.Logs },
-                { Component.Catering, Component.Catering +Component.Logs },
-                { Component.Deicing, Component.Deicing + Component.Logs },
-                { Component.GroundMotion,Component.GroundMotion+ Component.Logs },
-                { Component.Bus, Component.Bus + Component.Logs },
-                { Component.Baggage, Component.Baggage + Component.Logs },
-                { Component.Airplane, Component.Baggage + Component.Logs },
-                { Component.Cashbox, Component.Baggage + Component.Logs },
-                { Component.Registration, Component.Baggage + Component.Logs },
-                { Component.Storage, Component.Baggage + Component.Logs },
-                { Component.TimeService, Component.Baggage + Component.Logs },
-                { Component.Passenger, Component.Baggage + Component.Logs },
-                { Component.Timetable, Component.Baggage + Component.Logs },
+                {Component.Airplane, Component.Logs+"for"+Component.Airplane+"service"},
+                {Component.Logs, "logs"},
+                {Component.TimeService,Component.TimeService+Component.Logs }
             };
         }
         void Subscribe()
         {
-           foreach(var queue in queuesFrom.Values)
-           {
-                MqClient.SubscribeTo<LogMessage>(queue, mes => Log(mes));
-           }
+        
+            MqClient.SubscribeTo<LogMessage>("logs", mes => Log(mes));
+
+            MqClient.SubscribeTo<CurrentPlayTime>(queuesFrom[Component.TimeService], mes =>
+                 playTime = mes.PlayTime);
         }
         void Log(LogMessage mes)
         {
-
+            logger.Info(() => playTime.TimeOfDay + " " + mes.Component + ": " + mes.Message);
         }
         void DeclareQueues()
         {
