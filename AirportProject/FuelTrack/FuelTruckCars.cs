@@ -4,31 +4,26 @@ using System.Text;
 
 namespace FuelTruck
 {
-    public enum Status
+    public enum Status { Free, Busy }
+    public class FuelTruckCar : ICar
     {
-        Free, Busy
-    }
-    class FuelTruckCar
-    {
-        string fuelTruckId { get; set;  }
-        public FuelTruckCar(int id)
-        {
-            fuelTruckID = "FuelTruck" + id;
-            MotionPermitted = false;
-            GotAirplaneResponse = false;
-        }
-
-        public string FuelTrackId { get => fuelTruckId; }
-        public string PlaneId { get; set; }
-        public Status Status { get; set; }
-        public int FuelOnBoard { get; set; }
-
-        const int MaxFuel = 1000;
+        string carId;
         
-        public bool MotionPermitted { get; set; }
-        public bool GotAirplaneResponse { get; set; }
-        public static int Speed { get => 50; }
-        public int LocationVertex { get; set; }
 
+        public FuelTruckCar(int id) // CateringCar = FuelTrackCar
+        {
+            carId = "FuelTrack-" + id;
+            //Status = Status.Free;           
+        }
+        public string CarId => carId;
+        //public Status Status { get; set; }
+        public string PlaneId { get; set; }
+        public int Speed { get => 40; set { } }
+        public int LocationVertex { get; set; }
+        //public List<Tuple<Food, int>> FoodList { get; set; }
+        //public static List<Tuple<Food, int>> MaxFoodAmount { get => maxFoodAmount; }
+        public static int FuelOnBoard { get; set; }
+        //const int MaxFuelOnBoard = 1000;
+        public bool MotionPermission { get; set; }
     }
 }
