@@ -14,6 +14,7 @@ namespace FuelTruck
 {
     public class FuelTruck
     {
+        
         Dictionary<string, string> queuesFrom;
         Dictionary<string, string> queuesTo;
 
@@ -59,6 +60,8 @@ namespace FuelTruck
                 tokens.TryAdd(fuelTruckCar.CarId, new CancellationTokenSource());
                 DoRefuel(fuelTruckCar, wakeEvents[i]).Start();
             }
+
+            SendLogMessage(String.Format("Создали {0} машинок!", countCars));
         }
         void CreateQueues()
         {
@@ -94,18 +97,31 @@ namespace FuelTruck
                     cars[response.ObjectId].MotionPermission = true);
         }
 
+        //Отправка ЛОГ сообщений
+        public void SendLogMessage(string message)
+        {
+            var newLogMessage = new LogMessage()
+            {
+                Message = message,
+                Component = Component.FuelTruck
+            };
+            Console.WriteLine(message);
+            mqClient.Send(queueToLogs, newLogMessage);
+        }
+
         Task GotCommand(RefuelServiceCommand cmd)
         {
-            int countCars = (int)Math.Celling(1000 / cmd.Fuel); // HowManyCarsNeeded(cmd);
+            int countCars = (int)Math.Celling(1000 / cmd.Fuel); // HowManyCarsNeeded(cmd); //1000 - maxFuel
+            string logMes = "";
             for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
-            {
-                var foodList = new List<Tuple<Food, int>>();
+            {                
                 commands.Enqueue(new RefuelServiceCommand()
                 {
                     PlaneId = cmd.PlaneId,
                     PlaneLocationVertex = cmd.PlaneLocationVertex,
                     Fuel = cmd.Fuel
                 });
+                
             }
             var cde = new CountdownEvent(countCars);
             completionEvents.TryAdd(cmd.PlaneId, cde);
@@ -120,6 +136,9 @@ namespace FuelTruck
                     Component = Component.FuelTruck,
                     PlaneId = cmd.PlaneId
                 });
+
+                //сюда лог мессадж
+
             });
         }
 
@@ -138,11 +157,14 @@ namespace FuelTruck
                 {
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
                     playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
-                    mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
+                    mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new FuelCompletion()
                     {
                         Fuel = command.Fuel,
                         PlaneId = car.PlaneId
                     });
+
+                    SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, car.PlaneId));
+
                     completionEvents[car.PlaneId].Signal();
                     transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
                     if (!tokens[car.CarId].IsCancellationRequested)
