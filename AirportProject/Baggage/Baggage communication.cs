@@ -70,6 +70,7 @@ namespace Baggage
         //C СЛУЖБОЙ НАЗЕМНОГО ОБСЛУЖИВАНИЯ
         private void MessageFromGroundService() //забрать/сдать багаж на самолет
         {
+            Console.WriteLine(DateTime.Now + "Получил сообщение от СНО");
             mqClient.SubscribeTo<BaggageServiceCommand>(queueFromGroundService, (bsc) =>
             {
                 new Task(() =>
@@ -78,7 +79,6 @@ namespace Baggage
 
                     int carsEndWork = numOfCars;
 
-                    Task[] tasks = new Task[numOfCars];
 
                     if (bsc.Action == TransferAction.Give)
                     {
@@ -86,23 +86,22 @@ namespace Baggage
                         for (int i=0;i<numOfCars;i++)
                         {
                             BaggageCar  car = SearchFreeCar();
-                            var t = Task.Factory.StartNew(() =>
+                            Task t = new Task(() =>
                             {
-                                //car = SearchFreeCar();
-
-                                carTasks.TryAdd(car.BaggageCarID, tasks[i]);
-
                                 //поехать к накопителю 
                                 GoPath(GoToVertexAlone, car, storageVertex);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к накопителю");
 
                                 ToStorageRequest(car.BaggageCarID, bsc.FlightId, BaggageCar.MaxCountOfBaggage);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} запросила багаж у накопителя");
 
                                 //поехать к самолёту 
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
-
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
                                 //отдаём багаж самолёту
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
                                 car.CountOfBaggage = 0;
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
 
                                 carsEndWork--; //машина обслужила самолёт
 
@@ -111,9 +110,11 @@ namespace Baggage
                                 //вернуться на стоянку
                                 GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
                                 tokens.Remove(car.BaggageCarID, out source);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} вернулась на стоянку");
                             });
-                            tasks[i] = t;
+
                             carTasks.TryAdd(car.BaggageCarID, t);
+                            t.Start();
                         }
 
                     }
@@ -122,37 +123,35 @@ namespace Baggage
                         for (int i = 0; i < numOfCars; i++)
                         {
                             BaggageCar car = SearchFreeCar();
-                            var t = Task.Factory.StartNew(() =>
+                            Task t = new Task(() =>
                             {
 
                                 //поехать к самолёту 
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
 
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
 
                                 carsEndWork--; //машина обслужила самолёт
 
                                 //поехать к накопителю (багаж отдавать не надо) 
                                 GoPath(GoToVertexAlone, car, storageVertex);
                                 car.CountOfBaggage = 0;
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к накопителю");
 
-                                
                                 var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
                                 tokens.TryAdd(car.BaggageCarID, source);
                                 //едем на стоянку
                                 GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
                                 tokens.Remove(car.BaggageCarID, out source);
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} вернулась на стоянку");
                             });
-                            tasks[i] = t;
                             carTasks.TryAdd(car.BaggageCarID, t);
-
+                            t.Start();
                         }
                     }
 
-                    foreach(Task t in tasks)
-                    {
-                        t.Start();
-                    }
 
                     //ждём, пока все машины не завершат работу
                     while (carsEndWork != 0)
@@ -166,6 +165,7 @@ namespace Baggage
                         PlaneId = bsc.PlaneId
                     };
                     mqClient.Send<ServiceCompletionMessage>(queueToGroundService, mes);
+                    Console.WriteLine($"{DateTime.Now} завершено обслуживание самолёта");
                 });
                 
             });
