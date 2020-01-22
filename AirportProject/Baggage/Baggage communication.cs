@@ -93,7 +93,7 @@ namespace Baggage
                                 carTasks.TryAdd(car.BaggageCarID, tasks[i]);
 
                                 //поехать к накопителю 
-                                GoPath(GoToVertexAlone, car, bsc.StorageVertex);
+                                GoPath(GoToVertexAlone, car, storageVertex);
 
                                 ToStorageRequest(car.BaggageCarID, bsc.FlightId, BaggageCar.MaxCountOfBaggage);
 
@@ -133,7 +133,7 @@ namespace Baggage
                                 carsEndWork--; //машина обслужила самолёт
 
                                 //поехать к накопителю (багаж отдавать не надо) 
-                                GoPath(GoToVertexAlone, car, bsc.StorageVertex);
+                                GoPath(GoToVertexAlone, car, storageVertex);
                                 car.CountOfBaggage = 0;
 
                                 

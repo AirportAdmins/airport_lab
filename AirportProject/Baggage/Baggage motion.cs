@@ -31,6 +31,8 @@ namespace Baggage
         double TimeSpeedFactor = 1;
         int motionInterval = 100;       //ms
 
+        int storageVertex = 25;
+
 
         const string queueFromTimeService = Component.TimeService + Component.Baggage;
         const string queueFromGroundService = Component.GroundService + Component.Baggage;
