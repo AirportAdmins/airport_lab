@@ -52,42 +52,66 @@ namespace CashboxComponent
             mqClient.PurgeQueues(queues.ToArray());
 
             Task.Run(() => {
-
-                while (true)
-                {
-                    resetEvent.WaitOne();
-
-                    while (ticketRequests.TryDequeue(out var ticketRequest))
+                try { 
+                    while (true)
                     {
-                        HandleTicketRequest(ticketRequest);
+                        resetEvent.WaitOne();
+
+                        while (ticketRequests.TryDequeue(out var ticketRequest))
+                        {
+                            HandleTicketRequest(ticketRequest);
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
 
             });
 
             mqClient.SubscribeTo<FlightStatusUpdate>(ScheduleToCashboxQueue, mes =>
             {
-                lock (flights)
+                try
                 {
-                    if (flights.ContainsKey(mes.FlightId))
+                    lock (flights)
                     {
-                        flights[mes.FlightId].Status = mes.Status;
-                    } else
-                    {
-                        flights.Add(mes.FlightId, mes);
+                        if (flights.ContainsKey(mes.FlightId))
+                        {
+                            flights[mes.FlightId].Status = mes.Status;
+                        }
+                        else
+                        {
+                            flights.Add(mes.FlightId, mes);
+                        }
                     }
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             });
 
             mqClient.SubscribeTo<TicketRequest>(PassengerToCashboxQueue, mes =>
             {
-                ticketRequests.Enqueue(mes);
-                resetEvent.Set();
+                try
+                {
+                    ticketRequests.Enqueue(mes);
+                    resetEvent.Set();
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             });
 
             mqClient.SubscribeTo<CheckTicketRequest>(RegistrationToCashboxQueue, mes =>
             {
-                HandleCheckTicketRequest(mes);
+                try
+                {
+                    HandleCheckTicketRequest(mes);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             });
 
             mqClient.SubscribeTo<NewTimeSpeedFactor>(TimeServiceToCashboxQueue, mes =>
@@ -98,81 +122,89 @@ namespace CashboxComponent
 
         public void HandleTicketRequest(TicketRequest request)
         {
+            Console.WriteLine($"Started handling request from {request.PassengerId}...");
             delaySource.CreateToken().Sleep(TICKET_REQUEST_HANDLING_TIME_MS);
 
             var passId = request.PassengerId;
             var flightId = request.FlightId;
             TicketStatus status;
 
-            lock (passengerToFlight)
-            {
-                lock (flights)
+            try {
+                lock (passengerToFlight)
                 {
-                    if (!flights.ContainsKey(request.FlightId))
+                    lock (flights)
                     {
-                        status = 
-                            request.Action == TicketAction.Buy ? TicketStatus.Late : 
-                            request.Action == TicketAction.Return ? TicketStatus.LateReturn : 
-                            (TicketStatus) 420;
-                    }
-                    else
-                    {
-                        switch (request.Action)
+                        if (!flights.ContainsKey(request.FlightId))
                         {
-                            case TicketAction.Buy:
-                                if (passengerToFlight.ContainsKey(passId))
-                                {
-                                    status = TicketStatus.AlreadyHasTicket;
-                                }
-                                else
-                                {
-                                    var lastUpdate = flights[flightId];
-                                    if (lastUpdate.Status == FlightStatus.New
-                                        || lastUpdate.Status == FlightStatus.CheckIn)
+                            Console.WriteLine($"There is no such flight {flightId} for passenger {passId}");
+                            status =
+                                request.Action == TicketAction.Buy ? TicketStatus.Late :
+                                request.Action == TicketAction.Return ? TicketStatus.LateReturn :
+                                (TicketStatus)420;
+                        }
+                        else
+                        {
+                            switch (request.Action)
+                            {
+                                case TicketAction.Buy:
+                                    if (passengerToFlight.ContainsKey(passId))
                                     {
-                                        if (lastUpdate.TicketCount > 0)
-                                        {
-                                            lastUpdate.TicketCount--;
-                                            passengerToFlight.Add(passId, flightId);
-                                            status = TicketStatus.HasTicket;
-                                        } else
-                                        {
-                                            status = TicketStatus.NoTicketsLeft;
-                                        }
+                                        status = TicketStatus.AlreadyHasTicket;
                                     }
                                     else
                                     {
-                                        status = TicketStatus.Late;
+                                        var lastUpdate = flights[flightId];
+                                        if (lastUpdate.Status == FlightStatus.New
+                                            || lastUpdate.Status == FlightStatus.CheckIn)
+                                        {
+                                            if (lastUpdate.TicketCount > 0)
+                                            {
+                                                lastUpdate.TicketCount--;
+                                                passengerToFlight.Add(passId, flightId);
+                                                status = TicketStatus.HasTicket;
+                                            } else
+                                            {
+                                                status = TicketStatus.NoTicketsLeft;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            status = TicketStatus.Late;
+                                        }
                                     }
-                                }
-                                break;
-                            case TicketAction.Return:
-                                if (passengerToFlight.TryGetValue(passId, out var passFlightId) 
-                                    && passFlightId == flightId)
-                                {
-                                    var lastUpdate = flights[flightId];
-                                    if (lastUpdate.Status == FlightStatus.New
-                                        || lastUpdate.Status == FlightStatus.CheckIn)
+                                    break;
+                                case TicketAction.Return:
+                                    if (passengerToFlight.TryGetValue(passId, out var passFlightId)
+                                        && passFlightId == flightId)
                                     {
-                                        passengerToFlight.Remove(passId);
-                                        flights[flightId].TicketCount++;
-                                        status = TicketStatus.TicketReturn;
+                                        var lastUpdate = flights[flightId];
+                                        if (lastUpdate.Status == FlightStatus.New
+                                            || lastUpdate.Status == FlightStatus.CheckIn)
+                                        {
+                                            passengerToFlight.Remove(passId);
+                                            flights[flightId].TicketCount++;
+                                            status = TicketStatus.TicketReturn;
+                                        } else
+                                        {
+                                            status = TicketStatus.LateReturn;
+                                        }
                                     } else
                                     {
-                                        status = TicketStatus.LateReturn;
+                                        status = TicketStatus.ReturnError;
                                     }
-                                } else
-                                {
-                                    status = TicketStatus.ReturnError;
-                                }
-                                break;
-                            default:
-                                var message = $"Unknown action of {nameof(request)}.Action: {request.Action}";
-                                Console.WriteLine(message);
-                                throw new Exception(message);
+                                    break;
+                                default:
+                                    var message = $"Unknown action of {nameof(request)}.Action: {request.Action}";
+                                    Console.WriteLine(message);
+                                    throw new Exception(message);
+                            }
                         }
                     }
-                }
+                } 
+            } catch (Exception e)
+            {
+                status = (TicketStatus) (-1);
+                Console.WriteLine(e);
             }
 
             Console.WriteLine($"Passenger {passId} gets {status} for flight {flightId}");
@@ -189,17 +221,25 @@ namespace CashboxComponent
 
         private void HandleCheckTicketRequest(CheckTicketRequest mes)
         {
-            lock (passengerToFlight)
+            try
             {
-                mqClient.Send(
-                    CashboxToRegistrationQueue, 
-                    new CheckTicketResponse()
-                    {
-                        PassengerId = mes.PassengerId,
-                        HasTicket = passengerToFlight.TryGetValue(mes.PassengerId, out var flightId) 
-                                && flightId == mes.FlightId
-                    }
-                );
+                lock (passengerToFlight)
+                {
+                    var hasTicket = passengerToFlight.TryGetValue(mes.PassengerId, out var flightId)
+                                    && flightId == mes.FlightId;
+                    Console.WriteLine($"Check passenger {mes.PassengerId} ticket for flight {mes.FlightId}: {hasTicket}");
+                    mqClient.Send(
+                        CashboxToRegistrationQueue,
+                        new CheckTicketResponse()
+                        {
+                            PassengerId = mes.PassengerId,
+                            HasTicket = hasTicket
+                        }
+                    );
+                }
+            } catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
     }
