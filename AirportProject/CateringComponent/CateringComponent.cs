@@ -90,7 +90,7 @@ namespace CateringComponent
             mqClient.SubscribeTo<CateringServiceCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotCommand(cmd).Start());
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
-                    cars[response.ObjectId].MotionPermission.Set());
+                    cars[response.ObjectId].MotionPermission=true);
         }
 
         Task GotCommand(CateringServiceCommand cmd)     
@@ -152,11 +152,11 @@ namespace CateringComponent
         Task DoCatering(CateringCar car, AutoResetEvent wakeEvent)      //car work
         {
             while (true)
-            {
-                wakeEvent.WaitOne();                        //waits for common command
+            {                                                           //waits for common command
                 if (commands.TryDequeue(out var command))
                 {                   
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
+                    playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
                     mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
                     {
                         FoodList = command.FoodList,
@@ -164,9 +164,15 @@ namespace CateringComponent
                     });
                     completionEvents[car.PlaneId].Signal();
                     transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
+                    if (!tokens[car.CarId].IsCancellationRequested)
+                        wakeEvent.WaitOne();
+                    else
+                    {
+                        tokens[car.CarId] = new CancellationTokenSource();
+                    }
                 }
-                wakeEvent.Reset();                      //turn to wait again
             }
         }
     }
+    
 }

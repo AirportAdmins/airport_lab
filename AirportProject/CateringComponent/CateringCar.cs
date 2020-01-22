@@ -30,6 +30,6 @@ namespace CateringComponent
         public int LocationVertex { get; set; }
         //public List<Tuple<Food, int>> FoodList { get; set; }
         public static List<Tuple<Food, int>> MaxFoodAmount { get => maxFoodAmount; }
-        public AutoResetEvent MotionPermission { get; set; }
+        public bool MotionPermission { get; set; }
     }
 }

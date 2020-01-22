@@ -22,6 +22,7 @@ namespace TransportMotion
         double timeFactor;
         int motionInterval = 100;
         PlayDelaySource source;
+        Random rand = new Random();
 
         public TransportMotion(string Component,RabbitMqClient MqClient)
         {
@@ -89,7 +90,7 @@ namespace TransportMotion
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermission = new AutoResetEvent(false);
+            car.MotionPermission = false;
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
@@ -113,15 +114,17 @@ namespace TransportMotion
                     StartVertex = StartVertex
                 });
 
-            car.MotionPermission.WaitOne();
-            car.MotionPermission.Reset();
+            while (car.MotionPermission != true)
+                source.CreateToken().Sleep(5);
         }
 
         public int GetHomeVertex()
         {
             List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
-            Random rand = new Random();
-            return homeVertexes.ElementAt(rand.Next(0, 3));
+            lock (rand)
+            {
+                return homeVertexes.ElementAt(rand.Next(0, 4));
+            }
         }
         void SendVisualizationMessage(ICar car, int StartVertex, int DestinationVertex, int speed)
         {

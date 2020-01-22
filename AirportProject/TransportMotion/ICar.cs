@@ -12,7 +12,7 @@ namespace TransportMotion
         public string PlaneId { get; set; }
 
         //motion
-        public AutoResetEvent MotionPermission { get; set; }        
+        public bool MotionPermission { get; set; }        
         public int Speed { get; set; }
         public int LocationVertex { get; set; }
     }
