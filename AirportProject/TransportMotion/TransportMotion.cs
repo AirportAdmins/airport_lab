@@ -27,11 +27,7 @@ namespace TransportMotion
         {
             this.component = Component;
             this.mqClient = MqClient;
-            source = new PlayDelaySource(timeFactor);
-            CreateQueues();
-            DeclareQueues();
-            MqClient.PurgeQueues(queuesFrom.Values.ToArray());
-            MqClient.PurgeQueues(queuesTo.Values.ToArray());
+            source = new PlayDelaySource(timeFactor);           
             Subscribe();
         }
         void CreateQueues()
@@ -47,11 +43,7 @@ namespace TransportMotion
                 { Component.Visualizer,component+Component.Visualizer },
             };
         }
-        void DeclareQueues()
-        {
-            mqClient.DeclareQueues(queuesFrom.Values.ToArray());
-            mqClient.DeclareQueues(queuesTo.Values.ToArray());
-        }
+ 
         void Subscribe()
         {
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
