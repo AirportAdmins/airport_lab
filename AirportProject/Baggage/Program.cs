@@ -16,6 +16,8 @@ namespace Baggage
     {
         static void Main(string[] args)
         {
+            Baggage b = new Baggage();
+            b.Start();
         }
         
 

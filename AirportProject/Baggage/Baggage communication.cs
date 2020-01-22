@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AirportLibrary;
+using System.Collections.Concurrent;
 
 namespace Baggage
 {
@@ -16,6 +17,8 @@ namespace Baggage
     partial class Baggage
     {
         static object locker = new object(); //При поиске свободной машины блокируем поиск для других потоков
+
+        ConcurrentDictionary<string, Task> carTasks = new ConcurrentDictionary<string, Task>();
 
         //С САМОЛЁТОМ
         private void TakeOrGiveBaggageFromPlane(string planeId, string carId, TransferAction action, int baggageCount)
@@ -79,11 +82,15 @@ namespace Baggage
 
                     if (bsc.Action == TransferAction.Give)
                     {
-                        for(int i=0;i<numOfCars;i++)
+
+                        for (int i=0;i<numOfCars;i++)
                         {
-                            tasks[i] = ( new Task(() =>
+                            BaggageCar  car = SearchFreeCar();
+                            var t = Task.Factory.StartNew(() =>
                             {
-                                BaggageCar car = SearchFreeCar();
+                                //car = SearchFreeCar();
+
+                                carTasks.TryAdd(car.BaggageCarID, tasks[i]);
 
                                 //поехать к накопителю 
                                 GoPath(GoToVertexAlone, car, bsc.StorageVertex);
@@ -96,16 +103,17 @@ namespace Baggage
                                 //отдаём багаж самолёту
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
                                 car.CountOfBaggage = 0;
-                                car.Status = Status.Free;
 
                                 carsEndWork--; //машина обслужила самолёт
 
+                                var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
+                                tokens.TryAdd(car.BaggageCarID, source);
                                 //вернуться на стоянку
-                                GoPathHome(GoToVertexAlone, car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
-
-
-
-                            }));
+                                GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
+                                tokens.Remove(car.BaggageCarID, out source);
+                            });
+                            tasks[i] = t;
+                            carTasks.TryAdd(car.BaggageCarID, t);
                         }
 
                     }
@@ -113,9 +121,9 @@ namespace Baggage
                     {
                         for (int i = 0; i < numOfCars; i++)
                         {
-                            tasks[i] = (new Task(() =>
+                            BaggageCar car = SearchFreeCar();
+                            var t = Task.Factory.StartNew(() =>
                             {
-                                BaggageCar car = SearchFreeCar();
 
                                 //поехать к самолёту 
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
@@ -126,13 +134,17 @@ namespace Baggage
 
                                 //поехать к накопителю (багаж отдавать не надо) 
                                 GoPath(GoToVertexAlone, car, bsc.StorageVertex);
-
                                 car.CountOfBaggage = 0;
-                                car.Status = Status.Free;
+
+                                
+                                var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
+                                tokens.TryAdd(car.BaggageCarID, source);
                                 //едем на стоянку
-                                GoPathHome(GoToVertexAlone, car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
-                            }));
-                           
+                                GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.BaggageCarID]);
+                                tokens.Remove(car.BaggageCarID, out source);
+                            });
+                            tasks[i] = t;
+                            carTasks.TryAdd(car.BaggageCarID, t);
 
                         }
                     }
@@ -165,7 +177,6 @@ namespace Baggage
             lock (locker)
             {
                 BaggageCar car = cars.Values.First(car => car.Status == Status.Free);
-                car.Status = Status.Busy;
 
                 //если не нашли свободную машину, начинаем поиск заново
                 if (car == null)
@@ -173,8 +184,17 @@ namespace Baggage
                     source.CreateToken().Sleep(15);
                     return SearchFreeCar();
                 }
-                else
+                else //иначе прерываем движение на стоянку и ставим статус busy
                 {
+                    car.Status = Status.Busy;
+                    if (tokens.TryGetValue(car.BaggageCarID, out var cancellationToken))
+                    {
+                        cancellationToken.Cancel();
+                    }
+                    Task task = carTasks[car.BaggageCarID];
+                    task.Wait();
+                    carTasks.Remove(car.BaggageCarID, out task);
+
                     return car;
                 }
             }

@@ -56,7 +56,7 @@ namespace Baggage
         {
             cars = new ConcurrentDictionary<string, BaggageCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            mqClient = new RabbitMqClient();
+            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
             source = new PlayDelaySource(TimeSpeedFactor);
         }
 
@@ -73,7 +73,6 @@ namespace Baggage
             {
                 BaggageCar car = new BaggageCar(i);
                 cars.TryAdd(car.BaggageCarID, car);
-                tokens.TryAdd(car.BaggageCarID, new CancellationTokenSource());
             }
         }
 
@@ -100,15 +99,18 @@ namespace Baggage
                 action(baggageCar, path[i + 1]);
             }
         }
-        private void GoPathHome(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex,
+        private void GoPathHome(BaggageCar baggageCar, int destinationVertex,
         CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
+
+            baggageCar.Status = Status.Free;
+
             for (int i = 0; i < path.Count - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
-                action(baggageCar, path[i + 1]);
+                GoToVertexAlone(baggageCar, path[i + 1]);
             }
         }
         private void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
