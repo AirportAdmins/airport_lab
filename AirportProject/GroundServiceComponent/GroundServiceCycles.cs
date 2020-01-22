@@ -69,25 +69,18 @@ namespace GroundServiceComponent
         Cycle secondCycle;
 
         RabbitMqClient mqClient;
+        ILogger logger;
 
         public string PlaneId;
-        public string FlightId { get; }
+        public string FlightId;
         public int PlaneLocationVertex;
 
-        public GroundServiceCycles()
+        public GroundServiceCycles(RabbitMqClient mq, ILogger logger)
         {
             firstCycle = new Cycle(FirstCycleComponents);
             secondCycle = new Cycle(SecondCycleComponents);
-        }
-        public GroundServiceCycles(RabbitMqClient mq, string flightId):this()
-        {
+            this.logger = logger;
             mqClient = mq;
-            FlightId = flightId;
-        }
-        public GroundServiceCycles(RabbitMqClient mq, string planeId, string flightId, int vertex):this(mq,flightId)
-        {
-            PlaneId = planeId;
-            PlaneLocationVertex = vertex;
         }
         public async void StartFisrtCycle(object needs)
         {
