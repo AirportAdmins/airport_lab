@@ -27,7 +27,8 @@ namespace TransportMotion
         {
             this.component = Component;
             this.mqClient = MqClient;
-            source = new PlayDelaySource(timeFactor);           
+            source = new PlayDelaySource(timeFactor);
+            CreateQueues();
             Subscribe();
         }
         void CreateQueues()
