@@ -8,7 +8,6 @@ FollowMeComponent
 FuelTruckComponent
 GroundmoutionComponent
 GroundServiceComponent
-LogsComponent
 PassengerComponent
 RegistrationComponent
 ScheduleComponent

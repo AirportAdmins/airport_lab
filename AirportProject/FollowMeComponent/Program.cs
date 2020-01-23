@@ -11,9 +11,7 @@ namespace FollowMeComponent
     {
         static void Main(string[] args)
         {
-            PlayDelaySource source = new PlayDelaySource(1);
-            var token = source.CreateToken();
-            token.Sleep(10000);
+            new FollowMeComponent().Start();
         }
     }
 }

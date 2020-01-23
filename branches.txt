@@ -3,7 +3,6 @@ comp/fueltruck
 comp/storage
 comp/timeservice
 visualizer
-comp/logs
 common/mqwrapper
 common/airport
 comp/passenger
