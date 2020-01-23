@@ -99,6 +99,14 @@ stage.add(garageLayer);
           this.startPoint = startPoint;
           this.type = type;
           const image = Item.getImage(type);
+          this.text = new Konva.Text({
+            x: startPoint.x,
+            y: startPoint.y - 20,
+            text: id,
+            fontSize: 12,
+            fill: 'black'
+          });
+
           this.image = new Konva.Image({
             x: startPoint.x,
             y: startPoint.y,
@@ -110,9 +118,11 @@ stage.add(garageLayer);
           });
           if (Object.values(TYPES_AUTO).includes(type)){
             autoLayer.add(this.image);
+            autoLayer.add(this.text);
             autoLayer.batchDraw();
           } else{
             layer.add(this.image);
+            layer.add(this.text);
             layer.batchDraw();
           }
       }
@@ -128,6 +138,8 @@ stage.add(garageLayer);
               if (this.speed === 0){
                 this.image.x(this.endPoint.x)
                 this.image.y(this.endPoint.y)
+                this.text.x(this.endPoint.x)
+                this.text.y(this.endPoint.y - 20)
                 layer.batchDraw();
                 autoLayer.batchDraw();
                 this.deleteAnimation();
@@ -152,12 +164,15 @@ stage.add(garageLayer);
             } else {
               if (this.image.x() !== newX){
                 this.image.x(newX)
+                this.text.x(newX)
+
                 layer.batchDraw();
                 autoLayer.batchDraw();
 
               } 
               if (this.image.y() !== newY){
                 this.image.y(newY)
+                this.text.y(newY - 20)
                 layer.batchDraw();
                 autoLayer.batchDraw();
               }
