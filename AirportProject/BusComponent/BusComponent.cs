@@ -99,11 +99,7 @@ namespace BusComponent
         }
         void Subscribe()
         {
-            mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-            {
-                timeFactor = mes.Factor;
-                playDelaySource.TimeFactor = timeFactor;
-            });
+
             mqClient.SubscribeTo<PassengersServiceCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotCommand(cmd).Start());
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
