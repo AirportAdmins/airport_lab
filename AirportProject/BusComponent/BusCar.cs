@@ -14,6 +14,8 @@ namespace BusComponent
             busID = "Bus-" + idCount;
             idCount++;
         }
+
+        public CarTools CarTools { get; set; }
         public string CarId => busID;
 
         public static int PassengersMaxCount { get => 15; }
