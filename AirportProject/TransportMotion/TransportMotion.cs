@@ -39,7 +39,7 @@ namespace TransportMotion
             };
             queuesTo = new Dictionary<string, string>()
             {
-                { Component.Logs,component+Component.FuelTruck },
+                { Component.Logs,Component.Logs },
                 { Component.GroundMotion,component+Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };

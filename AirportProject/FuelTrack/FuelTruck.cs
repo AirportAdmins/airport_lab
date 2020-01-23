@@ -58,6 +58,7 @@ namespace FuelTruck
             {
                 wakeEvents.Add(new AutoResetEvent(false));
                 var fuelTruckCar = new FuelTruckCar(i);
+                fuelTruckCar.LocationVertex = transportMotion.GetHomeVertex();
                 cars.TryAdd(fuelTruckCar.CarId, fuelTruckCar);
                 tokens.TryAdd(fuelTruckCar.CarId, new CancellationTokenSource());
                 DoRefuel(fuelTruckCar, wakeEvents[i]).Start();
@@ -72,12 +73,15 @@ namespace FuelTruck
                 { Component.GroundMotion,Component.GroundMotion+Component.FuelTruck },
                 { Component.Airplane,Component.Airplane+Component.FuelTruck },
                 { Component.GroundService,Component.GroundService+Component.FuelTruck },
+                { Component.TimeService,Component.TimeService + Component.TimeService },
             };
             queuesTo = new Dictionary<string, string>()
             {
                 { Component.Airplane,Component.FuelTruck+Component.Airplane },
                 { Component.GroundService,Component.FuelTruck+Component.GroundService },
-                {Component.Logs, Component.Logs }
+                { Component.Logs, Component.Logs },
+                { Component.GroundMotion,Component.FuelTruck+Component.GroundMotion },
+                { Component.Visualizer,Component.Visualizer },
             };
         }
         void DeclareQueues()
@@ -114,6 +118,7 @@ namespace FuelTruck
 
         Task GotCommand(RefuelServiceCommand cmd)
         {
+            Console.WriteLine($"Got new command for airplane {cmd.PlaneId}");
             int countCars = (int)(Math.Ceiling((double)(cmd.Fuel/FuelTruckCar.MaxFuelOnBoard))); // HowManyCarsNeeded(cmd); //1000 - maxFuel
             for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
             {
@@ -151,7 +156,7 @@ namespace FuelTruck
                     Component = Component.FuelTruck,
                     PlaneId = cmd.PlaneId
                 });
-
+                Console.WriteLine($"Fueling of plane {cmd.PlaneId} is completed");
 
             });
         }
@@ -162,7 +167,10 @@ namespace FuelTruck
             {                                                           //waits for common command
                 if (commands.TryDequeue(out var command))
                 {
+                    Console.WriteLine($"Fueltruck {car.CarId} is going to fuel airplane {command.PlaneId}" +
+                        $"with {command.Fuel} litres of fuel");
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
+                    Console.WriteLine($"Fueltruck {car.CarId} is fueling plane {command.PlaneId}");
                     playDelaySource.CreateToken().Sleep(2 * 60 * 1000);        
                     mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
                     {
@@ -179,11 +187,13 @@ namespace FuelTruck
                 }                
                 if (!tokens[car.CarId].IsCancellationRequested)
                 {
+                    
                     car.IsGoingHome = false;
                     wakeEvent.WaitOne();
                 }
                 else
                 {
+                    Console.WriteLine($"Fueltruck { car.CarId} going home was cancelled");
                     tokens[car.CarId] = new CancellationTokenSource();
                 }
                 
