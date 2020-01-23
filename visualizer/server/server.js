@@ -31,9 +31,9 @@ http.listen(port, function(){
 var amqp = require('amqplib/callback_api');
 
 amqp.connect({
-    hostname: 'v174153.hosted-by-vdsina.ru',
-    username: 'slava',
-    password: '228',
+    hostname: 'localhost',
+    username: 'guest',
+    password: 'guest',
     vhost: '/'
 }, function(error0, connection) {
     if (error0) {
