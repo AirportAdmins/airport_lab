@@ -53,7 +53,7 @@ namespace DeicingComponent
 
         public void Start()
         {
-            DeclareQueues();
+            DeclarePurgeQueues();
             FillCollections();
             Subscribe();
         }
@@ -74,9 +74,10 @@ namespace DeicingComponent
             TakeTimeSpeedFactor();
         }
 
-        private void DeclareQueues()
+        private void DeclarePurgeQueues()
         {
             mqClient.DeclareQueues(queues.ToArray());
+            mqClient.PurgeQueues(queues.ToArray());
         }
 
         // ответ 

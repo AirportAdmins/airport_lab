@@ -22,7 +22,7 @@ namespace DeicingComponent
                 PlaneId = planeId
             };
 
-            source.CreateToken().Sleep(15*60*1000);//чистим лёд
+            source.CreateToken().Sleep(2*60*1000);//чистим лёд
 
             mqClient.Send<DeicingCompletion>(queueToAirPlane, deicingCompletion);
         }
