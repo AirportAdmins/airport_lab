@@ -80,7 +80,7 @@ namespace FuelTruck
                 { Component.Airplane,Component.FuelTruck+Component.Airplane },
                 { Component.GroundService,Component.FuelTruck+Component.GroundService },
                 { Component.Logs, Component.Logs },
-                { Component.GroundMotion,Component.FuelTruck+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
         }
