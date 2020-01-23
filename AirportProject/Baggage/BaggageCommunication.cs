@@ -99,7 +99,7 @@ namespace Baggage
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
                                 //отдаём багаж самолёту
-                                sourceDelay.CreateToken().Sleep(15 * 60 * 1000); //отдаём багаж 15 минут
+                                sourceDelay.CreateToken().Sleep(2 * 60 * 1000); //отдаём багаж 15 минут
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
                                 car.CountOfBaggage = 0;
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
@@ -131,7 +131,7 @@ namespace Baggage
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
 
-                                sourceDelay.CreateToken().Sleep(15 * 60 * 1000); //забираем багаж 15 минут
+                                sourceDelay.CreateToken().Sleep(2 * 60 * 1000); //забираем багаж 15 минут
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
 
