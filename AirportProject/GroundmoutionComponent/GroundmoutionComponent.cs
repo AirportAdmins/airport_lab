@@ -35,9 +35,8 @@ namespace GroundmoutionComponent
 
         public void Start()
         {
-            logger?.Info(String.Format("{0}: Start",ComponentName));
+            logger?.Info($"{ComponentName}: Start");
 
-            logger?.Info(String.Format("{0}: DeclareQueues", ComponentName));
             //declare queue SendersToGroundmoution
             mqClient.DeclareQueues(ComponentName);
 
@@ -47,8 +46,12 @@ namespace GroundmoutionComponent
                 mqClient.DeclareQueues(ComponentName + receiver);
             }
 
+            logger?.Info($"{ComponentName}: Queues declared");
+
             mqClient.SubscribeTo<MotionPermissionRequest>(ComponentName, (message) =>
             {
+                logger?.Info($"{ComponentName}: {message.Component} with Id {message.ObjectId} sent message with Action {((message.Action==MotionAction.Free)? "Free":"Occupy")} on edge {message.StartVertex}-{message.DestinationVertex}");
+
                 lock (lockObj)
                 {
                     if (groundmoution.ContainsEdge(message))
@@ -58,28 +61,36 @@ namespace GroundmoutionComponent
                             case MotionAction.Occupy:
                                 if (groundmoution.IsFree(message))
                                 {
-                                    MotionPermissionResponse response = new MotionPermissionResponse();
-                                    response.ObjectId = message.ObjectId;
-                                    mqClient.Send<MotionPermissionResponse>(ComponentName + message.Component, response);
+                                    logger?.Debug($"{ComponentName}: Edge {message.StartVertex}-{message.DestinationVertex} is free");
+
+                                    mqClient.Send<MotionPermissionResponse>(ComponentName + message.Component, new MotionPermissionResponse() { ObjectId = message.ObjectId });
+
+                                    logger?.Info($"{ComponentName}: Sent to {message.Component} with Id {message.ObjectId} permission");
                                 }
+                                else
+                                    logger?.Debug($"{ComponentName}: Edge {message.StartVertex}-{message.DestinationVertex} is not free");
+
                                 groundmoution.Enqueue(message);
+
+                                logger?.Debug($"{ComponentName}: {message.Component} with Id {message.ObjectId} stood in queue");
                                 break;
                             case MotionAction.Free:
                                 if (groundmoution.IsFree(message))
                                 {
-                                    logger?.Error(String.Format("{0}: Component {1} with ID {2} sent moution permisstion response for free queue", ComponentName, message.Component, message.ObjectId));
+                                    logger?.Error($"{ComponentName}: {message.Component} with Id {message.ObjectId} sent that edge is free but queue has been alredy free");
+
                                     throw new Exception();
                                 }
                                 groundmoution.Dequeue(message);
+
+                                logger?.Debug($"{ComponentName}: {message.Component} with Id {message.ObjectId} came out from queue");
+
                                 if (!groundmoution.IsFree(message))
                                 {
                                     var next = groundmoution.Peek(message);
-                                    if (next != null)
-                                    {
-                                        MotionPermissionResponse response = new MotionPermissionResponse();
-                                        response.ObjectId = next.ObjectId;
-                                        mqClient.Send<MotionPermissionResponse>(ComponentName + next.Component, response);
-                                    }
+                                    mqClient.Send<MotionPermissionResponse>(ComponentName + next.Component, new MotionPermissionResponse() { ObjectId = next.ObjectId });
+
+                                    logger?.Info($"{ComponentName}: Sent to {next.Component} with Id {next.ObjectId} permission");
                                 }
                                 break;
                             default:
@@ -88,7 +99,7 @@ namespace GroundmoutionComponent
                     }
                     else
                     {
-                        logger?.Error(String.Format("{0}: Component {1} with ID {2} sent message for nonexistent edge of map", ComponentName, message.Component, message.ObjectId));
+                        logger?.Error($"{ComponentName}: Component {message.Component} with ID {message.ObjectId} sent message for nonexistent edge of map");
                         throw new Exception();
                     }
                 }
