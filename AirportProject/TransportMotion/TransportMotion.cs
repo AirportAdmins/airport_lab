@@ -30,9 +30,6 @@ namespace TransportMotion
             this.mqClient = MqClient;
             source = new PlayDelaySource(timeFactor);
             CreateQueues();
-            DeclareQueues();
-            MqClient.PurgeQueues(queuesFrom.Values.ToArray());
-            MqClient.PurgeQueues(queuesTo.Values.ToArray());
             Subscribe();
         }
         void CreateQueues()
@@ -45,18 +42,17 @@ namespace TransportMotion
             {
                 { Component.Logs,component+Component.FollowMe },
                 { Component.GroundMotion,component+Component.GroundMotion },
-                { Component.Visualizer,component+Component.Visualizer },
+                { Component.Visualizer,Component.Visualizer },
             };
         }
-        void DeclareQueues()
-        {
-            mqClient.DeclareQueues(queuesFrom.Values.ToArray());
-            mqClient.DeclareQueues(queuesTo.Values.ToArray());
-        }
+ 
         void Subscribe()
         {
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-                    timeFactor = mes.Factor);       
+            {
+                timeFactor = mes.Factor;
+                source.TimeFactor = timeFactor;
+                });       
         }
        
         public void GoPath(ICar car, int destinationVertex)     
@@ -114,17 +110,26 @@ namespace TransportMotion
                     StartVertex = StartVertex
                 });
 
+<<<<<<< HEAD
             while (car.MotionPermission != true)
+=======
+            while (!car.MotionPermitted)               //check if car can go
+>>>>>>> 157c02c1cacc59fa800b9352907fa6380da2fc1d
                 source.CreateToken().Sleep(5);
         }
 
         public int GetHomeVertex()
         {
             List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
+<<<<<<< HEAD
             lock (rand)
             {
                 return homeVertexes.ElementAt(rand.Next(0, 4));
             }
+=======
+            Random rand = new Random();
+            return homeVertexes.ElementAt(rand.Next(0, 4));
+>>>>>>> 157c02c1cacc59fa800b9352907fa6380da2fc1d
         }
         void SendVisualizationMessage(ICar car, int StartVertex, int DestinationVertex, int speed)
         {
