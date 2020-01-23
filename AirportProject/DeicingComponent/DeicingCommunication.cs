@@ -22,7 +22,7 @@ namespace DeicingComponent
                 PlaneId = planeId
             };
 
-            source.CreateToken().Sleep(50);//чистим лёд
+            source.CreateToken().Sleep(15*60*1000);//чистим лёд
 
             mqClient.Send<DeicingCompletion>(queueToAirPlane, deicingCompletion);
         }
@@ -46,9 +46,10 @@ namespace DeicingComponent
                     var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
                     tokens.TryAdd(car.DeicingCarID, source);
                     //уезжаем на стоянку 
-                    GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.DeicingCarID]);
+                    GoPathHome(car, RandomHomeVertex.GetHomeVertex(), tokens[car.DeicingCarID]);    
+                    if (!tokens[car.DeicingCarID].IsCancellationRequested)     //если не было отмены пути домой
+                        Console.WriteLine($"{DateTime.Now} {car.DeicingCarID} приехала домой");
                     tokens.Remove(car.DeicingCarID, out source);
-                    Console.WriteLine($"{DateTime.Now} {car.DeicingCarID} приехала домой");
                 });
 
                 carTasks.TryAdd(car.DeicingCarID, t);
@@ -64,13 +65,13 @@ namespace DeicingComponent
             //При поиске свободной машины блокируем поиск для других потоков
             lock (locker)
             {
-                DeicingCar car = cars.Values.First(car => car.Status == Status.Free);
+                DeicingCar car = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
 
                 //если не нашли свободную машину, начинаем поиск заново
                 if (car == null)
                 {
                     source.CreateToken().Sleep(15);
-                    return SearchFreeCar();
+                    car = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
                 }
                 else //иначе прерываем движение на стоянку и ставим статус busy
                 {
@@ -78,13 +79,12 @@ namespace DeicingComponent
                     if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
                     {
                         cancellationToken.Cancel();
-                    }
-                    Task task = carTasks[car.DeicingCarID];
-                    task.Wait();
-                    carTasks.Remove(car.DeicingCarID, out task);
-
-                    return car;
+                        Task task = carTasks[car.DeicingCarID];
+                        task.Wait();
+                        carTasks.Remove(car.DeicingCarID, out task);
+                    }                 
                 }
+                return car;
             }
         }
     }

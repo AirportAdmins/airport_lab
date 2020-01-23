@@ -30,10 +30,10 @@ namespace DeicingComponent
         const string queueFromGroundMotion = Component.GroundMotion + Component.Deicing;
 
         const string queueToAirPlane = Component.Deicing + Component.Airplane;
-        const string queueToLogs = Component.Deicing + Component.Logs;
+        const string queueToLogs = Component.Logs;
         const string queueToGroundMotion = Component.Deicing + Component.GroundMotion;
         const string queueToGroundService = Component.Deicing + Component.GroundService;
-        const string queueToVisualizer = Component.Deicing + Component.Visualizer;
+        const string queueToVisualizer = Component.Visualizer;
 
         public RabbitMqClient mqClient;
 
@@ -70,7 +70,6 @@ namespace DeicingComponent
         private void Subscribe()
         {
             MessageFromGroundService();
-            MessageFromGroundService();
             MotionPermissionResponse();
             TakeTimeSpeedFactor();
         }
@@ -106,6 +105,7 @@ namespace DeicingComponent
         private void GoToVertexAlone(DeicingCar deicingCar, int DestinationVertex)
         {
             WaitForMotionPermission(deicingCar, DestinationVertex);
+            int StartVertex = deicingCar.LocationVertex;
             MakeAMove(deicingCar, DestinationVertex);
             mqClient.Send<MotionPermissionRequest>(queueToGroundMotion, //free edge
             new MotionPermissionRequest()
@@ -114,7 +114,7 @@ namespace DeicingComponent
                 DestinationVertex = DestinationVertex,
                 Component = Component.Deicing,
                 ObjectId = deicingCar.DeicingCarID,
-                StartVertex = deicingCar.LocationVertex
+                StartVertex = StartVertex
             });
         }
         private void WaitForMotionPermission(DeicingCar deicingCar, int DestinationVertex)
