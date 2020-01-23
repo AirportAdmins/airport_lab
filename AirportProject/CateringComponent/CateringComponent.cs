@@ -55,6 +55,7 @@ namespace CateringComponent
             {
                 wakeEvents.Add(new AutoResetEvent(false));
                 var cateringCar = new CateringCar(i);
+                cateringCar.LocationVertex = transportMotion.GetHomeVertex();
                 cars.TryAdd(cateringCar.CarId, cateringCar);
                 tokens.TryAdd(cateringCar.CarId, new CancellationTokenSource());
                 DoCatering(cateringCar, wakeEvents[i]).Start();
@@ -64,14 +65,18 @@ namespace CateringComponent
         {
             queuesFrom = new Dictionary<string, string>()
             {
-                { Component.GroundMotion,Component.GroundMotion+Component.FollowMe },
-                { Component.Airplane,Component.Airplane+Component.FollowMe },
-                { Component.GroundService,Component.GroundService+Component.FollowMe },                
+                { Component.GroundMotion,Component.GroundMotion+Component.Catering },
+                { Component.Airplane,Component.Airplane+Component.Catering },
+                { Component.GroundService,Component.GroundService+Component.Catering },
+                { Component.TimeService,Component.TimeService + Component.Catering },
             };
             queuesTo = new Dictionary<string, string>()
             {
-                { Component.Airplane,Component.FollowMe+Component.Airplane },
-                { Component.GroundService,Component.FollowMe+Component.GroundService },
+                { Component.Airplane,Component.Catering+Component.Airplane },
+                { Component.GroundService,Component.Catering+Component.GroundService },
+                 { Component.Logs,Component.Logs },
+                { Component.GroundMotion,Component.Catering+Component.GroundMotion },
+                { Component.Visualizer,Component.Visualizer },
             };
         }
         void DeclareQueues()
@@ -82,11 +87,6 @@ namespace CateringComponent
         }
         void Subscribe()
         {
-            mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
-            {
-                timeFactor = mes.Factor;
-                playDelaySource.TimeFactor = timeFactor;
-            });
             mqClient.SubscribeTo<CateringServiceCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotCommand(cmd).Start());
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
@@ -164,7 +164,7 @@ namespace CateringComponent
                     Console.WriteLine($"Catering car {car.CarId} is going to airplane {command.PlaneId}");
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
                     Console.WriteLine($"Catering car {car.CarId} begins catering airplane {command.PlaneId}");
-                    playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
+                    playDelaySource.CreateToken().Sleep(1 * 60 * 1000);        //1 min to do catering
                     mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
                     {
                         FoodList = command.FoodList,
