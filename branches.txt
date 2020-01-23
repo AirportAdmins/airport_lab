@@ -1,3 +1,12 @@
+comp/baggage
+comp/followme
+comp/catering
+comp/deicing
+comp/fueltruck
+comp/storage
+comp/timeservice
+comp/visualizer
+comp/logs
 common/mqwrapper
 common/airport
 comp/passenger
@@ -9,12 +18,3 @@ comp/airplane
 comp/groundservice
 comp/groundmoution
 comp/bus
-comp/baggage
-comp/followme
-comp/catering
-comp/deicing
-comp/fueltruck
-comp/storage
-comp/timeservice
-comp/visualizer
-comp/logs
