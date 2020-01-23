@@ -66,7 +66,7 @@ namespace FollowMeComponent
                 { Component.Airplane,Component.FollowMe+Component.Airplane },
                 { Component.Logs,Component.Logs },
                 { Component.GroundService,Component.FollowMe+Component.GroundService },
-                { Component.GroundMotion,Component.FollowMe+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer }
             };
         }
