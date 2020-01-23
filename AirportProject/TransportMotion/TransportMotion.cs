@@ -23,11 +23,11 @@ namespace TransportMotion
         int motionInterval = 100;
         PlayDelaySource source;
 
-        public TransportMotion(string Component,RabbitMqClient MqClient)
+        public TransportMotion(string Component,RabbitMqClient MqClient,PlayDelaySource source)
         {
             this.component = Component;
             this.mqClient = MqClient;
-            source = new PlayDelaySource(timeFactor);
+            this.source = source;
             CreateQueues();
             Subscribe();
         }
@@ -39,7 +39,7 @@ namespace TransportMotion
             };
             queuesTo = new Dictionary<string, string>()
             {
-                { Component.Logs,component+Component.FollowMe },
+                { Component.Logs, Component.Logs },
                 { Component.GroundMotion,component+Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
