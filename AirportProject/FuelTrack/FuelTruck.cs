@@ -75,6 +75,7 @@ namespace FuelTruck
             {
                 { Component.Airplane,Component.FuelTruck+Component.Airplane },
                 { Component.GroundService,Component.FuelTruck+Component.GroundService },
+                {Component.Logs, Component.FuelTruck+Component.Logs }
             };
         }
         void DeclareQueues()
@@ -94,7 +95,7 @@ namespace FuelTruck
                     GotCommand(cmd).Start());
 
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
-                    cars[response.ObjectId].MotionPermission = true);
+                    cars[response.ObjectId].MotionPermitted = true);
         }
 
         //Отправка ЛОГ сообщений
@@ -106,12 +107,12 @@ namespace FuelTruck
                 Component = Component.FuelTruck
             };
             Console.WriteLine(message);
-            mqClient.Send(queueToLogs, newLogMessage);
+            mqClient.Send(queuesTo[Component.Logs], newLogMessage);
         }
 
         Task GotCommand(RefuelServiceCommand cmd)
         {
-            int countCars = (int)Math.Celling(1000 / cmd.Fuel); // HowManyCarsNeeded(cmd); //1000 - maxFuel
+            int countCars = (int)(Math.Ceiling((double)(1000 / cmd.Fuel))); // HowManyCarsNeeded(cmd); //1000 - maxFuel
             string logMes = "";
             for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
             {                
@@ -131,7 +132,7 @@ namespace FuelTruck
             {
                 cde.Wait();
                 completionEvents.Remove(cmd.PlaneId, out cde);
-                mqClient.Send<RefuelServiceCommand>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
+                mqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
                 {
                     Component = Component.FuelTruck,
                     PlaneId = cmd.PlaneId
@@ -157,7 +158,7 @@ namespace FuelTruck
                 {
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
                     playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
-                    mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new FuelCompletion()
+                    mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
                     {
                         Fuel = command.Fuel,
                         PlaneId = car.PlaneId

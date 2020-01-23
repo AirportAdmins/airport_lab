@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TransportMotion;
 
 namespace FuelTruck
 {
@@ -24,6 +25,6 @@ namespace FuelTruck
         //public static List<Tuple<Food, int>> MaxFoodAmount { get => maxFoodAmount; }
         public static int FuelOnBoard { get; set; }
         const int MaxFuelOnBoard = 1000;
-        public bool MotionPermission { get; set; }
+        public bool MotionPermitted { get; set; }
     }
 }

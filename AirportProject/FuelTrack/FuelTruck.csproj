@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <AssemblyName>FuelTruck</AssemblyName>
     <RootNamespace>FuelTruck</RootNamespace>
     <ApplicationIcon />
@@ -12,7 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AirportLibrary\AirportLibrary.csproj" />
     <ProjectReference Include="..\MqWrapper\RabbitMqWrapper.csproj" />
-    <ProjectReference Include="..\ScheduleComponent\ScheduleComponent.csproj" />
+    <ProjectReference Include="..\TransportMotion\TransportMotion.csproj" />
   </ItemGroup>
 
 </Project>
