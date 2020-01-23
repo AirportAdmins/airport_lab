@@ -56,11 +56,17 @@ namespace GroundServiceComponent
         public void Start()
         {
             logger?.Info($"{ComponentName}: Start");
-            //Declare queues
+            //Declare and purge queues
             foreach (var receiver in Receivers)
-                mqClient.DeclareQueues(ComponentName+receiver);
+            {
+                mqClient.PurgeQueues(ComponentName + receiver);
+                mqClient.DeclareQueues(ComponentName + receiver);
+            }
             foreach (var sender in Senders)
-                mqClient.DeclareQueues(sender+ComponentName);
+            {
+                mqClient.PurgeQueues(sender + ComponentName);
+                mqClient.DeclareQueues(sender + ComponentName);
+            }
 
             //Receieve from airplane to parking
             mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
