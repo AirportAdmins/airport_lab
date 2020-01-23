@@ -41,7 +41,7 @@ namespace TransportMotion
             {
                 { Component.Logs,component+Component.FuelTruck },
                 { Component.GroundMotion,component+Component.GroundMotion },
-                { Component.Visualizer,component+Component.Visualizer },
+                { Component.Visualizer,Component.Visualizer },
             };
         }
  
@@ -117,7 +117,7 @@ namespace TransportMotion
         {
             List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
             Random rand = new Random();
-            return homeVertexes.ElementAt(rand.Next(0, 3));
+            return homeVertexes.ElementAt(rand.Next(0, 4));
         }
         void SendVisualizationMessage(ICar car, int StartVertex, int DestinationVertex, int speed)
         {
