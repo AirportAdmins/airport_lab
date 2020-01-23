@@ -68,22 +68,20 @@ namespace DeicingComponent
                 DeicingCar car = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
 
                 //если не нашли свободную машину, начинаем поиск заново
-                if (car == null)
+                while(car == null)
                 {
                     source.CreateToken().Sleep(15);
                     car = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
                 }
-                else //иначе прерываем движение на стоянку и ставим статус busy
+                 //иначе прерываем движение на стоянку и ставим статус busy               
+                car.Status = Status.Busy;
+                if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
                 {
-                    car.Status = Status.Busy;
-                    if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
-                    {
-                        cancellationToken.Cancel();
-                        Task task = carTasks[car.DeicingCarID];
-                        task.Wait();
-                        carTasks.Remove(car.DeicingCarID, out task);
-                    }                 
-                }
+                    cancellationToken.Cancel();
+                    Task task = carTasks[car.DeicingCarID];
+                    task.Wait();
+                    carTasks.Remove(car.DeicingCarID, out task);
+                }                                 
                 return car;
             }
         }
