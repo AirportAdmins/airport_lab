@@ -52,7 +52,7 @@ namespace AirplaneComponent
                 { Component.FollowMe, Component.Airplane + Component.FollowMe },
                 { Component.Logs, Component.Airplane + Component.Logs },
                 { Component.Visualizer, Component.Visualizer},
-                { Component.GroundMotion, Component.Airplane+Component.GroundMotion },
+                { Component.GroundMotion, Component.GroundMotion },
                 { Component.GroundService, Component.Airplane+Component.GroundService }
             };
             queuesFrom = new Dictionary<string, string>()
