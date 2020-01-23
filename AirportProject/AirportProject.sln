@@ -35,6 +35,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaggageComponent", "Baggage
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FollowMeComponent", "FollowMeComponent\FollowMeComponent.csproj", "{34B208FC-9B97-4E80-A801-88F30AAF8B7E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeicingComponent", "DeicingComponent\DeicingComponent.csproj", "{513CD0A8-0A33-4AFF-A8B2-CE82C23C1608}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34B208FC-9B97-4E80-A801-88F30AAF8B7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{513CD0A8-0A33-4AFF-A8B2-CE82C23C1608}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{513CD0A8-0A33-4AFF-A8B2-CE82C23C1608}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{513CD0A8-0A33-4AFF-A8B2-CE82C23C1608}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{513CD0A8-0A33-4AFF-A8B2-CE82C23C1608}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
