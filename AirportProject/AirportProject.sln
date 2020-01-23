@@ -9,11 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqWrapper", "MqWrapper\RabbitMqWrapper.csproj", "{548956CA-B7F5-4B8D-AB24-5AE5C900F789}"
 EndProject
-<<<<<<< HEAD
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuelTruck", "FuelTrack\FuelTruck.csproj", "{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}"
-=======
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuelTruck", "FuelTruckComponent\FuelTruckComponent.csproj", "{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransportMotion", "TransportMotion\TransportMotion.csproj", "{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}"
->>>>>>> common/motion
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,17 +31,6 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
-<<<<<<< HEAD
-		{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{525BE74A-B8E4-4EEC-9C56-172F0A39DA95}.Release|Any CPU.Build.0 = Release|Any CPU
-=======
-		{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C38FF7A9-37A7-41B3-BA34-3D4F1583949A}.Release|Any CPU.Build.0 = Release|Any CPU
->>>>>>> common/motion
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
