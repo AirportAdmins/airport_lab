@@ -41,8 +41,8 @@ namespace Baggage
         const string queueFromAirPlane = Component.Airplane + Component.Baggage;
 
         const string queueToAirPlane = Component.Baggage + Component.Airplane;
-        const string queueToLogs = Component.Baggage + Component.Logs;
-        const string queueToGroundMotion = Component.Baggage + Component.GroundMotion;
+        const string queueToLogs = Component.Logs;
+        const string queueToGroundMotion = Component.GroundMotion;
         const string queueToGroundService = Component.Baggage + Component.GroundService;
         const string queuetoStorage = Component.Baggage + Component.Storage;
         const string queueToVisualizer = Component.Baggage + Component.Visualizer;
