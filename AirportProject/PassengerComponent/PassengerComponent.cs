@@ -422,7 +422,7 @@ namespace PassengerComponent
                         {
                             var passFlight = passengersFlight[0];
                             if (passFlight.Status == FlightStatus.CheckIn)
-                                GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                                GoCheckInToAnyOfFlights(passenger, passengersFlight);
                         }
                     }
                 }

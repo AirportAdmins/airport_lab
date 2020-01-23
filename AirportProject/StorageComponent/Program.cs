@@ -88,11 +88,13 @@ namespace StorageComponent
                 if (flight != null)
                 {
                     flight.Passengers.Add(pasId);
-                    return;
+                } else
+                {
+                    var newFlight = new Flight() { FlightId = flightId };
+                    newFlight.Passengers.Add(pasId);
+                    Flights.Add(newFlight);
                 }
-                var newFlight = new Flight() { FlightId = flightId };
-                newFlight.Passengers.Add(pasId);
-                Flights.Add(newFlight);
+                Console.WriteLine($"{flight.FlightId}: {flight.Passengers.Count} passengers");
             }
         }
 
@@ -104,9 +106,11 @@ namespace StorageComponent
                 if (flight != null)
                 {
                     flight.Baggage++;
-                    return;
+                } else
+                {
+                    Flights.Add(new Flight() { FlightId = flightId, Baggage = 1 });
                 }
-                Flights.Add(new Flight() { FlightId = flightId, Baggage = 1 });
+                Console.WriteLine($"{flight.FlightId}: {flight.Baggage} baggage");
             }            
         }
         

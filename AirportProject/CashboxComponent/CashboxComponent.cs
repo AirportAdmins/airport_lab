@@ -75,6 +75,7 @@ namespace CashboxComponent
                     } else
                     {
                         flights.Add(mes.FlightId, mes);
+                        Console.WriteLine("New flight {0}. TicketCount: {2}", mes.FlightId, mes.TicketCount);
                     }
                 }
             });
@@ -132,6 +133,7 @@ namespace CashboxComponent
                                     {
                                         if (lastUpdate.TicketCount > 0)
                                         {
+                                            Console.WriteLine("{0} is buying a ticket. TicketCount for {1}: {2}", passId, flightId, lastUpdate.TicketCount);
                                             lastUpdate.TicketCount--;
                                             passengerToFlight.Add(passId, flightId);
                                             status = TicketStatus.HasTicket;
@@ -154,6 +156,7 @@ namespace CashboxComponent
                                     if (lastUpdate.Status == FlightStatus.New
                                         || lastUpdate.Status == FlightStatus.CheckIn)
                                     {
+                                        Console.WriteLine("{0} is returning a ticket. TicketCount for {1}: {2}", passId, flightId, lastUpdate.TicketCount);
                                         passengerToFlight.Remove(passId);
                                         flights[flightId].TicketCount++;
                                         status = TicketStatus.TicketReturn;
