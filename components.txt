@@ -1,2 +1,6 @@
+CashboxComponent
+RegistrationComponent
+PassengerComponent
+TimetableComponent
 ScheduleComponent
 TimeServiceComponent
