@@ -6,7 +6,9 @@ namespace GroundServiceComponent
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Logger logger = new Logger();
+            logger.Write += Console.WriteLine;
+            new GroundServiceComponent(logger).Start();
         }
     }
 }

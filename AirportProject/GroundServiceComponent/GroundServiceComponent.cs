@@ -59,13 +59,13 @@ namespace GroundServiceComponent
             //Declare and purge queues
             foreach (var receiver in Receivers)
             {
-                mqClient.PurgeQueues(ComponentName + receiver);
                 mqClient.DeclareQueues(ComponentName + receiver);
+                mqClient.PurgeQueues(ComponentName + receiver);
             }
             foreach (var sender in Senders)
             {
-                mqClient.PurgeQueues(sender + ComponentName);
                 mqClient.DeclareQueues(sender + ComponentName);
+                mqClient.PurgeQueues(sender + ComponentName);
             }
 
             //Receieve from airplane to parking
