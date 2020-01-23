@@ -31,6 +31,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BusComponent", "BusComponen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaggageComponent", "BaggageComponent\BaggageComponent.csproj", "{4F22B24B-9168-425D-A72A-9C2FADAACAAF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FollowMeComponent", "FollowMeComponent\FollowMeComponent.csproj", "{34B208FC-9B97-4E80-A801-88F30AAF8B7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,7 +94,6 @@ Global
 		{4F22B24B-9168-425D-A72A-9C2FADAACAAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4F22B24B-9168-425D-A72A-9C2FADAACAAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F22B24B-9168-425D-A72A-9C2FADAACAAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4F22B24B-9168-425D-A72A-9C2FADAACAAF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
