@@ -24,11 +24,7 @@ namespace TransportMotion
         PlayDelaySource source;
         Random rand = new Random();
 
-<<<<<<< HEAD
-        public TransportMotion(string Component, RabbitMqClient MqClient)
-=======
         public TransportMotion(string Component,RabbitMqClient MqClient,PlayDelaySource source)
->>>>>>> 190c8a55fb4ad2cc2cf8410b1a9f93428f684bca
         {
             this.component = Component;
             this.mqClient = MqClient;
@@ -44,11 +40,7 @@ namespace TransportMotion
             };
             queuesTo = new Dictionary<string, string>()
             {
-<<<<<<< HEAD
-                { Component.Logs,Component.Logs },
-=======
                 { Component.Logs, Component.Logs },
->>>>>>> 190c8a55fb4ad2cc2cf8410b1a9f93428f684bca
                 { Component.GroundMotion,component+Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
