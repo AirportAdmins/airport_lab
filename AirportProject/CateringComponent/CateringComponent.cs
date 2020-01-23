@@ -90,11 +90,12 @@ namespace CateringComponent
             mqClient.SubscribeTo<CateringServiceCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotCommand(cmd).Start());
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
-                    cars[response.ObjectId].MotionPermission=true);
+                    cars[response.ObjectId].MotionPermitted=true);
         }
 
         Task GotCommand(CateringServiceCommand cmd)     
         {
+            Console.WriteLine($"Got new catering command from groundservice");
             int countCars = HowManyCarsNeeded(cmd);
             for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
             {
@@ -119,7 +120,12 @@ namespace CateringComponent
             }
             var cde = new CountdownEvent(countCars);
             completionEvents.TryAdd(cmd.PlaneId, cde);
-            foreach (var ev in wakeEvents)
+            foreach(var car in cars.Values)             //break cars path home
+            {
+                if (car.IsGoingHome)
+                    tokens[car.CarId].Cancel();
+            }
+            foreach (var ev in wakeEvents)              //wake cars in garage
                 ev.Set();
             return new Task(() =>
             {
@@ -154,25 +160,44 @@ namespace CateringComponent
             while (true)
             {                                                           //waits for common command
                 if (commands.TryDequeue(out var command))
-                {                   
+                {
+                    Console.WriteLine($"Catering car {car.CarId} is going to airplane {command.PlaneId}");
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
+                    Console.WriteLine($"Catering car {car.CarId} begins catering airplane {command.PlaneId}");
                     playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
                     mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
                     {
                         FoodList = command.FoodList,
                         PlaneId = car.PlaneId
                     });
+                    Console.WriteLine($"Catering car {car.CarId} completed catering airplane {command.PlaneId}");
                     completionEvents[car.PlaneId].Signal();
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
-                    if (!tokens[car.CarId].IsCancellationRequested)
-                        wakeEvent.WaitOne();
-                    else
-                    {
-                        tokens[car.CarId] = new CancellationTokenSource();
-                    }
                 }
-            }
+                if (!IsHome(car.LocationVertex))            //if car is not home go home
+                {
+                    Console.WriteLine($"Catering car {car.CarId} is going home");
+                    car.IsGoingHome = true;
+                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(),
+                        tokens[car.CarId].Token);
+                }
+                if (!tokens[car.CarId].IsCancellationRequested)   //if going home was not cancelled wait for task
+                {
+                    car.IsGoingHome = false;
+                    wakeEvent.WaitOne();                    
+                }
+                else
+                {
+                    Console.WriteLine($"Catering car {car.CarId} going home was cancelled");
+                    tokens[car.CarId] = new CancellationTokenSource();
+                }
+             }
+         }
+        bool IsHome(int locationVertex)
+        {
+            List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
+            return homeVertexes.Contains(locationVertex);
         }
     }
+    }
     
-}
+

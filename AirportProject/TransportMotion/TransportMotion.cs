@@ -86,7 +86,7 @@ namespace TransportMotion
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermission = false;
+            car.MotionPermitted= false;
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
@@ -110,26 +110,15 @@ namespace TransportMotion
                     StartVertex = StartVertex
                 });
 
-<<<<<<< HEAD
-            while (car.MotionPermission != true)
-=======
             while (!car.MotionPermitted)               //check if car can go
->>>>>>> 157c02c1cacc59fa800b9352907fa6380da2fc1d
                 source.CreateToken().Sleep(5);
         }
 
         public int GetHomeVertex()
         {
             List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
-<<<<<<< HEAD
-            lock (rand)
-            {
-                return homeVertexes.ElementAt(rand.Next(0, 4));
-            }
-=======
             Random rand = new Random();
             return homeVertexes.ElementAt(rand.Next(0, 4));
->>>>>>> 157c02c1cacc59fa800b9352907fa6380da2fc1d
         }
         void SendVisualizationMessage(ICar car, int StartVertex, int DestinationVertex, int speed)
         {
