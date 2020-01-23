@@ -204,6 +204,10 @@ namespace RegistrationComponent
                 MqClient.Send(regStorage,
                         new PassengerStoragePass() { PassengerId = passengerId, FlightId = flightId });
                 flight.PasCount++;
+                MqClient.Send(
+                        regPas,
+                        new CheckInResponse() { PassengerId = passengerId, Status = CheckInStatus.Terminal }
+                    );
 
                 if (baggage)
                 {

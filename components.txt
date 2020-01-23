@@ -1,4 +1,5 @@
 CashboxComponent
+RegistrationComponent
 PassengerComponent
 TimetableComponent
 ScheduleComponent

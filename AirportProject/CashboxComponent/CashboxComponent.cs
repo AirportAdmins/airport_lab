@@ -160,6 +160,7 @@ namespace CashboxComponent
                                             if (lastUpdate.TicketCount > 0)
                                             {
                                                 lastUpdate.TicketCount--;
+                                                Console.WriteLine($"Tickets left for flight {lastUpdate.FlightId}: {lastUpdate.TicketCount}");
                                                 passengerToFlight.Add(passId, flightId);
                                                 status = TicketStatus.HasTicket;
                                             } else

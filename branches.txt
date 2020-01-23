@@ -1,0 +1,8 @@
+common/airport
+common/mqwrapper
+comp/schedule
+comp/registration
+comp/timeservice
+comp/passenger
+comp/timetable
+comp/cashbox
