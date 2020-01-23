@@ -20,6 +20,7 @@ namespace FollowMeComponent
         Dictionary<string, string> queuesTo;
         ConcurrentDictionary<string, FollowMeCar> cars;
         ConcurrentDictionary<string, CancellationTokenSource> tokens;
+        ConcurrentDictionary<string, Task> carTasks;
         RabbitMqClient MqClient;
         Map map = new Map();
         PlayDelaySource source;
@@ -27,20 +28,21 @@ namespace FollowMeComponent
         double timeFactor = 1;
         int motionInterval = 100;       //ms
         int countCars = 4;
-        public FollowMeComponent()  //TODO sleep в машинке
+        public FollowMeComponent()  
         {
             MqClient = new RabbitMqClient();
             cars = new ConcurrentDictionary<string, FollowMeCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
             source = new PlayDelaySource(timeFactor);
+            carTasks = new ConcurrentDictionary<string, Task>();
         }
         public void Start()
         {
             CreateQueues();
             DeclareQueues();
             MqClient.PurgeQueues(queuesFrom.Values.ToArray());
-            Subscribe();
             FillCollections();
+            Subscribe();            
         }
         void FillCollections()
         {
@@ -62,7 +64,7 @@ namespace FollowMeComponent
             queuesTo = new Dictionary<string, string>()
             {
                 { Component.Airplane,Component.FollowMe+Component.Airplane },
-                { Component.Logs,Component.Logs+Component.FollowMe },
+                { Component.Logs,Component.Logs },
                 { Component.GroundService,Component.FollowMe+Component.GroundService },
                 { Component.GroundMotion,Component.FollowMe+Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer }
@@ -94,7 +96,7 @@ namespace FollowMeComponent
         }
         public void GotTransferRequest(AirplaneTransferCommand cmd)
         {
-            SendToLogs($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} "+
+            Console.WriteLine($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} "+
                 $"to {cmd.DestinationVertex}");
             var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
             while(followme==null)       //waits for a free car
@@ -105,12 +107,17 @@ namespace FollowMeComponent
               
             if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
             {
-                cancellationToken.Cancel();
+                cancellationToken.Cancel();                     //cancel going home
+                carTasks[followme.FollowMeId].Wait();           //wait for the task end
             }
                         
             followme.Status = Status.Busy;            
             followme.PlaneId = cmd.PlaneId;
-            TransferAirplane(followme,cmd).Start();
+            var t = TransferAirplane(followme, cmd);        
+            carTasks.AddOrUpdate(followme.FollowMeId, t, (key,value)=> value=t);  //update task or add if not exists       
+            Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
+            t.Start();
+           
         }
         Task TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
@@ -123,12 +130,18 @@ namespace FollowMeComponent
                     Component = Component.FollowMe,
                     PlaneId = followme.PlaneId
                 });
-                SendToLogs("Completed servicing airplane ID " + cmd.PlaneId);                
+                SendToLogs("Completed transfering airplane ID " + cmd.PlaneId);
+                Console.WriteLine($"FollowMe {followme.FollowMeId} completed transfering airplane ID " 
+                    + cmd.PlaneId);
                 followme.Status = Status.Free;
-
+                Console.WriteLine($"FollowMe {followme.FollowMeId} is free now and going home");
                 var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
                 tokens.TryAdd(followme.FollowMeId, source);
                 GoPathHome(followme, GetHomeVertex(), source.Token);
+                if (source.Token.IsCancellationRequested)
+                    Console.WriteLine($"FollowMe {followme.FollowMeId} is going on new task");
+                else
+                    Console.WriteLine($"FollowMe {followme.FollowMeId} is in garage now");
                 tokens.Remove(followme.FollowMeId, out source);
             });                                                         
         }
@@ -155,11 +168,15 @@ namespace FollowMeComponent
         {
             List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
             Random rand = new Random();
-            return homeVertexes.ElementAt(rand.Next(0, 3));
+            return homeVertexes.ElementAt(rand.Next(0, 4));
         }
         void GoToVertexWithAirplane(FollowMeCar followme, int DestinationVertex)
         {
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is waiting for motion permission in " +
+               $"vertex {followme.LocationVertex} to go to vertex {DestinationVertex}");
             WaitForMotionPermission(followme, DestinationVertex);
+            Console.WriteLine($"FollowMe {followme.FollowMeId} got permission to go to {DestinationVertex}");
+            var StartVertex = followme.LocationVertex;
             MqClient.Send<FollowMeCommand>(queuesTo[Component.Airplane], new FollowMeCommand()
             {
                 FollowMeId = followme.FollowMeId,
@@ -167,8 +184,12 @@ namespace FollowMeComponent
                 PlaneId = followme.PlaneId
             });
             MakeAMove(followme, DestinationVertex);
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is in vertex {DestinationVertex}");
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is waiting for airplane " +
+                $"{followme.PlaneId} in {followme.LocationVertex}");
             while (!followme.GotAirplaneResponse)           //wait for airplane response
                 source.CreateToken().Sleep(10);
+            Console.WriteLine($"FollowMe {followme.FollowMeId} got airplane {followme.PlaneId} response staying in {followme.LocationVertex}");
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
             {
@@ -176,14 +197,19 @@ namespace FollowMeComponent
                 DestinationVertex = DestinationVertex,
                 Component = Component.FollowMe,
                 ObjectId = followme.FollowMeId,
-                StartVertex = followme.LocationVertex
+                StartVertex = StartVertex
             });
             followme.GotAirplaneResponse = false;
         }
         void GoToVertexAlone(FollowMeCar followme, int DestinationVertex)
         {
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is waiting for motion permission in " +
+                $"vertex {followme.LocationVertex} to go to vertex {DestinationVertex}");
             WaitForMotionPermission(followme, DestinationVertex);
+            Console.WriteLine($"FollowMe {followme.FollowMeId} got permission to go to {DestinationVertex}");
+            var startVertex = followme.LocationVertex;
             MakeAMove(followme, DestinationVertex);
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is in vertex {DestinationVertex}");            
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
             {
@@ -191,7 +217,7 @@ namespace FollowMeComponent
                 DestinationVertex = DestinationVertex,
                 Component = Component.FollowMe,
                 ObjectId = followme.FollowMeId,
-                StartVertex = followme.LocationVertex
+                StartVertex = startVertex
             });
         }
         void WaitForMotionPermission(FollowMeCar followme, int DestinationVertex)
