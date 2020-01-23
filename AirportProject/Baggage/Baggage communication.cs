@@ -99,6 +99,7 @@ namespace Baggage
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
                                 //отдаём багаж самолёту
+                                sourceDelay.CreateToken().Sleep(15 * 60 * 1000); //отдаём багаж 15 минут
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Give, car.CountOfBaggage);
                                 car.CountOfBaggage = 0;
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
@@ -130,6 +131,7 @@ namespace Baggage
                                 GoPath(GoToVertexAlone, car, bsc.PlaneLocationVertex);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} приехала к самолёту");
 
+                                sourceDelay.CreateToken().Sleep(15 * 60 * 1000); //забираем багаж 15 минут
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
                                 Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
 
@@ -156,7 +158,7 @@ namespace Baggage
                     //ждём, пока все машины не завершат работу
                     while (carsEndWork != 0)
                     {
-                        source.CreateToken().Sleep(100);
+                        sourceDelay.CreateToken().Sleep(100);
                     }
                     //отправляем СНО сообщение о том, что обслуживание самолёта завершено
                     ServiceCompletionMessage mes = new ServiceCompletionMessage()
@@ -181,7 +183,7 @@ namespace Baggage
                 //если не нашли свободную машину, начинаем поиск заново
                 if (car == null)
                 {
-                    source.CreateToken().Sleep(15);
+                    sourceDelay.CreateToken().Sleep(15);
                     return SearchFreeCar();
                 }
                 else //иначе прерываем движение на стоянку и ставим статус busy

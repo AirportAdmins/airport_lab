@@ -21,7 +21,7 @@ namespace Baggage
     {
         delegate void GoToVertexAction(BaggageCar baggage, int DestinationVertex);
 
-        PlayDelaySource source;
+        PlayDelaySource sourceDelay;
 
         ConcurrentDictionary<string, BaggageCar> cars;
         int countOfCars = 6;
@@ -59,7 +59,7 @@ namespace Baggage
             cars = new ConcurrentDictionary<string, BaggageCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
             mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
-            source = new PlayDelaySource(TimeSpeedFactor);
+            sourceDelay = new PlayDelaySource(TimeSpeedFactor);
         }
 
         public void Start()
@@ -118,6 +118,7 @@ namespace Baggage
         private void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
         {
             WaitForMotionPermission(baggageCar, DestinationVertex);
+            int startLocation = baggageCar.LocationVertex;
             MakeAMove(baggageCar, DestinationVertex);
             mqClient.Send<MotionPermissionRequest>(queueToGroundMotion, //free edge
             new MotionPermissionRequest()
@@ -126,7 +127,7 @@ namespace Baggage
                 DestinationVertex = DestinationVertex,
                 Component = Component.Baggage,
                 ObjectId = baggageCar.BaggageCarID,
-                StartVertex = baggageCar.LocationVertex
+                StartVertex = startLocation
             });
         }
         private void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
@@ -142,7 +143,7 @@ namespace Baggage
                 });
 
             while (!baggageCar.MotionPermitted)               //check if baggacar can go
-                source.CreateToken().Sleep(5);
+                sourceDelay.CreateToken().Sleep(5);
         }
 
         private void MotionPermissionResponse()
@@ -161,7 +162,7 @@ namespace Baggage
             while (position < distance)                     //go
             {
                 position += BaggageCar.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
-                source.CreateToken().Sleep(motionInterval);
+                sourceDelay.CreateToken().Sleep(motionInterval);
             };
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
@@ -187,7 +188,7 @@ namespace Baggage
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queueFromTimeService, (ntsf) =>
             {
                 TimeSpeedFactor = ntsf.Factor;
-                source.TimeFactor = TimeSpeedFactor;
+                sourceDelay.TimeFactor = TimeSpeedFactor;
             });
         }
 
