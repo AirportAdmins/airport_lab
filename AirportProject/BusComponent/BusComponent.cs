@@ -58,6 +58,7 @@ namespace BusComponent
             for (int i = 0; i < countCars; i++)
             {
                 var busCar = new BusCar();
+                busCar.LocationVertex = transportMotion.GetHomeVertex();
                 cars.TryAdd(busCar.CarId, busCar);
                 busCar.CarTools = new CarTools()
                 {
