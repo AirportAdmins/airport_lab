@@ -39,11 +39,13 @@ namespace GroundmoutionComponent
 
             //declare queue SendersToGroundmoution
             mqClient.DeclareQueues(ComponentName);
+            mqClient.PurgeQueues(ComponentName);
 
             //declare queues GroundmoutionToReceivers
             foreach (var receiver in MotionPermissionReceivers)
             {
                 mqClient.DeclareQueues(ComponentName + receiver);
+                mqClient.PurgeQueues(ComponentName + receiver);
             }
 
             logger?.Info($"{ComponentName}: Queues declared");
