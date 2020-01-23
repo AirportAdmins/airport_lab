@@ -22,6 +22,7 @@ namespace TransportMotion
         double timeFactor;
         int motionInterval = 100;
         PlayDelaySource source;
+        Random rand = new Random();
 
         public TransportMotion(string Component,RabbitMqClient MqClient,PlayDelaySource source)
         {
@@ -85,7 +86,7 @@ namespace TransportMotion
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermitted = false;
+            car.MotionPermitted= false;
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
