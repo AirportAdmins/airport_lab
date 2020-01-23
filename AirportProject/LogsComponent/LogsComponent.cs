@@ -15,8 +15,6 @@ namespace LogsComponent
 {
     public class LogsComponent
     {
-        //private readonly ILogger<>
-
         RabbitMqClient MqClient;
         Dictionary<string, string> queuesFrom;
         DateTime playTime = DateTime.Now;
