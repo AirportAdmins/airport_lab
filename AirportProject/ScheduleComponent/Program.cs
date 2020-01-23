@@ -10,7 +10,7 @@ using AirportLibrary.Delay;
 using System.Threading.Tasks;
 
 namespace ScheduleComponent
-{
+{ 
     class Program
     {
         static double timeFactor = 1.0;
