@@ -40,7 +40,7 @@ namespace FuelTruck
             completionEvents = new ConcurrentDictionary<string, CountdownEvent>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
             playDelaySource = new PlayDelaySource(timeFactor);
-            transportMotion = new TransportMotion.TransportMotion(Component.FuelTruck, mqClient);
+            transportMotion = new TransportMotion.TransportMotion(Component.FuelTruck, mqClient,playDelaySource);
         }
         public void Start()
         {
