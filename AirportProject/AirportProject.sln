@@ -29,7 +29,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransportMotion", "Transpor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BusComponent", "BusComponent\BusComponent.csproj", "{286A93CB-9C0E-4D9D-B117-CB171E6FC1FA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Baggage", "Baggage\Baggage.csproj", "{4F22B24B-9168-425D-A72A-9C2FADAACAAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaggageComponent", "BaggageComponent\BaggageComponent.csproj", "{4F22B24B-9168-425D-A72A-9C2FADAACAAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
