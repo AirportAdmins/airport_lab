@@ -6,7 +6,7 @@ using AirportLibrary;
 using AirportLibrary.DTO;
 
 namespace ScheduleComponent
-{
+{ 
     class Program
     {
         static void Main(string[] args)

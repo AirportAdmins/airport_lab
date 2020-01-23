@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{1A134D0A-F959-49D8-9E48-494E0660D092}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScheduleComponent", "ScheduleComponent\ScheduleComponent.csproj", "{0233CD02-EABE-410C-B55F-6C3E0149330A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AirportLibrary", "AirportLibrary\AirportLibrary.csproj", "{D8F7B003-666C-4920-A534-0E683FD434C1}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegistrationComponent", "RegistrationComponent\RegistrationComponent.csproj", "{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundServiceComponent", "GroundServiceComponent\GroundServiceComponent.csproj", "{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundmoutionComponent", "GroundmoutionComponent\GroundmoutionComponent.csproj", "{A9C03490-B97E-49E3-B4C3-2E18BAD9C5FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,33 +41,6 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
-<<<<<<< HEAD
-		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{10D92438-7F96-4AE6-9DEF-CED862F87E8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10D92438-7F96-4AE6-9DEF-CED862F87E8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10D92438-7F96-4AE6-9DEF-CED862F87E8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10D92438-7F96-4AE6-9DEF-CED862F87E8A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FE0899DF-F007-44C7-9B8E-29D29040DFB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE0899DF-F007-44C7-9B8E-29D29040DFB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE0899DF-F007-44C7-9B8E-29D29040DFB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE0899DF-F007-44C7-9B8E-29D29040DFB1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0685FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.Build.0 = Release|Any CPU
-=======
-		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Release|Any CPU.Build.0 = Release|Any CPU
->>>>>>> 537f3c9dbef5f2fd5542c5e4f6f1230c66412fba
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
