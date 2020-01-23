@@ -79,69 +79,107 @@ namespace PassengerComponent
 
             Task.Run(() =>
             {
-                while (!cancellationToken.IsCancellationRequested)
+                try
                 {
-                    var num = 4;
-                    // generate passengers
-                    if (random.NextDouble() < 1.0 / num) {
-                        var passenger = generator.GeneratePassenger();
-                        idlePassengers.TryAdd(
-                            passenger.PassengerId,
-                            passenger
-                        );
-                    }
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        var num = 4;
+                        // generate passengers
+                        if (random.NextDouble() < 1.0 / num)
+                        {
+                            var passenger = generator.GeneratePassenger();
+                            Console.WriteLine($"New passenger: {passenger.PassengerId}");
+                            idlePassengers.TryAdd(
+                                passenger.PassengerId,
+                                passenger
+                            );
+                        }
 
-                    playDelaySource.CreateToken().Sleep(PASSENGER_CREATION_PERIOD_MS / num);
+                        playDelaySource.CreateToken().Sleep(PASSENGER_CREATION_PERIOD_MS / num);
+                    }
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             }, cancellationToken);
 
             // Own run for every queue (e.g. waiting-for-response-passengers-from-cashbox)
             Task.Run(() =>
             {
-                while (!cancellationToken.IsCancellationRequested)
+                try
                 {
-                    // send passengers to do something
-                    var copyPassengers = new List<Passenger>(idlePassengers.Values);
-                    foreach (var passenger in copyPassengers)
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        TryToSendPassengerSomewhere(passenger);
-                    }
+                        // send passengers to do something
+                        var copyPassengers = new List<Passenger>(idlePassengers.Values);
+                        foreach (var passenger in copyPassengers)
+                        {
+                            TryToSendPassengerSomewhere(passenger);
+                        }
 
-                    playDelaySource.CreateToken().Sleep(PASSENGER_ACTIVITY_PERIOD_MS);
+                        playDelaySource.CreateToken().Sleep(PASSENGER_ACTIVITY_PERIOD_MS);
+                    }
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             }, cancellationToken);
 
             mqClient.SubscribeTo<Timetable>(TimetableToPassengerQueue, (mes) =>
             {
-                // Careful: do not change to "updating" of timetable, just replace it
-                // Otherwise it can be modified at the same time it's being traversed
-                timetable = mes;
-                var flights = mes.Flights.Select(f => f.FlightId);
-                foreach (var passenger in passivePassengers.Values)
+                try
                 {
-                    if (!flights.Contains(passenger.FlightId))
+                    Console.WriteLine("Timetable updated");
+                    // Careful: do not change to "updating" of timetable, just replace it
+                    // Otherwise it can be modified at the same time it's being traversed
+                    timetable = mes;
+                    var flights = mes.Flights.Select(f => f.FlightId);
+                    foreach (var passenger in passivePassengers.Values)
                     {
-                        if (passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger)) {
-                            Console.WriteLine($"Passenger {depPassenger.PassengerId} has departed with flight {depPassenger.FlightId}");
-                        };
+                        if (!flights.Contains(passenger.FlightId))
+                        {
+                            if (passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger))
+                            {
+                                Console.WriteLine($"Passenger {depPassenger.PassengerId} has departed with flight {depPassenger.FlightId}");
+                            };
+                        }
                     }
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             });
 
             mqClient.SubscribeTo<TicketResponse>(CashboxToPassengerQueue, (mes) =>
             {
-                HandleCashboxResponse(mes);
+                try
+                {
+                    HandleCashboxResponse(mes);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             });
 
             mqClient.SubscribeTo<CheckInResponse>(RegistrationToPassengerQueue, (mes) =>
             {
-                HandleRegistrationResponse(mes);
-            });
+                try { 
+                    HandleRegistrationResponse(mes);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+        });
 
             mqClient.SubscribeTo<PassengerPassMessage>(BusStorageToPassengerQueue, (mes) =>
             {
-                HandleBusStorageResponse(mes);
-            });
+                try { 
+                    HandleBusStorageResponse(mes);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+        });
 
             mqClient.SubscribeTo<NewTimeSpeedFactor>(TimeServiceToPassengerQueue, (mes) =>
             {
@@ -297,91 +335,104 @@ namespace PassengerComponent
 
         private void TryToSendPassengerSomewhere(Passenger passenger)
         {
-            var tt = timetable;
-            if (tt == null || tt.Flights.Count == 0)
-                return;
+            try
+            {
+                //Console.WriteLine($"Trying to send passenger {passenger.PassengerId} anywhere...");
+                var tt = timetable;
+                if (tt == null || tt.Flights.Count == 0)
+                    return;
 
-            var chance = random.NextDouble();
-            if (passenger.Status == PassengerStatus.NoTicket)
-            {
-                if (chance < CHANCE_TO_MISTAKE)
+                var chance = random.NextDouble();
+                if (passenger.Status == PassengerStatus.NoTicket)
                 {
-                    var option = random.Next(3);
-                    switch (option)
+                    if (chance < CHANCE_TO_MISTAKE)
                     {
-                        case 0:
-                            var invalidFlights = tt.Flights.Where(
-                                f => f.Status != FlightStatus.New && f.Status != FlightStatus.CheckIn
-                            ).ToList();
-                            GoBuyTicketToAnyOfFlights(passenger, invalidFlights);
-                            break;
-                        case 1:
-                            GoCheckInToAnyOfFlights(passenger, tt.Flights);
-                            break;
-                        case 2:
-                            GoReturnTicketToAnyOfFlights(passenger, tt.Flights);
-                            break;
-                    }
-                } else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
-                {
-                    var goodFlights = tt.Flights.Where(
-                        f => f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn
-                    ).ToList();
-                    GoBuyTicketToAnyOfFlights(passenger, goodFlights);
-                }
-            } else if (passenger.Status == PassengerStatus.HasTicket)
-            {
-                if (chance < CHANCE_TO_MISTAKE)
-                {
-                    var option = random.Next(3);
-                    switch (option)
-                    {
-                        case 0:
-                            // Important: AlreadyHasTicket should only be returned to a passenger
-                            // that want to buy a ticket that he already has (see TODO above)
-                            var passengersFlight = tt.Flights.Where(
-                                f => f.FlightId == passenger.FlightId
-                            ).ToList();
-                            GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
-                            break;
-                        case 1:
-                            var notPassengersFlights = tt.Flights.Where(
-                                f => f.FlightId != passenger.FlightId || f.Status != FlightStatus.CheckIn
-                            ).ToList();
-                            GoCheckInToAnyOfFlights(passenger, notPassengersFlights);
-                            break;
-                        case 2:
-                            var invalidFlights = tt.Flights.Where(
-                                f => f.FlightId != passenger.FlightId
-                            ).ToList();
-                            GoReturnTicketToAnyOfFlights(passenger, invalidFlights);
-                            break;
-                    }
-                }
-                else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
-                {
-                    var passengersFlight = tt.Flights.Where(
-                        f => f.FlightId == passenger.FlightId && (f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn)
-                    ).ToList();
-                    if (passengersFlight.Count == 0)
-                    {
-                        // throw this passenger out
-                        if (idlePassengers.TryRemove(passenger.PassengerId, out passenger)) {
-                            Console.WriteLine($"Passenger {passenger.PassengerId} has missed check in - he sadly goes away");
+                        var option = random.Next(3);
+                        switch (option)
+                        {
+                            case 0:
+                                var invalidFlights = tt.Flights.Where(
+                                    f => f.Status != FlightStatus.New && f.Status != FlightStatus.CheckIn
+                                ).ToList();
+                                GoBuyTicketToAnyOfFlights(passenger, invalidFlights);
+                                break;
+                            case 1:
+                                GoCheckInToAnyOfFlights(passenger, tt.Flights);
+                                break;
+                            case 2:
+                                GoReturnTicketToAnyOfFlights(passenger, tt.Flights);
+                                break;
                         }
-                    } else if (chance < CHANCE_TO_RETURN_TICKET)
+                    }
+                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
                     {
-                        GoReturnTicketToAnyOfFlights(passenger, passengersFlight);
-                    } else
-                    {
-                        var passFlight = passengersFlight[0];
-                        if (passFlight.Status == FlightStatus.CheckIn)
-                            GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                        var goodFlights = tt.Flights.Where(
+                            f => f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn
+                        ).ToList();
+                        GoBuyTicketToAnyOfFlights(passenger, goodFlights);
                     }
                 }
-            } else
+                else if (passenger.Status == PassengerStatus.HasTicket)
+                {
+                    if (chance < CHANCE_TO_MISTAKE)
+                    {
+                        var option = random.Next(3);
+                        switch (option)
+                        {
+                            case 0:
+                                // Important: AlreadyHasTicket should only be returned to a passenger
+                                // that want to buy a ticket that he already has (see TODO above)
+                                var passengersFlight = tt.Flights.Where(
+                                    f => f.FlightId == passenger.FlightId
+                                ).ToList();
+                                GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                                break;
+                            case 1:
+                                var notPassengersFlights = tt.Flights.Where(
+                                    f => f.FlightId != passenger.FlightId || f.Status != FlightStatus.CheckIn
+                                ).ToList();
+                                GoCheckInToAnyOfFlights(passenger, notPassengersFlights);
+                                break;
+                            case 2:
+                                var invalidFlights = tt.Flights.Where(
+                                    f => f.FlightId != passenger.FlightId
+                                ).ToList();
+                                GoReturnTicketToAnyOfFlights(passenger, invalidFlights);
+                                break;
+                        }
+                    }
+                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
+                    {
+                        var passengersFlight = tt.Flights.Where(
+                            f => f.FlightId == passenger.FlightId && (f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn)
+                        ).ToList();
+                        if (passengersFlight.Count == 0)
+                        {
+                            // throw this passenger out
+                            if (idlePassengers.TryRemove(passenger.PassengerId, out passenger))
+                            {
+                                Console.WriteLine($"Passenger {passenger.PassengerId} has missed check in - he sadly goes away");
+                            }
+                        }
+                        else if (chance < CHANCE_TO_RETURN_TICKET)
+                        {
+                            GoReturnTicketToAnyOfFlights(passenger, passengersFlight);
+                        }
+                        else
+                        {
+                            var passFlight = passengersFlight[0];
+                            if (passFlight.Status == FlightStatus.CheckIn)
+                                GoBuyTicketToAnyOfFlights(passenger, passengersFlight);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException($"Cannot send passenger with status {passenger.Status} anywhere");
+                }
+            } catch (Exception e)
             {
-                throw new ArgumentException($"Cannot send passenger with status {passenger.Status} anywhere");
+                Console.WriteLine(e);
             }
         }
 
@@ -449,10 +500,10 @@ namespace PassengerComponent
             };
             if (idlePassengers.TryRemove(passenger.PassengerId, out passenger))
             {
-                log("was removed from idle");
+                //log("was removed from idle");
                 if (waitingForResponsePassengers.TryAdd(passenger.PassengerId, passenger))
                 {
-                    log("was added to waiting");
+                    //log("was added to waiting");
                     if (message != null) log(message);
                     action();
                 }
