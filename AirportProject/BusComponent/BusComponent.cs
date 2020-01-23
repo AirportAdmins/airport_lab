@@ -127,10 +127,16 @@ namespace BusComponent
         }
         Task GotCommand(PassengersServiceCommand cmd)
         {
+            Console.WriteLine($"Got a new command from storage for an airplane {cmd.PlaneId}");
             DoSmallCommands(cmd);                      //breaking a command on small commands          
             var cde = new CountdownEvent(countCars);
             completionEvents.TryAdd(cmd.PlaneId, cde);
-            foreach (var car in cars.Values)
+            foreach (var car in cars.Values)        //cancel going home
+            {
+                if (car.IsGoingHome)
+                    car.CarTools.TokenSource.Cancel();
+            }
+            foreach (var car in cars.Values)        //wake up the cars in garage
                 car.CarTools.WakeEvent.Set();
             return new Task(() =>
             {
@@ -190,13 +196,17 @@ namespace BusComponent
                 if (!IsHome(car.LocationVertex))            //if car is not home go home
                 {
                     Console.WriteLine($"Bus {car.CarId} is going home");
+                    car.IsGoingHome = true;
                     transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), 
                         car.CarTools.TokenSource.Token);
                 }
                 if (!car.CarTools.TokenSource.IsCancellationRequested)   //if going home was not cancelled wait for task
-                    wakeEvent.WaitOne();
+                {
+                    car.IsGoingHome = false;
+                    wakeEvent.WaitOne(); 
+                }
                 else
-                {                    
+                {
                     car.CarTools.TokenSource = new CancellationTokenSource();
                 }           
             }
