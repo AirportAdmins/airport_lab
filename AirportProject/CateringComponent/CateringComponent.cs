@@ -75,7 +75,7 @@ namespace CateringComponent
                 { Component.Airplane,Component.Catering+Component.Airplane },
                 { Component.GroundService,Component.Catering+Component.GroundService },
                  { Component.Logs,Component.Logs },
-                { Component.GroundMotion,Component.Catering+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
         }
