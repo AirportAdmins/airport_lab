@@ -47,7 +47,9 @@ namespace FuelTruck
             CreateQueues();
             DeclareQueues();
             mqClient.PurgeQueues(queuesFrom.Values.ToArray());
+            mqClient.PurgeQueues(queuesTo.Values.ToArray());
             Subscribe();
+            Console.WriteLine("Okay");
             CarsStart();
         }
         void CarsStart()
@@ -75,7 +77,7 @@ namespace FuelTruck
             {
                 { Component.Airplane,Component.FuelTruck+Component.Airplane },
                 { Component.GroundService,Component.FuelTruck+Component.GroundService },
-                {Component.Logs, Component.FuelTruck+Component.Logs }
+                {Component.Logs, Component.Logs }
             };
         }
         void DeclareQueues()
@@ -112,20 +114,32 @@ namespace FuelTruck
 
         Task GotCommand(RefuelServiceCommand cmd)
         {
-            int countCars = (int)(Math.Ceiling((double)(1000 / cmd.Fuel))); // HowManyCarsNeeded(cmd); //1000 - maxFuel
-            string logMes = "";
+            int countCars = (int)(Math.Ceiling((double)(cmd.Fuel/FuelTruckCar.MaxFuelOnBoard))); // HowManyCarsNeeded(cmd); //1000 - maxFuel
             for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
-            {                
-                commands.Enqueue(new RefuelServiceCommand()
-                {
-                    PlaneId = cmd.PlaneId,
-                    PlaneLocationVertex = cmd.PlaneLocationVertex,
-                    Fuel = cmd.Fuel
-                });
-                
+            {
+                cmd.Fuel -= FuelTruckCar.MaxFuelOnBoard;
+                if (cmd.Fuel>0)
+                    commands.Enqueue(new RefuelServiceCommand()
+                    {
+                        PlaneId = cmd.PlaneId,
+                        PlaneLocationVertex = cmd.PlaneLocationVertex,
+                        Fuel = FuelTruckCar.MaxFuelOnBoard
+                    });
+                else
+                    commands.Enqueue(new RefuelServiceCommand()     //остаток
+                    {
+                        PlaneId = cmd.PlaneId,
+                        PlaneLocationVertex = cmd.PlaneLocationVertex,
+                        Fuel = cmd.Fuel + FuelTruckCar.MaxFuelOnBoard
+                    });
             }
             var cde = new CountdownEvent(countCars);
             completionEvents.TryAdd(cmd.PlaneId, cde);
+            foreach(var car in cars.Values)
+            {
+                if (car.IsGoingHome)
+                    tokens[car.CarId].Cancel();
+            }
             foreach (var ev in wakeEvents)
                 ev.Set();
             return new Task(() =>
@@ -138,17 +152,9 @@ namespace FuelTruck
                     PlaneId = cmd.PlaneId
                 });
 
-                //сюда лог мессадж
 
             });
         }
-
-        /*int HowManyCarsNeeded(RefuelServiceCommand cmd)
-        {
-            //int cmdCat = cmd.Fuel;
-            
-            return (int)Math.Celling(1000/cmd.Fuel);
-        }*/
 
         Task DoRefuel(FuelTruckCar car, AutoResetEvent wakeEvent)      //car work
         {
@@ -157,24 +163,35 @@ namespace FuelTruck
                 if (commands.TryDequeue(out var command))
                 {
                     transportMotion.GoPath(car, command.PlaneLocationVertex);
-                    playDelaySource.CreateToken().Sleep(10 * 60 * 1000);        //10 min to do catering
+                    playDelaySource.CreateToken().Sleep(2 * 60 * 1000);        
                     mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
                     {
                         Fuel = command.Fuel,
                         PlaneId = car.PlaneId
                     });
-
                     SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, car.PlaneId));
-
                     completionEvents[car.PlaneId].Signal();
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
-                    if (!tokens[car.CarId].IsCancellationRequested)
-                        wakeEvent.WaitOne();
-                    else
-                    {
-                        tokens[car.CarId] = new CancellationTokenSource();
-                    }
                 }
+                if (!IsHome(car.LocationVertex))            //if car is not home go home
+                {
+                    car.IsGoingHome = true;
+                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
+                }                
+                if (!tokens[car.CarId].IsCancellationRequested)
+                {
+                    car.IsGoingHome = false;
+                    wakeEvent.WaitOne();
+                }
+                else
+                {
+                    tokens[car.CarId] = new CancellationTokenSource();
+                }
+                
+            }
+            bool IsHome(int locationVertex)
+            {
+                List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
+                return homeVertexes.Contains(locationVertex);
             }
         }
     }

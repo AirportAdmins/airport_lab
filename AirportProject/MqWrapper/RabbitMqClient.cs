@@ -24,7 +24,8 @@ namespace RabbitMqWrapper
             {
                 HostName = hostName,
                 UserName = userName,
-                Password = password
+                Password = password,
+                VirtualHost= "qxubihhb"
             };
             mqConnection = factory.CreateConnection();
             mqChannel = mqConnection.CreateModel();
