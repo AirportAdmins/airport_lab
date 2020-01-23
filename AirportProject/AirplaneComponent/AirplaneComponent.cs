@@ -242,19 +242,17 @@ namespace AirplaneComponent
 
         void Departure(DepartureSignal signal)
         {
-            FlyAway(airplanes[signal.PlaneId]);
-        }
-
-        void FlyAway(Airplane plane)
-        {
+            var plane=airplanes[signal.PlaneId];
             MoveByItself(plane, plane.LocationVertex - 4);
         }
+
+   
         void Land(Airplane plane)
         {
-            MoveByItself(plane, plane.LocationVertex + 4);
+            MoveByItself(plane, plane.LocationVertex + 4).Wait();
         }
 
-        void MoveByItself(Airplane plane, int DestinationVertex)
+        Task MoveByItself(Airplane plane, int DestinationVertex)
         {
             int timeInterval = 100;
             double position = 0;
@@ -263,7 +261,7 @@ namespace AirplaneComponent
             Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
             SendVisualizationMessage(plane, DestinationVertex, 1);
             Console.WriteLine("Send vs message");
-            Task task = Task.Run(() =>
+            Task task = new Task(() =>
             {
                 while (position < distance)
                 {
@@ -285,6 +283,8 @@ namespace AirplaneComponent
                 Console.WriteLine("In vertex " + DestinationVertex);
 
             });
+            task.Start();
+            return task;
         }
         void WaitForMotionPermission(Airplane airplane, int DestinationVertex)
         {
