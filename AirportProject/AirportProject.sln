@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CashboxComponent", "Cashbox
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RegistrationComponent", "RegistrationComponent\RegistrationComponent.csproj", "{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundServiceComponent", "GroundServiceComponent\GroundServiceComponent.csproj", "{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,7 @@ Global
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{548956CA-B7F5-4B8D-AB24-5AE5C900F789}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
 		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C400E24-210C-4B5C-B314-C86F20DE0CEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -57,6 +60,12 @@ Global
 		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0485FFC2-6E15-4D70-9E1B-08EECF6CB9D6}.Release|Any CPU.Build.0 = Release|Any CPU
+=======
+		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21E7E988-CCB6-49FF-8CC6-78C0A202A4D5}.Release|Any CPU.Build.0 = Release|Any CPU
+>>>>>>> 537f3c9dbef5f2fd5542c5e4f6f1230c66412fba
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
