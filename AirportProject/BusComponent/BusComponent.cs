@@ -77,6 +77,7 @@ namespace BusComponent
                 { Component.Airplane,Component.Airplane+Component.Bus },
                 { Component.GroundService,Component.GroundService+Component.Bus },
                 { Component.Storage,Component.Storage+Component.Bus },
+                { Component.TimeService,Component.TimeService + Component.Bus },
             };
             queuesTo = new Dictionary<string, string>()
             {
@@ -84,6 +85,9 @@ namespace BusComponent
                 { Component.GroundService,Component.Bus+Component.GroundService },
                 { Component.Storage,Component.Bus+Component.Storage },
                 { Component.Passenger,Component.Bus+Component.Passenger },
+                { Component.Logs,Component.Logs },
+                { Component.GroundMotion,Component.Bus+Component.GroundMotion },
+                { Component.Visualizer,Component.Visualizer },
             };
         }
         void DeclareQueues()
@@ -155,7 +159,7 @@ namespace BusComponent
             var count = 1;
             while(cmd.PassengersCount>0)
             {
-                cmd.PassengersCount -=  BusCar.PassengersMaxCount * count; //how many passengers left
+                cmd.PassengersCount -=  BusCar.PassengersMaxCount; //how many passengers left
                 if (cmd.PassengersCount>0)
                 {
                     commands.Enqueue(new PassengersServiceCommand()
@@ -222,7 +226,7 @@ namespace BusComponent
             Console.WriteLine($"Bus {car.CarId} is going to take passngers from airplane {cmd.PlaneId}");
             transportMotion.GoPath(car, cmd.PlaneLocationVertex);
             Console.WriteLine($"Bus {car.CarId} begins to take passengers from airplane {cmd.PlaneId} ");
-            playDelaySource.CreateToken().Sleep(15 * 60 * 1000);      //take passengers from airplane
+            playDelaySource.CreateToken().Sleep(2 * 60 * 1000);      //take passengers from airplane
             mqClient.Send<PassengerTransferRequest>(queuesTo[Component.Airplane], new PassengerTransferRequest()
             {
                 Action=TransferAction.Take,
@@ -254,7 +258,7 @@ namespace BusComponent
             Console.WriteLine($"Bus {car.CarId} took passengers from storage and is going to plane {cmd.PlaneId}");
             transportMotion.GoPath(car, cmd.PlaneLocationVertex);
             Console.WriteLine($"Bus {car.CarId} begins to give passengers to airplane {cmd.PlaneId} ");
-            playDelaySource.CreateToken().Sleep(15 * 60 * 1000);        //get passengers to airplane
+            playDelaySource.CreateToken().Sleep(2 * 60 * 1000);        //get passengers to airplane
             mqClient.Send<PassengerTransferRequest>(queuesTo[Component.Airplane], new PassengerTransferRequest()
             {
                 Action = TransferAction.Give,
