@@ -172,7 +172,7 @@ namespace AirportLibrary.Graph
             var shortcut = new List<T>() { vertex2.Id };
             for (var i = 0; i < Vertices.Count * (Vertices.Count - 1) / 2; i++)
             {
-                if (vertex1 == vertex2)
+                if (vertex1.Equals(vertex2))
                     return shortcut;
                 vertex2 = GetDijkstraVertex(vertex2).PrevVertex;
                 shortcut.Insert(0, vertex2.Id);
