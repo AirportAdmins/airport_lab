@@ -204,31 +204,35 @@ namespace AirplaneComponent
                     }
                 });
         }
-        void FollowAction(FollowMeCommand cmd)
+        Task FollowAction(FollowMeCommand cmd)
         {
             int timeInterval = 100;
             double position = 0;
             var plane = airplanes[cmd.PlaneId];
-            int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
-            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);           
-            Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
-            Task task = Task.Run(() =>
+            Task task = new Task(() =>
             {
-                while (position < distance)
-                {
-                    position += Airplane.SpeedOnGround / 3.6 / 1000 * timeInterval * timeFactor;
-                    source.CreateToken().Sleep(timeInterval);
-                };
-                SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
-                plane.LocationVertex = cmd.DestinationVertex;
-                mqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
-                {
-                    PlaneId = plane.PlaneID,
-                    FollowMeId = cmd.FollowMeId,
-                    LocationVertex = plane.LocationVertex
-                });
-                Console.WriteLine("In vertex " + plane.LocationVertex);
-            });
+                  int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
+                  SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);
+                  Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
+                  Task task = Task.Run(() =>
+                  {
+                      while (position < distance)
+                      {
+                          position += Airplane.SpeedOnGround / 3.6 / 1000 * timeInterval * timeFactor;
+                          source.CreateToken().Sleep(timeInterval);
+                      };
+                      SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
+                      plane.LocationVertex = cmd.DestinationVertex;
+                      mqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
+                      {
+                          PlaneId = plane.PlaneID,
+                          FollowMeId = cmd.FollowMeId,
+                          LocationVertex = plane.LocationVertex
+                      });
+                      Console.WriteLine("In vertex " + plane.LocationVertex);
+                  });
+              });
+            return task;
         }
         void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)
         {
