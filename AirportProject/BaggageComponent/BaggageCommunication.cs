@@ -70,9 +70,10 @@ namespace Baggage
         //C СЛУЖБОЙ НАЗЕМНОГО ОБСЛУЖИВАНИЯ
         private void MessageFromGroundService() //забрать/сдать багаж на самолет
         {
-            Console.WriteLine(DateTime.Now + "Получил сообщение от СНО");
+            
             mqClient.SubscribeTo<BaggageServiceCommand>(queueFromGroundService, (bsc) =>
             {
+                Console.WriteLine(DateTime.Now +" "+  Component.Baggage + " Получил сообщение от СНО");
                 new Task(() =>
                 {
                     int numOfCars = Convert.ToInt32(Math.Ceiling((double)(bsc.BaggageCount / BaggageCar.MaxCountOfBaggage))); //сколько машин нужно выделить под задачу
@@ -85,7 +86,9 @@ namespace Baggage
 
                         for (int i=0;i<numOfCars;i++)
                         {
+                            Console.WriteLine("ищем свободную машину");
                             BaggageCar  car = SearchFreeCar();
+                            Console.WriteLine($"нашли {car.BaggageCarID} ");
                             Task t = new Task(() =>
                             {
                                 //поехать к накопителю 
