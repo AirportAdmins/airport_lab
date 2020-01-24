@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using AirportLibrary.DTO;
 
 namespace AirplaneComponent.AirplaneGenerator
@@ -9,6 +10,7 @@ namespace AirplaneComponent.AirplaneGenerator
     {
         AirplaneModel model;
         string airplaneID;
+        public AutoResetEvent MotionPermission { get; set; } = new AutoResetEvent(false);
 
         public Airplane(AirplaneModel model,int id)
         {
