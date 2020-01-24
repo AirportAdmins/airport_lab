@@ -20,7 +20,6 @@ namespace TransportMotion
         Dictionary<string, string> queuesTo;
         Map map = new Map();
         double timeFactor;
-        int motionInterval = 100;
         PlayDelaySource source;
         Random rand = new Random();
 
