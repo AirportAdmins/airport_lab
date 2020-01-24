@@ -137,7 +137,7 @@ namespace Baggage
         private void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
         {
             Console.WriteLine(baggageCar.BaggageCarID + " пытается получить разрешение на перемещение");
-            mqClient.Send<MotionPermissionRequest>(Component.Baggage, //permission request
+            mqClient.Send<MotionPermissionRequest>(Component.GroundMotion, //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
