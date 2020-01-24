@@ -49,7 +49,6 @@ namespace FuelTruck
             mqClient.PurgeQueues(queuesFrom.Values.ToArray());
             mqClient.PurgeQueues(queuesTo.Values.ToArray());
             Subscribe();
-            Console.WriteLine("Okay");
             CarsStart();
         }
         void CarsStart()
