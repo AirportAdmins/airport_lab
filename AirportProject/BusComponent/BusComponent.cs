@@ -129,8 +129,10 @@ namespace BusComponent
         }
         Task GotCommand(PassengersServiceCommand cmd)
         {
-            Console.WriteLine($"Got a new command of {cmd.Action} passengers from storage for an airplane {cmd.PlaneId}");
-            var count=DoSmallCommands(cmd);                      //breaking a command on small commands          
+            Console.WriteLine($"Got a new command of {cmd.Action} passengers for an airplane {cmd.PlaneId}" +
+                $"passengercount= {cmd.PassengersCount}");
+            var count=DoSmallCommands(cmd);                      //breaking a command on small commands  
+            Console.WriteLine($"Broke a command for {cmd.PlaneId} on {count} commands");
             var cde = new CountdownEvent(count);
             completionEvents.TryAdd(cmd.PlaneId, cde);
             foreach (var car in cars.Values)        //cancel going home
