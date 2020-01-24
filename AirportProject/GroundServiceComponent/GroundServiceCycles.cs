@@ -163,6 +163,12 @@ namespace GroundServiceComponent
                 while (secondCycle.Status != ActionStatus.Finished)
                     await Task.Delay(100);
             }
+            mqClient.Send<DepartureSignal>(GroundServiceComponent.ComponentName + Component.Airplane,
+                new DepartureSignal()
+                {
+                    PlaneId = this.PlaneId
+                });
+            Console.WriteLine($"Sent DepartureSignal to {PlaneId}");
             mqClient.Send<AirplaneServiceStatus>(GroundServiceComponent.ComponentName + Component.Schedule,
                 new AirplaneServiceStatus()
                 {
