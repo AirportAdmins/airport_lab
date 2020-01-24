@@ -58,12 +58,13 @@ namespace Baggage
         {
             cars = new ConcurrentDictionary<string, BaggageCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
+            mqClient = new RabbitMqClient();
             sourceDelay = new PlayDelaySource(TimeSpeedFactor);
         }
 
         public void Start()
         {
+            Console.WriteLine($"{Component.Baggage} начал работу");
             DeclarePurgeQueues();
             FillCollections();
             Subscribe();
