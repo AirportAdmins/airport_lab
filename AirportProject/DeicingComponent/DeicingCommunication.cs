@@ -1,4 +1,5 @@
-﻿using AirportLibrary.DTO;
+﻿using AirportLibrary;
+using AirportLibrary.DTO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -31,7 +32,9 @@ namespace DeicingComponent
         {
             mqClient.SubscribeTo<ServiceCommand>(queueFromGroundService, (sc) =>
             {
+                Console.WriteLine(DateTime.Now + " " + Component.Deicing + " Получил сообщение от СНО");
                 DeicingCar car = SearchFreeCar();
+                Console.WriteLine($"нашли свободную машину {car.DeicingCarID}");
                 Task t = new Task(() =>
                 {
 
