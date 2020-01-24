@@ -121,7 +121,11 @@ namespace AirplaneComponent
                 }
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
-                     Departure(mes));
+            {
+                Console.WriteLine($"Airplane {mes.PlaneId} got signal to departure");
+                Departure(mes);
+            });
+            
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
                 Console.WriteLine($"Airplane {mes.ObjectId} gets permission...");
@@ -244,6 +248,7 @@ namespace AirplaneComponent
         {
             var plane=airplanes[signal.PlaneId];
             MoveByItself(plane, plane.LocationVertex - 4);
+            Console.WriteLine($"Airplane {plane.PlaneID} departured");
         }
 
    
