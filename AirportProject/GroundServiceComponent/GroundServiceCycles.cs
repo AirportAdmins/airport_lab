@@ -18,11 +18,13 @@ namespace GroundServiceComponent
         public readonly object lockStatus = new object();
         static int count;
         public int Id { get; }
+        public ILogger logger;
         public ActionStatus Status = ActionStatus.NotStarted;
         public Dictionary<string, ActionStatus> componentsAction { get; }
         
-        public Cycle(params string[] actions)
+        public Cycle(ILogger logger,params string[] actions)
         {
+            this.logger = logger;
             Id = count++;
             componentsAction = new Dictionary<string, ActionStatus>();
             foreach (var component in actions)
@@ -38,8 +40,13 @@ namespace GroundServiceComponent
                     throw new Exception();
                 }
                 componentsAction[component] = ActionStatus.Finished;
+
+                logger?.Debug($"{GroundServiceComponent.ComponentName}: FinishAction: InnerCycle Id {Id} Action {component} is finished");
                 if (componentsAction.Keys.Where(x => componentsAction[x] == ActionStatus.Finished).Count() == componentsAction.Count)
+                {
                     this.Status = ActionStatus.Finished;
+                    logger?.Debug($"{GroundServiceComponent.ComponentName}: InnerCycle Id {Id} is finished");
+                }
             }
         }
 
@@ -80,8 +87,8 @@ namespace GroundServiceComponent
         public GroundServiceCycles(RabbitMqClient mq, ILogger logger)
         {
             id = count++;
-            firstCycle = new Cycle(FirstCycleComponents);
-            secondCycle = new Cycle(SecondCycleComponents);
+            firstCycle = new Cycle(logger, FirstCycleComponents);
+            secondCycle = new Cycle(logger, SecondCycleComponents);
             this.logger = logger;
             mqClient = mq;
             logger?.Debug($"{GroundServiceComponent.ComponentName}: Create new service cycle with Id {id} ");
@@ -137,9 +144,9 @@ namespace GroundServiceComponent
             RequestDeliverEat(((FlightInfo)mes).FoodList);
 
             //Wait End of overhead actions
-            while (firstCycle.componentsAction[Component.Bus] != ActionStatus.Finished ||
-                    firstCycle.componentsAction[Component.Baggage] != ActionStatus.Finished ||
-                    firstCycle.componentsAction[Component.Catering] != ActionStatus.Finished)
+            while (secondCycle.componentsAction[Component.Bus] != ActionStatus.Finished ||
+                    secondCycle.componentsAction[Component.Baggage] != ActionStatus.Finished ||
+                    secondCycle.componentsAction[Component.Catering] != ActionStatus.Finished)
                 await Task.Delay(100);
             RequestFollow(runWayVertices);
         }
@@ -156,6 +163,12 @@ namespace GroundServiceComponent
                 while (secondCycle.Status != ActionStatus.Finished)
                     await Task.Delay(100);
             }
+            mqClient.Send<DepartureSignal>(GroundServiceComponent.ComponentName + Component.Airplane,
+                new DepartureSignal()
+                {
+                    PlaneId = this.PlaneId
+                });
+            Console.WriteLine($"Sent DepartureSignal to {PlaneId}");
             mqClient.Send<AirplaneServiceStatus>(GroundServiceComponent.ComponentName + Component.Schedule,
                 new AirplaneServiceStatus()
                 {
