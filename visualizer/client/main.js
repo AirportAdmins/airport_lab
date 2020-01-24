@@ -132,10 +132,12 @@ stage.add(garageLayer);
           this.endPoint = endPoint;
           this.startAnimateTime = performance.now();
           this.speed = speed;
+		  console.log(`Distance: ${Math.sqrt(Math.pow(startPoint.x - endPoint.x, 2) + Math.pow(startPoint.y - endPoint.y, 2))}, speed: ${speed}, start date: ${performance.now()}`)
       }
       animate(thisTime){
           if (this.endPoint && this.speed !== undefined && this.startAnimateTime){
               if (this.speed === 0){
+				console.log(`Speed is 0: ${performance.now()}`);
                 this.image.x(this.endPoint.x)
                 this.image.y(this.endPoint.y)
                 this.text.x(this.endPoint.x)
@@ -154,9 +156,11 @@ stage.add(garageLayer);
             let newY = Math.round(this.startPoint.y - this.speed*factor * (thisTime - this.startAnimateTime)* Math.sin(angle));
 
             if (this.endPoint.x > this.startPoint.x && newX >= this.endPoint.x || this.endPoint.x < this.startPoint.x && newX <= this.endPoint.x){
+				console.log(`At vertext: ${performance.now()}`);
                 newX = this.endPoint.x;
             }
             if (this.endPoint.y > this.startPoint.y && newY >= this.endPoint.y || this.endPoint.y < this.startPoint.y && newY <= this.endPoint.y){
+				console.log(`At vertex: ${performance.now()}`);
                 newY = this.endPoint.y;
             }
             if (newX == this.endPoint.x && newY == this.endPoint.y){
