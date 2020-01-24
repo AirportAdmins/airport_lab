@@ -119,17 +119,20 @@ namespace FuelTruck
         Task GotCommand(RefuelServiceCommand cmd)
         {
             Console.WriteLine($"Got new command for airplane {cmd.PlaneId}");
-            int countCars = (int)(Math.Ceiling((double)(cmd.Fuel/FuelTruckCar.MaxFuelOnBoard))); // HowManyCarsNeeded(cmd); //1000 - maxFuel
-            for (int i = 1; i <= countCars; i++)        //breaking the command on small commands for cars
+            int countCars = 1; // HowManyCarsNeeded(cmd); //1000 - maxFuel
+            while(cmd.Fuel>0)        //breaking the command on small commands for cars
             {
                 cmd.Fuel -= FuelTruckCar.MaxFuelOnBoard;
-                if (cmd.Fuel>0)
+                if (cmd.Fuel > 0)
+                {
                     commands.Enqueue(new RefuelServiceCommand()
                     {
                         PlaneId = cmd.PlaneId,
                         PlaneLocationVertex = cmd.PlaneLocationVertex,
                         Fuel = FuelTruckCar.MaxFuelOnBoard
                     });
+                    countCars++;
+                }
                 else
                     commands.Enqueue(new RefuelServiceCommand()     //остаток
                     {
@@ -177,8 +180,8 @@ namespace FuelTruck
                         Fuel = command.Fuel,
                         PlaneId = car.PlaneId
                     });
-                    SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, car.PlaneId));
-                    completionEvents[car.PlaneId].Signal();
+                    SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, command.PlaneId));
+                    completionEvents[command.PlaneId].Signal();
                 }
                 if (!IsHome(car.LocationVertex))            //if car is not home go home
                 {
