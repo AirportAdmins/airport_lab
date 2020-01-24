@@ -256,7 +256,7 @@ namespace AirplaneComponent
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
             Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
-            SendVisualizationMessage(plane, DestinationVertex, 1);
+            SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
             Console.WriteLine("Send vs message");
             Task task = new Task(() =>
             {
