@@ -63,8 +63,8 @@ namespace GroundServiceComponent
             Component.FollowMe
         };
 
-        static int[] parkingVertices = new int[] { 4, 10, 16, 19 };
-        static int[] runWayVertices = new int[] { 1, 2, 3 };
+        static int[] parkingVertices = new int[] { 8, 9, 11, 12, 17, 18, 23, 24 };
+        static int[] runWayVertices = new int[] { 5, 6, 7 };
 
         int id;
         Cycle firstCycle;

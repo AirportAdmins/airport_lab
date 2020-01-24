@@ -71,75 +71,83 @@ namespace GroundServiceComponent
             //Receieve from airplane to parking
             mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
             {
-                logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex}) from Airplane to start first cycle");
+                Task.Run(()=> {
+                    logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex}) from Airplane to start first cycle");
 
-                GroundServiceCycles cycle;
-                lock (airplaneLock)
-                {
-                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
-                    if (cycle == null)
+                    GroundServiceCycles cycle;
+                    lock (airplaneLock)
                     {
-                        cycle = new GroundServiceCycles(mqClient, logger);
-                        cycle.FlightId = mes.FlightId;
-                        cycle.PlaneId = mes.PlaneId;
-                        cycle.PlaneLocationVertex = mes.LocationVertex;
+                        cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                        if (cycle == null)
+                        {
+                            cycle = new GroundServiceCycles(mqClient, logger);
+                            cycle.FlightId = mes.FlightId;
+                            cycle.PlaneId = mes.PlaneId;
+                            cycle.PlaneLocationVertex = mes.LocationVertex;
 
-                        serviceAirplanes.Add(cycle);
+                            serviceAirplanes.Add(cycle);
 
-                        logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex})");
+                            logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex})");
+                        }
+                        else
+                        {
+                            cycle.PlaneId = mes.PlaneId;
+                            cycle.PlaneLocationVertex = mes.LocationVertex;
+                        }
                     }
-                    else
-                    {
-                        cycle.PlaneId = mes.PlaneId;
-                        cycle.PlaneLocationVertex = mes.LocationVertex;
-                    }
-                }
-                new Task(cycle.StartFisrtCycle,mes.Needs).Start();
+                    cycle.StartFisrtCycle(mes.Needs);
+                });
             }
             );
 
             //Receieve from registration that second cycle begin 
             mqClient.SubscribeTo<FlightInfo>(Component.Registration + ComponentName, (mes) =>
             {
-                logger?.Info($"{ComponentName}: Received message (FlightId: {mes.FlightId}) from Registration to start second cycle");
+                Task.Run(() => {
+                    logger?.Info($"{ComponentName}: Received message (FlightId: {mes.FlightId}) from Registration to start second cycle");
 
-                GroundServiceCycles cycle;
-                lock (airplaneLock)
-                {
-                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
-                    if (cycle == null)
+                    GroundServiceCycles cycle;
+                    lock (airplaneLock)
                     {
-                        cycle = new GroundServiceCycles(mqClient, logger);
-                        cycle.FlightId = mes.FlightId;
+                        cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                        if (cycle == null)
+                        {
+                            cycle = new GroundServiceCycles(mqClient, logger);
+                            cycle.FlightId = mes.FlightId;
 
-                        serviceAirplanes.Add(cycle);
+                            serviceAirplanes.Add(cycle);
 
-                        logger?.Debug($"{ComponentName}: Added new cycle with (FlightId: {mes.FlightId})");
+                            logger?.Debug($"{ComponentName}: Added new cycle with (FlightId: {mes.FlightId})");
+                        }
                     }
-                }
-                new Task(cycle.StartSecondCycle, mes).Start();
+                    cycle.StartSecondCycle(mes);
+                });
             }
             );
 
             //Receieve from Schedule that time to Departure
             mqClient.SubscribeTo<AirplaneDepartureTimeSignal>(Component.Schedule + ComponentName, (mes) =>
             {
-                logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}) from Schedule that now time to Departure");
-                GroundServiceCycles cycle;
-                lock (airplaneLock)
+                Task.Run(() =>
                 {
-                    cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
-                    if (cycle == null)
+                    logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}) from Schedule that now time to Departure");
+                    GroundServiceCycles cycle;
+                    lock (airplaneLock)
                     {
-                        cycle = new GroundServiceCycles(mqClient, logger);
-                        cycle.FlightId = mes.FlightId;
+                        cycle = serviceAirplanes.Find(x => x.FlightId == mes.FlightId);
+                        if (cycle == null)
+                        {
+                            cycle = new GroundServiceCycles(mqClient, logger);
+                            cycle.FlightId = mes.FlightId;
 
-                        serviceAirplanes.Add(cycle);
+                            serviceAirplanes.Add(cycle);
 
-                        logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId})");
+                            logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId})");
+                        }
                     }
-                }
-                new Task(cycle.StartDeparture).Start();
+                    cycle.StartDeparture();
+                });
+                
             }
             );
 
@@ -147,17 +155,19 @@ namespace GroundServiceComponent
             foreach (var car in GroundTransport)
                 mqClient.SubscribeTo<ServiceCompletionMessage>(car + ComponentName, (mes) =>
                   {
-                      logger?.Info($"{ComponentName}: Received message (Component: {mes.Component}, PlaneId: {mes.PlaneId}) that service completion");
+                      Task.Run(() => {
+                          logger?.Info($"{ComponentName}: Received message (Component: {mes.Component}, PlaneId: {mes.PlaneId}) that service completion");
 
-                      GroundServiceCycles cycle;
-                      lock (airplaneLock)
-                          cycle = serviceAirplanes.Find(x => x.PlaneId == mes.PlaneId);
-                      if (cycle == null)
-                      {
-                          logger?.Error($"{ComponentName}: Cycle not found");
-                          throw new Exception();
-                      } 
-                      new Task(cycle.FinishAction, mes.Component).Start();
+                          GroundServiceCycles cycle;
+                          lock (airplaneLock)
+                              cycle = serviceAirplanes.Find(x => x.PlaneId == mes.PlaneId);
+                          if (cycle == null)
+                          {
+                              logger?.Error($"{ComponentName}: Cycle not found");
+                              throw new Exception();
+                          }
+                          cycle.FinishAction(mes.Component);
+                      });
                   }
                 );
         }
