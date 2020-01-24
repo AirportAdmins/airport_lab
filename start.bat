@@ -1,6 +1,10 @@
 set netcoreappversion=%1
 
 if "%1"=="" (
+	start cmd /k "sleep 0.3 && cd visualizer\server && node server"
+)
+
+if "%2"=="" (
 	set netcoreappversion="3.0"
 )
 
