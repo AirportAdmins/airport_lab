@@ -82,7 +82,7 @@ var autoLayer = new Konva.Layer();
 var garageLayer = new Konva.Layer();
 const points = getPoints(WIDTH, HEIGHT);
 
-setPoints(layer);
+setPoints(autoLayer);
 setTexture();
 
 stage.add(laverText);
