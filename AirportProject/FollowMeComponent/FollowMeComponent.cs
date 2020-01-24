@@ -84,7 +84,7 @@ namespace FollowMeComponent
                 source.TimeFactor = timeFactor;
             });
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
-                    GotTransferRequest(cmd));
+                    GotTransferRequest(cmd).Start());
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
                     cars[response.ObjectId].MotionPermitted = true);
             MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>    //airpane
@@ -95,30 +95,32 @@ namespace FollowMeComponent
                             followme.GotAirplaneResponse = true;
                     });
         }
-        public void GotTransferRequest(AirplaneTransferCommand cmd)
+        public Task GotTransferRequest(AirplaneTransferCommand cmd)
         {
-            Console.WriteLine($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} "+
+            Console.WriteLine($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} " +
                 $"to {cmd.DestinationVertex}");
             var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
-            while(followme==null)       //waits for a free car
+            Task task = new Task(() =>
             {
-                source.CreateToken().Sleep(100);
-                followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
-            }
-              
-            if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
-            {
-                cancellationToken.Cancel();                     //cancel going home
-                carTasks[followme.FollowMeId].Wait();           //wait for the task end
-            }
-                        
-            followme.Status = Status.Busy;            
-            followme.PlaneId = cmd.PlaneId;
-            var t = TransferAirplane(followme, cmd);        
-            carTasks.AddOrUpdate(followme.FollowMeId, t, (key,value)=> value=t);  //update task or add if not exists       
-            Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
-            t.Start();
-           
+                while (followme == null)       //waits for a free car
+                {
+                    source.CreateToken().Sleep(100);
+                    followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
+                }
+
+                if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
+                {
+                    cancellationToken.Cancel();                     //cancel going home
+                    carTasks[followme.FollowMeId].Wait();           //wait for the task end
+                }
+
+                followme.Status = Status.Busy;
+                followme.PlaneId = cmd.PlaneId;
+                var t = TransferAirplane(followme, cmd);
+                carTasks.AddOrUpdate(followme.FollowMeId, t, (key, value) => value = t);  //update task or add if not exists       
+                Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
+            });
+            return task;
         }
         Task TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
