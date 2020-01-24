@@ -115,9 +115,10 @@ namespace Baggage
             for (int i = 0; i < path.Count - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
-                    break;
+                    return;
                 GoToVertexAlone(baggageCar, path[i + 1]);
             }
+            Console.WriteLine($"{DateTime.Now} {baggageCar.BaggageCarID} вернулась на стоянку");
         }
         private void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
         {
