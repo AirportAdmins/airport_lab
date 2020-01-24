@@ -161,7 +161,7 @@ namespace BusComponent
             while(cmd.PassengersCount>0)
             {
                 count++;
-                cmd.PassengersCount -=  BusCar.PassengersMaxCount*count; //how many passengers left
+                cmd.PassengersCount -=  BusCar.PassengersMaxCount; //how many passengers left
                 if (cmd.PassengersCount>0)
                 {
                     commands.Enqueue(new PassengersServiceCommand()
@@ -255,12 +255,14 @@ namespace BusComponent
             Console.WriteLine($"Bus {car.CarId} is going to get passengers to airplane {cmd.PlaneId}");
             Console.WriteLine($"Bus {car.CarId} is going to storage");
             transportMotion.GoPath(car, 25);
+
             mqClient.Send<PassengersFromStorageRequest>(queuesTo[Component.Storage], new PassengersFromStorageRequest()
             {
                 BusId=car.CarId,
                 Capacity=BusCar.PassengersMaxCount,
                 FlightId=cmd.FlightId
             });
+            Console.WriteLine($"Bus {car.CarId} send message to storage");
             car.CarTools.StorageResponse.WaitOne();
             Console.WriteLine($"Bus {car.CarId} took passengers from storage and is going to plane {cmd.PlaneId}");
             transportMotion.GoPath(car, cmd.PlaneLocationVertex);
