@@ -45,7 +45,7 @@ namespace Baggage
         const string queueToGroundMotion = Component.GroundMotion;
         const string queueToGroundService = Component.Baggage + Component.GroundService;
         const string queuetoStorage = Component.Baggage + Component.Storage;
-        const string queueToVisualizer = Component.Baggage + Component.Visualizer;
+        const string queueToVisualizer =  Component.Visualizer;
 
         public RabbitMqClient mqClient;
 
