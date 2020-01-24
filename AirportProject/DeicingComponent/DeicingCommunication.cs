@@ -1,4 +1,5 @@
-﻿using AirportLibrary.DTO;
+﻿using AirportLibrary;
+using AirportLibrary.DTO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -31,7 +32,9 @@ namespace DeicingComponent
         {
             mqClient.SubscribeTo<ServiceCommand>(queueFromGroundService, (sc) =>
             {
+                Console.WriteLine(DateTime.Now + " " + Component.Deicing + " Получил сообщение от СНО");
                 DeicingCar car = SearchFreeCar();
+                Console.WriteLine($"нашли свободную машину {car.DeicingCarID}");
                 Task t = new Task(() =>
                 {
 
@@ -75,13 +78,18 @@ namespace DeicingComponent
                 }
                  //иначе прерываем движение на стоянку и ставим статус busy               
                 car.Status = Status.Busy;
-                if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
+
+                if (carTasks.ContainsKey(car.DeicingCarID))
                 {
-                    cancellationToken.Cancel();
-                    Task task = carTasks[car.DeicingCarID];
-                    task.Wait();
-                    carTasks.Remove(car.DeicingCarID, out task);
-                }                                 
+
+                    if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
+                    {
+                        cancellationToken.Cancel();
+                        Task task = carTasks[car.DeicingCarID];
+                        task.Wait();
+                        carTasks.Remove(car.DeicingCarID, out task);
+                    }
+                }
                 return car;
             }
         }
