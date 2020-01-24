@@ -25,10 +25,10 @@ namespace FollowMeComponent
         Map map = new Map();
         PlayDelaySource source;
 
-        
-        
+
+
         int countCars = 4;
-        public FollowMeComponent()  
+        public FollowMeComponent()
         {
             MqClient = new RabbitMqClient();
             cars = new ConcurrentDictionary<string, FollowMeCar>();
@@ -42,7 +42,7 @@ namespace FollowMeComponent
             DeclareQueues();
             MqClient.PurgeQueues(queuesFrom.Values.ToArray());
             FillCollections();
-            Subscribe();            
+            Subscribe();
         }
         void FillCollections()
         {
@@ -50,7 +50,7 @@ namespace FollowMeComponent
             {
                 var followme = new FollowMeCar(i);
                 followme.LocationVertex = GetHomeVertex();
-                cars.TryAdd(followme.FollowMeId, followme);                
+                cars.TryAdd(followme.FollowMeId, followme);
             }
         }
         void CreateQueues()
@@ -83,44 +83,41 @@ namespace FollowMeComponent
                 source.TimeFactor = mes.Factor;
             });
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
-                    GotTransferRequest(cmd).Start());
+                    GotTransferRequest(cmd));
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
                     cars[response.ObjectId].MotionPermission.Set());
             MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>    //airpane
-                    {
-                        FollowMeCar followme = null;
-                        followme = cars[mes.FollowMeId];
-                        if (followme.PlaneId == mes.PlaneId&&followme.LocationVertex==mes.LocationVertex)           
-                            followme.GotAirplaneResponse = true;
-                    });
+            {
+                FollowMeCar followme = null;
+                followme = cars[mes.FollowMeId];
+                if (followme.PlaneId == mes.PlaneId && followme.LocationVertex == mes.LocationVertex)
+                    followme.GotAirplaneResponse = true;
+            });
         }
-        public Task GotTransferRequest(AirplaneTransferCommand cmd)
+        public void GotTransferRequest(AirplaneTransferCommand cmd)
         {
             Console.WriteLine($"Got transfer command of airplane {cmd.PlaneId} from vertex {cmd.PlaneLocationVertex} " +
                 $"to {cmd.DestinationVertex}");
             var followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
-            Task task = new Task(() =>
+            while (followme == null)       //waits for a free car
             {
-                while (followme == null)       //waits for a free car
-                {
-                    source.CreateToken().Sleep(100);
-                    followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
-                }
+                source.CreateToken().Sleep(100);
+                followme = cars.Values.FirstOrDefault(car => car.Status == Status.Free);
+            }
 
-                if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
-                {
-                    cancellationToken.Cancel();                     //cancel going home
-                    carTasks[followme.FollowMeId].Wait();           //wait for the task end
-                }
+            if (tokens.TryGetValue(followme.FollowMeId, out var cancellationToken))
+            {
+                cancellationToken.Cancel();                     //cancel going home
+                carTasks[followme.FollowMeId].Wait();           //wait for the task end
+            }
 
-                followme.Status = Status.Busy;
-                followme.PlaneId = cmd.PlaneId;
-                var t = TransferAirplane(followme, cmd);
-                carTasks.AddOrUpdate(followme.FollowMeId, t, (key, value) => value = t);  //update task or add if not exists 
-                t.Start();
-                Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
-            });
-            return task;
+            followme.Status = Status.Busy;
+            followme.PlaneId = cmd.PlaneId;
+            var t = TransferAirplane(followme, cmd);
+            carTasks.AddOrUpdate(followme.FollowMeId, t, (key, value) => value = t);  //update task or add if not exists       
+            Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
+            t.Start();
+
         }
         Task TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
@@ -148,17 +145,18 @@ namespace FollowMeComponent
                     else
                         Console.WriteLine($"FollowMe {followme.FollowMeId} is in garage now");
                     tokens.Remove(followme.FollowMeId, out source);
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
-            });                                                         
+            });
         }
         void GoPathHome(FollowMeCar followme, int destinationVertex,
             CancellationToken cancellationToken)
         {
             var path = map.FindShortcut(followme.LocationVertex, destinationVertex);
-            for (int i = 0; i < path.Count - 1; i++) 
+            for (int i = 0; i < path.Count - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
@@ -218,7 +216,7 @@ namespace FollowMeComponent
             Console.WriteLine($"FollowMe {followme.FollowMeId} got permission to go to {DestinationVertex}");
             var startVertex = followme.LocationVertex;
             MakeAMove(followme, DestinationVertex);
-            Console.WriteLine($"FollowMe {followme.FollowMeId} is in vertex {DestinationVertex}");            
+            Console.WriteLine($"FollowMe {followme.FollowMeId} is in vertex {DestinationVertex}");
             MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
             {
@@ -245,7 +243,7 @@ namespace FollowMeComponent
         }
         void MakeAMove(FollowMeCar followme, int DestinationVertex)     //just move to vertex
         {
-            
+
             int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);
             SendVisualizationMessage(followme, DestinationVertex, FollowMeCar.Speed);
             source.CreateToken().Sleep(distance * 1000 / FollowMeCar.Speed);

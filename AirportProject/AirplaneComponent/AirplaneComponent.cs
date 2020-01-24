@@ -80,22 +80,18 @@ namespace AirplaneComponent
             mqClient.SubscribeTo<AirplaneGenerationRequest>(queuesFrom[Component.Schedule], mes =>   //schedule
                 Task.Run(() => {
                     ScheduleResponse(mes);
-                    }));
-
+                }));
             mqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
             mqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
                      BaggageTransferResponse(mes));
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //time speed
-                {
-                    timeFactor = mes.Factor;
-                    source.TimeFactor = timeFactor;
-                });
+            {
+                timeFactor = mes.Factor;
+                source.TimeFactor = timeFactor;
+            });
             mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
-                    Task.Run(()=>
-                    {
-                        FollowAction(mes);
-                    }));
+                     FollowAction(mes));
             mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
             {
                 lock (airplanes[mes.PlaneId])
@@ -122,10 +118,7 @@ namespace AirplaneComponent
                 }
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
-            Task.Run(()=>
-                {
-                     Departure(mes);
-                }));
+                     Departure(mes));
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
                 Console.WriteLine($"Airplane {mes.ObjectId} gets permission...");
@@ -154,7 +147,7 @@ namespace AirplaneComponent
                     });
                 airplane.LocationVertex = GetVertexToLand();
                 Land(airplane);
-                Console.WriteLine($"Airplane {airplane.PlaneID} landed in vertex " + airplane.LocationVertex);
+                Console.WriteLine("I landed in vertex " + airplane.LocationVertex);
                 AirplaneServiceCommand(airplane);
             }
         }
@@ -248,11 +241,11 @@ namespace AirplaneComponent
 
         void Departure(DepartureSignal signal)
         {
-            var plane=airplanes[signal.PlaneId];
+            var plane = airplanes[signal.PlaneId];
             MoveByItself(plane, plane.LocationVertex - 4);
         }
 
-   
+
         void Land(Airplane plane)
         {
             MoveByItself(plane, plane.LocationVertex + 4).Wait();
@@ -261,19 +254,16 @@ namespace AirplaneComponent
         Task MoveByItself(Airplane plane, int DestinationVertex)
         {
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
-            WaitForMotionPermission(plane,DestinationVertex);
-
-            Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
+            WaitForMotionPermission(plane, DestinationVertex);
+            Console.WriteLine("Go to vertex " + DestinationVertex + " alone");
             SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
             Console.WriteLine("Send vs message");
             Task task = new Task(() =>
             {
                 source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedFly);
                 SendVisualizationMessage(plane, DestinationVertex, 0);
-
                 Console.WriteLine("Send vs message");
-                mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
-
+                mqClient.Send(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
                 {
                     Action = MotionAction.Free,
                     Component = Component.Airplane,
@@ -283,7 +273,7 @@ namespace AirplaneComponent
                 });
                 plane.LocationVertex = DestinationVertex;
                 plane.MotionPermitted = false;
-                Console.WriteLine($"Airlane {plane.PlaneID} is now in vertex " + DestinationVertex);
+                Console.WriteLine("In vertex " + DestinationVertex);
 
             });
             task.Start();
@@ -300,6 +290,7 @@ namespace AirplaneComponent
                     ObjectId = airplane.PlaneID,
                     StartVertex = airplane.LocationVertex
                 });
+
             Console.WriteLine($"Airplane {airplane.PlaneID} starts waiting for permission...");
             airplane.MotionPermission.WaitOne();
         }
@@ -317,9 +308,5 @@ namespace AirplaneComponent
                 return vertexes[rand.Next(0, 3)];
             }
         }
-        }
     }
-
-    
-
-
+}
