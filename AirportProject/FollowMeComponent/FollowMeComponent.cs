@@ -49,6 +49,7 @@ namespace FollowMeComponent
             for (int i = 0; i < countCars; i++)
             {
                 var followme = new FollowMeCar(i);
+                followme.LocationVertex = GetHomeVertex();
                 cars.TryAdd(followme.FollowMeId, followme);                
             }
         }
