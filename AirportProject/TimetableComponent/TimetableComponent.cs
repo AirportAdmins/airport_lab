@@ -34,13 +34,15 @@ namespace TimetableComponent
             mqClient.DeclareQueues(
                 TimetableToPassengerQueue,
                 ScheduleToTimetableQueue,
-                TimeServiceToTimetableQueue
+                TimeServiceToTimetableQueue,
+				TimeServiceToTimetableFactorQueue
             );
 
             mqClient.PurgeQueues(
                 TimetableToPassengerQueue,
                 ScheduleToTimetableQueue,
-                TimeServiceToTimetableQueue
+                TimeServiceToTimetableQueue,
+				TimeServiceToTimetableFactorQueue
             );
 
             var timetable = new ConsoleTimetable();
