@@ -78,7 +78,9 @@ namespace AirplaneComponent
         void Subscribe()
         {
             mqClient.SubscribeTo<AirplaneGenerationRequest>(queuesFrom[Component.Schedule], mes =>   //schedule
-                     ScheduleResponse(mes));
+                Task.Run(() => {
+                    ScheduleResponse(mes);
+                    }));
             mqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
             mqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
@@ -117,11 +119,13 @@ namespace AirplaneComponent
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
                      Departure(mes));
-            mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
+            mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
+                Console.WriteLine($"Airplane {mes.ObjectId} gets permission...");
                 lock (airplanes[mes.ObjectId])
                 {
-                    airplanes[mes.ObjectId].MotionPermitted = true;
+                    Console.WriteLine($"Airplane {mes.ObjectId} enters lock section...");
+                    airplanes[mes.ObjectId].MotionPermission.Set();
                 }
             });
         }
@@ -130,11 +134,12 @@ namespace AirplaneComponent
         ///<summary
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
-            Console.WriteLine("Got request");
+            Console.WriteLine("Request for generating a new airplane");
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
             if (airplanes.TryAdd(airplane.PlaneID, airplane))
             {
-                mqClient.Send<AirplaneGenerationResponse>(queuesTo[Component.Schedule],
+                Console.WriteLine("Sending permission request to GroundMotion");
+                mqClient.Send(queuesTo[Component.Schedule],
                     new AirplaneGenerationResponse()
                     {
                         FlightId = req.FlightId,
@@ -153,7 +158,7 @@ namespace AirplaneComponent
             {
                 if (req.Action == TransferAction.Take)
                 {
-                    mqClient.Send<PassengersTransfer>(queuesTo[Component.Bus], new PassengersTransfer()
+                    mqClient.Send(queuesTo[Component.Bus], new PassengersTransfer()
                     {
                         BusId = req.BusId,
                         PassengerCount = req.PassengersCount
@@ -188,7 +193,7 @@ namespace AirplaneComponent
         }
         void AirplaneServiceCommand(Airplane plane)
         {
-            mqClient.Send<AirplaneServiceCommand>(queuesTo[Component.GroundService],
+            mqClient.Send(queuesTo[Component.GroundService],
                 new AirplaneServiceCommand()
                 {
                     LocationVertex = plane.LocationVertex,
@@ -204,22 +209,16 @@ namespace AirplaneComponent
         }
         void FollowAction(FollowMeCommand cmd)
         {
-            int timeInterval = 100;
-            double position = 0;
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
             SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);           
             Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
             Task task = Task.Run(() =>
             {
-                while (position < distance)
-                {
-                    position += Airplane.SpeedOnGround / 3.6 / 1000 * timeInterval * timeFactor;
-                    source.CreateToken().Sleep(timeInterval);
-                };
+                source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedOnGround);
                 SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
                 plane.LocationVertex = cmd.DestinationVertex;
-                mqClient.Send<ArrivalConfirmation>(queuesTo[Component.FollowMe], new ArrivalConfirmation()
+                mqClient.Send(queuesTo[Component.FollowMe], new ArrivalConfirmation()
                 {
                     PlaneId = plane.PlaneID,
                     FollowMeId = cmd.FollowMeId,
@@ -254,8 +253,6 @@ namespace AirplaneComponent
 
         Task MoveByItself(Airplane plane, int DestinationVertex)
         {
-            int timeInterval = 100;
-            double position = 0;
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
             Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
@@ -263,14 +260,10 @@ namespace AirplaneComponent
             Console.WriteLine("Send vs message");
             Task task = new Task(() =>
             {
-                while (position < distance)
-                {
-                    position += Airplane.SpeedFly/3.6/1000 * timeInterval * timeFactor; //m/ms
-                    source.CreateToken().Sleep(timeInterval);
-                };
+                source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedFly);
                 SendVisualizationMessage(plane, DestinationVertex, 0);
                 Console.WriteLine("Send vs message");
-                mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
+                mqClient.Send(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
                 {
                     Action = MotionAction.Free,
                     Component = Component.Airplane,
@@ -288,7 +281,7 @@ namespace AirplaneComponent
         }
         void WaitForMotionPermission(Airplane airplane, int DestinationVertex)
         {
-            mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion],
+            mqClient.Send(queuesTo[Component.GroundMotion],
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -298,8 +291,8 @@ namespace AirplaneComponent
                     StartVertex = airplane.LocationVertex
                 });
 
-            while (!airplane.MotionPermitted)
-                source.CreateToken().Sleep(5);
+            Console.WriteLine($"Airplane {airplane.PlaneID} starts waiting for permission...");
+            airplane.MotionPermission.WaitOne();
         }
 
         int GetDistance(int locationVertex, int destinationVertex)

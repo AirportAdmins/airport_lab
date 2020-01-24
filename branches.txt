@@ -1,3 +1,5 @@
+comp/catering
+common/motion
 comp/deicing
 comp/fueltruck
 comp/storage
@@ -16,5 +18,3 @@ comp/groundmoution
 comp/bus
 comp/baggage
 comp/followme
-comp/catering
-common/motion
