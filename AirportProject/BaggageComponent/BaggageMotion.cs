@@ -175,7 +175,7 @@ namespace Baggage
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
-            Console.WriteLine($"baggageCar.BaggageCarID передвинулась на {DestinationVertex} вершину");
+            Console.WriteLine($"{baggageCar.BaggageCarID} передвинулась на {DestinationVertex} вершину");
         }
         private void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
         {
