@@ -87,7 +87,7 @@ namespace BusComponent
                 { Component.Storage,Component.Bus+Component.Storage },
                 { Component.Passenger,Component.Bus+Component.Passenger },
                 { Component.Logs,Component.Logs },
-                { Component.GroundMotion,Component.Bus+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
         }
