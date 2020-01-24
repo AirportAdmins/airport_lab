@@ -185,23 +185,22 @@ namespace GroundServiceComponent
         }
         void RequestFollow(List<int> verticesSet, bool isParkingAction)
         {
-            var newVertex = verticesSet[new Random().Next(0, verticesSet.Count)];
-            mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
-                new AirplaneTransferCommand() {
-                    PlaneLocationVertex = this.PlaneLocationVertex,
-                    DestinationVertex = newVertex,
-                    PlaneId = this.PlaneId
-                });
-
             lock (parkingVerticesLock)
             {
+                var newVertex = verticesSet[new Random().Next(0, verticesSet.Count)];
+                mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
+                    new AirplaneTransferCommand()
+                    {
+                        PlaneLocationVertex = this.PlaneLocationVertex,
+                        DestinationVertex = newVertex,
+                        PlaneId = this.PlaneId
+                    });
                 if (isParkingAction)
                     freeParkingvertices.Remove(newVertex);
                 else
                     freeParkingvertices.Add(PlaneLocationVertex);
+                PlaneLocationVertex = newVertex;
             }
-
-            PlaneLocationVertex = newVertex;
             logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to FollowMe (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestMovePassengers(TransferAction action, int passengerCount)
