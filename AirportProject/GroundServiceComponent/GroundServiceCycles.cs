@@ -122,12 +122,15 @@ namespace GroundServiceComponent
         }
         public async void StartSecondCycle(object mes)
         {
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Try to start second cycle in cycle with Id {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
+
             while (firstCycle.Status != ActionStatus.Finished)
                 await Task.Delay(100);
 
             logger?.Info($"{GroundServiceComponent.ComponentName}: Started second cycle in cycle with {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
-            secondCycle.Status = ActionStatus.Started;
+            lock (secondCycle.lockStatus)
+                secondCycle.Status = ActionStatus.Started;
 
             RequestMovePassengers(TransferAction.Give, ((FlightInfo)mes).PassengerCount);
             RequestMoveBaggage(TransferAction.Give, ((FlightInfo)mes).BaggageCount);
@@ -169,12 +172,14 @@ namespace GroundServiceComponent
         }
         void RequestFollow(int [] verticesSet)
         {
+            var newVertex = verticesSet[new Random().Next(0, verticesSet.Length)];
             mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
                 new AirplaneTransferCommand() {
                     PlaneLocationVertex = this.PlaneLocationVertex,
-                    DestinationVertex = verticesSet[new Random().Next(0, verticesSet.Length)],
+                    DestinationVertex = newVertex,
                     PlaneId = this.PlaneId
                 });
+            PlaneLocationVertex = newVertex;
             logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to FollowMe (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestMovePassengers(TransferAction action, int passengerCount)
