@@ -123,7 +123,7 @@ namespace DeicingComponent
         private void WaitForMotionPermission(DeicingCar deicingCar, int DestinationVertex)
         {
             Console.WriteLine($"{deicingCar.DeicingCarID} ждёт разрешения передвинуться в {DestinationVertex}");
-            mqClient.Send<MotionPermissionRequest>(Component.Deicing, //permission request
+            mqClient.Send<MotionPermissionRequest>(queueToGroundMotion, //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
