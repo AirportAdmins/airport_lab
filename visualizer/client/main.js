@@ -161,7 +161,7 @@ stage.add(garageLayer);
             const angle = Math.atan2(this.startPoint.y - this.endPoint.y, this.startPoint.x - this.endPoint.x)
             this.curentPoint.x = this.curentPoint.x - this.speed*factor * (thisTime - this.currentTime)* Math.cos(angle);
             this.curentPoint.y = this.curentPoint.y - this.speed*factor * (thisTime - this.currentTime)* Math.sin(angle);
-            this.currentTime = performance.now();
+            this.currentTime = thisTime;
 
             if (this.endPoint.x > this.startPoint.x && this.curentPoint.x >= this.endPoint.x || this.endPoint.x < this.startPoint.x && this.curentPoint.x <= this.endPoint.x){
               this.curentPoint.x = this.endPoint.x;
