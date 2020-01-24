@@ -72,6 +72,7 @@ namespace GroundServiceComponent
             mqClient.SubscribeTo<AirplaneServiceCommand>(Component.Airplane + ComponentName, (mes) =>
             {
                 logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex}) from Airplane to start first cycle");
+
                 GroundServiceCycles cycle;
                 lock (airplaneLock)
                 {
@@ -84,6 +85,7 @@ namespace GroundServiceComponent
                         cycle.PlaneLocationVertex = mes.LocationVertex;
 
                         serviceAirplanes.Add(cycle);
+
                         logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}, PlaneLocation: {mes.LocationVertex})");
                     }
                     else
@@ -99,7 +101,8 @@ namespace GroundServiceComponent
             //Receieve from registration that second cycle begin 
             mqClient.SubscribeTo<FlightInfo>(Component.Registration + ComponentName, (mes) =>
             {
-                logger?.Info($"{ComponentName}: Received message (FlightId: {mes.FlightId}) from Registration to start secon cycle");
+                logger?.Info($"{ComponentName}: Received message (FlightId: {mes.FlightId}) from Registration to start second cycle");
+
                 GroundServiceCycles cycle;
                 lock (airplaneLock)
                 {
@@ -110,6 +113,7 @@ namespace GroundServiceComponent
                         cycle.FlightId = mes.FlightId;
 
                         serviceAirplanes.Add(cycle);
+
                         logger?.Debug($"{ComponentName}: Added new cycle with (FlightId: {mes.FlightId})");
                     }
                 }
@@ -120,7 +124,7 @@ namespace GroundServiceComponent
             //Receieve from Schedule that time to Departure
             mqClient.SubscribeTo<AirplaneDepartureTimeSignal>(Component.Schedule + ComponentName, (mes) =>
             {
-                logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}) from Schedule to start secon cycle");
+                logger?.Info($"{ComponentName}: Received message (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId}) from Schedule that now time to Departure");
                 GroundServiceCycles cycle;
                 lock (airplaneLock)
                 {
@@ -131,6 +135,7 @@ namespace GroundServiceComponent
                         cycle.FlightId = mes.FlightId;
 
                         serviceAirplanes.Add(cycle);
+
                         logger?.Debug($"{ComponentName}: Added new cycle with (PlaneId: {mes.PlaneId}, FlightId: {mes.FlightId})");
                     }
                 }
@@ -142,7 +147,8 @@ namespace GroundServiceComponent
             foreach (var car in GroundTransport)
                 mqClient.SubscribeTo<ServiceCompletionMessage>(car + ComponentName, (mes) =>
                   {
-                      logger?.Info($"{ComponentName}: Received message (Component: {mes.Component}, PlaneId: {mes.PlaneId}) from transport");
+                      logger?.Info($"{ComponentName}: Received message (Component: {mes.Component}, PlaneId: {mes.PlaneId}) that service completion");
+
                       GroundServiceCycles cycle;
                       lock (airplaneLock)
                           cycle = serviceAirplanes.Find(x => x.PlaneId == mes.PlaneId);
