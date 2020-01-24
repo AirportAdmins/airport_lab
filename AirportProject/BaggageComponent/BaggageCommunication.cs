@@ -86,7 +86,9 @@ namespace Baggage
 
                         for (int i=0;i<numOfCars;i++)
                         {
+                            Console.WriteLine("ищем свободную машину");
                             BaggageCar  car = SearchFreeCar();
+                            Console.WriteLine($"нашли {car.BaggageCarID} ");
                             Task t = new Task(() =>
                             {
                                 //поехать к накопителю 

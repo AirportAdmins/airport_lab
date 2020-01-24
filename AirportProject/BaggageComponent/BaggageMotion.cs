@@ -97,7 +97,9 @@ namespace Baggage
         // ответ 
         private void GoPath(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex)
         {
+            
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
+            Console.WriteLine($"{baggageCar.BaggageCarID} поедет из {path[0]} в {path[path.Count-1]}");
             for (int i = 0; i < path.Count - 1; i++)
             {
                 action(baggageCar, path[i + 1]);
@@ -107,7 +109,7 @@ namespace Baggage
         CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
-
+            Console.WriteLine($"{baggageCar.BaggageCarID} поедет домой из {path[0]} в {path[path.Count - 1]}");
             baggageCar.Status = Status.Free;
 
             for (int i = 0; i < path.Count - 1; i++)
@@ -134,6 +136,7 @@ namespace Baggage
         }
         private void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
         {
+            Console.WriteLine(baggageCar.BaggageCarID + " пытается получить разрешение на перемещение");
             mqClient.Send<MotionPermissionRequest>(Component.Baggage, //permission request
                 new MotionPermissionRequest()
                 {
@@ -152,12 +155,14 @@ namespace Baggage
         {
             mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
             {
+                Console.WriteLine(mpr.ObjectId + " получил разрешение на перемещение");
                 cars[mpr.ObjectId].MotionPermitted = true;
             });
         }
 
         private void MakeAMove(BaggageCar baggageCar, int DestinationVertex)     //just move to vertex
         {
+            Console.WriteLine(baggageCar.BaggageCarID + "пытается передвинуться на 1 вершину");
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(baggageCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(baggageCar, DestinationVertex, BaggageCar.Speed);
@@ -169,6 +174,7 @@ namespace Baggage
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
+            Console.WriteLine(baggageCar.BaggageCarID + "передвинулась на 1 вершину");
         }
         private void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
         {
