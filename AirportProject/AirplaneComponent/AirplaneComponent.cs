@@ -119,8 +119,10 @@ namespace AirplaneComponent
                      Departure(mes));
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
+                
                 lock (airplanes[mes.ObjectId])
                 {
+                    Console.WriteLine($"Airplane {airplanes[mes.ObjectId]} got response");
                     airplanes[mes.ObjectId].MotionPermitted = true;
                 }
             });
