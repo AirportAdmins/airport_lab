@@ -170,7 +170,7 @@ namespace CateringComponent
                         mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
                         {
                             FoodList = command.FoodList,
-                            PlaneId = car.PlaneId
+                            PlaneId = command.PlaneId
                         });
                         Console.WriteLine($"Catering car {car.CarId} completed catering airplane {command.PlaneId}");
                         completionEvents[command.PlaneId].Signal();
