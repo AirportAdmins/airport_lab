@@ -70,7 +70,7 @@ namespace StorageComponent
                 storage.PassPassengers(mes.BusId, mes.FlightId, mes.Capacity);
             });
 
-            storage.MqClient.SubscribeTo<BaggageFromStorageRequest>(busStorage, (mes) =>
+            storage.MqClient.SubscribeTo<BaggageFromStorageRequest>(baggageStorage, (mes) =>
             {
                 Console.WriteLine($"Received from Baggage car: {mes.CarId}, {mes.FlightId}, {mes.Capacity}");
                 storage.DelaySource.CreateToken().Sleep(BAGGAGE_TIME_MS);
