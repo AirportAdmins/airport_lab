@@ -58,12 +58,13 @@ namespace Baggage
         {
             cars = new ConcurrentDictionary<string, BaggageCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
+            mqClient = new RabbitMqClient();
             sourceDelay = new PlayDelaySource(TimeSpeedFactor);
         }
 
         public void Start()
         {
+            Console.WriteLine($"{Component.Baggage} начал работу");
             DeclarePurgeQueues();
             FillCollections();
             Subscribe();
@@ -96,7 +97,9 @@ namespace Baggage
         // ответ 
         private void GoPath(GoToVertexAction action, BaggageCar baggageCar, int destinationVertex)
         {
+            
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
+            Console.WriteLine($"{baggageCar.BaggageCarID} поедет из {path[0]} в {path[path.Count-1]}");
             for (int i = 0; i < path.Count - 1; i++)
             {
                 action(baggageCar, path[i + 1]);
@@ -106,15 +109,16 @@ namespace Baggage
         CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(baggageCar.LocationVertex, destinationVertex);
-
+            Console.WriteLine($"{baggageCar.BaggageCarID} поедет домой из {path[0]} в {path[path.Count - 1]}");
             baggageCar.Status = Status.Free;
 
             for (int i = 0; i < path.Count - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
-                    break;
+                    return;
                 GoToVertexAlone(baggageCar, path[i + 1]);
             }
+            Console.WriteLine($"{DateTime.Now} {baggageCar.BaggageCarID} вернулась на стоянку");
         }
         private void GoToVertexAlone(BaggageCar baggageCar, int DestinationVertex)
         {
@@ -133,7 +137,8 @@ namespace Baggage
         }
         private void WaitForMotionPermission(BaggageCar baggageCar, int DestinationVertex)
         {
-            mqClient.Send<MotionPermissionRequest>(Component.Baggage, //permission request
+            Console.WriteLine(baggageCar.BaggageCarID + " пытается получить разрешение на перемещение");
+            mqClient.Send<MotionPermissionRequest>(Component.GroundMotion, //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -151,12 +156,14 @@ namespace Baggage
         {
             mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
             {
+                Console.WriteLine(mpr.ObjectId + " получил разрешение на перемещение");
                 cars[mpr.ObjectId].MotionPermitted = true;
             });
         }
 
         private void MakeAMove(BaggageCar baggageCar, int DestinationVertex)     //just move to vertex
         {
+            Console.WriteLine($"{baggageCar.BaggageCarID} пытается передвинуться на {DestinationVertex} вершину");
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(baggageCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(baggageCar, DestinationVertex, BaggageCar.Speed);
@@ -168,6 +175,7 @@ namespace Baggage
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
+            Console.WriteLine($"{baggageCar.BaggageCarID} передвинулась на {DestinationVertex} вершину");
         }
         private void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
         {

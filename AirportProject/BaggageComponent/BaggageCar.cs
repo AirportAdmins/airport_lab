@@ -15,7 +15,7 @@ namespace Baggage
         public Status Status { get; set; }
 
 
-        public const int MaxCountOfBaggage = 50;
+        public const int MaxCountOfBaggage = 20;
         public int CountOfBaggage = 0;
 
         //motion data
