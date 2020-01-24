@@ -83,7 +83,6 @@ namespace TransportMotion
             Console.WriteLine($"{component}car is going to vertex {DestinationVertex}");
             source.CreateToken().Sleep(distance * 1000 / car.Speed);
             car.LocationVertex = DestinationVertex;         //change location
-
             car.MotionPermitted = false;
             Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
