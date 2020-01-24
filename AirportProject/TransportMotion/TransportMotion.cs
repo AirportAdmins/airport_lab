@@ -45,7 +45,7 @@ namespace TransportMotion
                 { Component.Visualizer,Component.Visualizer },
             };
         }
-  
+ 
         void Subscribe()
         {
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
