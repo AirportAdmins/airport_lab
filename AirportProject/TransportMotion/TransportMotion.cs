@@ -78,15 +78,19 @@ namespace TransportMotion
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(car.LocationVertex, DestinationVertex);
             int StartVertex = car.LocationVertex;
+
+            Console.WriteLine($"{component}car is waiting for motion permission");
             WaitForMotionPermission(car, StartVertex,DestinationVertex);
             SendVisualizationMessage(car, StartVertex,DestinationVertex, car.Speed);
+            Console.WriteLine($"{component}car is going to vertex {DestinationVertex}");
             while (position < distance)                     //go
             {
                 position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-            car.MotionPermitted= false;
+            car.MotionPermitted = false;
+            Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
