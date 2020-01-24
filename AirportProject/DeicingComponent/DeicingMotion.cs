@@ -32,11 +32,8 @@ namespace DeicingComponent
         const string queueToAirPlane = Component.Deicing + Component.Airplane;
         const string queueToLogs = Component.Logs;
         const string queueToGroundMotion = Component.GroundMotion;
-<<<<<<< HEAD
-        const string queueToGroundService = Component.Deicing + Component.GroundService;
-=======
+
         const string queueToGroundService = Component.GroundService;
->>>>>>> 6d44e8241724ea095b6e681101a4d21168a730cd
         const string queueToVisualizer = Component.Visualizer;
 
         public RabbitMqClient mqClient;
@@ -155,11 +152,7 @@ namespace DeicingComponent
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(deicingCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(deicingCar, DestinationVertex, DeicingCar.Speed);
-            while (position < distance)                     //go
-            {
-                position += DeicingCar.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
-                source.CreateToken().Sleep(motionInterval);
-            };
+            source.CreateToken().Sleep(distance * 1000 / DeicingCar.Speed);
             SendVisualizationMessage(deicingCar, DestinationVertex, 0);
             deicingCar.LocationVertex = DestinationVertex;
             deicingCar.MotionPermitted = false;
