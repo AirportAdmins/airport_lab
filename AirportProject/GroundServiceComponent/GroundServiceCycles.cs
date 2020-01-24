@@ -134,8 +134,8 @@ namespace GroundServiceComponent
             RequestDeliverEat(((FlightInfo)mes).FoodList);
 
             //Wait End of overhead actions
-            while (firstCycle.componentsAction[Component.Bus] != ActionStatus.Finished &&
-                    firstCycle.componentsAction[Component.Baggage] != ActionStatus.Finished &&
+            while (firstCycle.componentsAction[Component.Bus] != ActionStatus.Finished ||
+                    firstCycle.componentsAction[Component.Baggage] != ActionStatus.Finished ||
                     firstCycle.componentsAction[Component.Catering] != ActionStatus.Finished)
                 await Task.Delay(100);
             RequestFollow(runWayVertices);
