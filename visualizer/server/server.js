@@ -31,10 +31,10 @@ http.listen(port, function(){
 var amqp = require('amqplib/callback_api');
 
 amqp.connect({
-    hostname: 'localhost',
-    username: 'guest',
-    password: 'guest',
-    vhost: '/'
+    hostname: 'cat.rmq.cloudamqp.com',
+    username: 'edhdrczm',
+    password: 'CU0PvDsxD0dCmaH3iUtx8o7HcqTfRBnB',
+    vhost: 'edhdrczm'
 }, function(error0, connection) {
     if (error0) {
         throw error0;
