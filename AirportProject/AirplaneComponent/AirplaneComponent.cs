@@ -117,7 +117,7 @@ namespace AirplaneComponent
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
                      Departure(mes));
-            mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundService], mes =>//groundmotion
+            mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
                 lock (airplanes[mes.ObjectId])
                 {
