@@ -233,7 +233,7 @@ namespace BusComponent
             {
                 Action=TransferAction.Take,
                 BusId=car.CarId,
-                PassengersCount=car.Passengers,
+                PassengersCount=BusCar.PassengersMaxCount,
                 PlaneId=cmd.PlaneId
             });
             car.CarTools.AirplaneResponse.WaitOne();
