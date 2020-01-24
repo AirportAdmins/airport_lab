@@ -97,6 +97,10 @@ stage.add(garageLayer);
       constructor(id, startPoint, type){
           this.id = id;
           this.startPoint = startPoint;
+          this.curentPoint = {
+            x: startPoint.x,
+            y: startPoint.y
+          }
           this.type = type;
           const image = Item.getImage(type);
           this.text = new Konva.Text({
@@ -129,12 +133,16 @@ stage.add(garageLayer);
       setAnimation(startPoint,endPoint, speed){
           this.image.rotation(getAngle(startPoint, endPoint))
           this.startPoint = startPoint;
+          this.curentPoint = {
+            x: startPoint.x,
+            y: startPoint.y
+          }
           this.endPoint = endPoint;
-          this.startAnimateTime = performance.now();
+          this.currentTime =  performance.now();
           this.speed = speed;
       }
       animate(thisTime){
-          if (this.endPoint && this.speed !== undefined && this.startAnimateTime){
+          if (this.endPoint && this.speed !== undefined && this.currentTime){
               if (this.speed === 0){
                 this.image.x(this.endPoint.x)
                 this.image.y(this.endPoint.y)
@@ -150,46 +158,41 @@ stage.add(garageLayer);
                 return;
               }
             const angle = Math.atan2(this.startPoint.y - this.endPoint.y, this.startPoint.x - this.endPoint.x)
-            let newX = Math.round(this.startPoint.x - this.speed*factor * (thisTime - this.startAnimateTime)* Math.cos(angle));
-            let newY = Math.round(this.startPoint.y - this.speed*factor * (thisTime - this.startAnimateTime)* Math.sin(angle));
+            this.curentPoint.x = this.curentPoint.x - this.speed*factor * (thisTime - this.currentTime)* Math.cos(angle);
+            this.curentPoint.y = this.curentPoint.y - this.speed*factor * (thisTime - this.currentTime)* Math.sin(angle);
+            this.currentTime = performance.now();
 
-            if (this.endPoint.x > this.startPoint.x && newX >= this.endPoint.x || this.endPoint.x < this.startPoint.x && newX <= this.endPoint.x){
-                newX = this.endPoint.x;
+            if (this.endPoint.x > this.startPoint.x && this.curentPoint.x >= this.endPoint.x || this.endPoint.x < this.startPoint.x && this.curentPoint.x <= this.endPoint.x){
+              this.curentPoint.x = this.endPoint.x;
             }
-            if (this.endPoint.y > this.startPoint.y && newY >= this.endPoint.y || this.endPoint.y < this.startPoint.y && newY <= this.endPoint.y){
-                newY = this.endPoint.y;
+            if (this.endPoint.y > this.startPoint.y && this.curentPoint.y >= this.endPoint.y || this.endPoint.y < this.startPoint.y && this.curentPoint.y <= this.endPoint.y){
+                this.curentPoint.y = this.endPoint.y;
             }
-            if (newX == this.endPoint.x && newY == this.endPoint.y){
+            if (this.image.x() !== this.curentPoint.x){
+              this.image.x(this.curentPoint.x)
+              this.text.x(this.curentPoint.x)
+              layer.batchDraw();
+              autoLayer.batchDraw();
+
+            } 
+            if (this.image.y() !== this.curentPoint.y){
+              this.image.y(this.curentPoint.y)
+              this.text.y(this.curentPoint.y - 20)
+              layer.batchDraw();
+              autoLayer.batchDraw();
+            }
+
+            if (this.curentPoint.x === this.endPoint.x && this.curentPoint.y === this.endPoint.y){
                 this.deleteAnimation();
-            } else {
-              if (this.image.x() !== newX){
-                this.image.x(newX)
-                this.text.x(newX)
-
-                layer.batchDraw();
-                autoLayer.batchDraw();
-
-              } 
-              if (this.image.y() !== newY){
-                this.image.y(newY)
-                this.text.y(newY - 20)
-                layer.batchDraw();
-                autoLayer.batchDraw();
-              }
-              // if (this.image.x() !== newX || this.image.y() !== newY){
-              //   this.image.to({
-              //     x: newX,
-              //     y: newY
-              //   })
-              // }
-            }
+            } 
           }
       }
       deleteAnimation(){
         this.startPoint = this.endPoint;
+        this.curentPoint = this.endPoint;
         this.endPoint = undefined;
         this.speed = undefined;
-        this.startAnimateTime = undefined;
+        this.currentTime = undefined;
       }
       static getImage(type){
         return Images[type];
