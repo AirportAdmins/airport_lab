@@ -47,12 +47,13 @@ namespace DeicingComponent
         {
             cars = new ConcurrentDictionary<string, DeicingCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
+            mqClient = new RabbitMqClient();
             source = new PlayDelaySource(TimeSpeedFactor);
         }
 
         public void Start()
         {
+            Console.WriteLine($"{Component.Deicing} начал работу");
             DeclarePurgeQueues();
             FillCollections();
             Subscribe();
