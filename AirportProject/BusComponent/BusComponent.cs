@@ -189,33 +189,37 @@ namespace BusComponent
         }
         Task DoWork(BusCar car, AutoResetEvent wakeEvent)         //car work
         {
-            while (true)
-            {                                                     //waits for common command
-                if (commands.TryDequeue(out var command))
+            return new Task(() =>
+            {
+                while (true)
                 {
-                    if (command.Action == TransferAction.Give)
-                        GetPassengersToAirplane(car, command);
+                    Console.WriteLine($"Bus {car.CarId} is trying to get command");
+                    if (commands.TryDequeue(out var command))
+                    {
+                        if (command.Action == TransferAction.Give)
+                            GetPassengersToAirplane(car, command);
+                        else
+                            TakePassengersFromAirplane(car, command);
+                        completionEvents[command.PlaneId].Signal();
+                    }
+                    if (!IsHome(car.LocationVertex))            //if car is not home go home
+                    {
+                        Console.WriteLine($"Bus {car.CarId} is going home");
+                        car.IsGoingHome = true;
+                        transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(),
+                            car.CarTools.TokenSource.Token);
+                    }
+                    if (!car.CarTools.TokenSource.IsCancellationRequested)   //if going home was not cancelled wait for task
+                    {
+                        car.IsGoingHome = false;
+                        wakeEvent.WaitOne();
+                    }
                     else
-                        TakePassengersFromAirplane(car, command);
-                    completionEvents[command.PlaneId].Signal();                    
+                    {
+                        car.CarTools.TokenSource = new CancellationTokenSource();
+                    }
                 }
-                if (!IsHome(car.LocationVertex))            //if car is not home go home
-                {
-                    Console.WriteLine($"Bus {car.CarId} is going home");
-                    car.IsGoingHome = true;
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), 
-                        car.CarTools.TokenSource.Token);
-                }
-                if (!car.CarTools.TokenSource.IsCancellationRequested)   //if going home was not cancelled wait for task
-                {
-                    car.IsGoingHome = false;
-                    wakeEvent.WaitOne(); 
-                }
-                else
-                {
-                    car.CarTools.TokenSource = new CancellationTokenSource();
-                }           
-            }
+            });
         }
 
         bool IsHome(int locationVertex)
