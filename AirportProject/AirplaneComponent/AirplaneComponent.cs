@@ -81,6 +81,7 @@ namespace AirplaneComponent
                 Task.Run(() => {
                     ScheduleResponse(mes);
                     }));
+
             mqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
             mqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
@@ -91,7 +92,10 @@ namespace AirplaneComponent
                     source.TimeFactor = timeFactor;
                 });
             mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
-                     FollowAction(mes));
+                    Task.Run(()=>
+                    {
+                        FollowAction(mes);
+                    }));
             mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
             {
                 lock (airplanes[mes.PlaneId])
@@ -118,7 +122,10 @@ namespace AirplaneComponent
                 }
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
-                     Departure(mes));
+            Task.Run(()=>
+                {
+                     Departure(mes);
+                }));
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
                 Console.WriteLine($"Airplane {mes.ObjectId} gets permission...");
@@ -211,7 +218,7 @@ namespace AirplaneComponent
         {
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
-            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);           
+            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);
             Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
             Task task = Task.Run(() =>
             {
