@@ -56,7 +56,7 @@ amqp.connect({
         // let factor = 0;
         // setInterval(()=>{
         //     const testMessage = {
-        //         type: TYPES[0], id: 1 , start: type % 24 + 1, end: type % 24 + 2, speed: 0.001
+        //         type: TYPES[type % 8 +1], id: type % 24 + 1 , start: type % 24 + 1, end: type % 24 + 2, speed: 0.001 * (type % 8 + 1)
         //         };
         //         io.emit('visualizer', testMessage);
         //     type++

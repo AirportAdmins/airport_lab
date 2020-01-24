@@ -87,9 +87,10 @@ setTexture();
 
 stage.add(laverText);
 
+stage.add(autoLayer);
+
 stage.add(layer);
 
-stage.add(autoLayer);
 stage.add(garageLayer);
 
 
