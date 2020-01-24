@@ -163,7 +163,7 @@ namespace Baggage
 
         private void MakeAMove(BaggageCar baggageCar, int DestinationVertex)     //just move to vertex
         {
-            Console.WriteLine(baggageCar.BaggageCarID + "пытается передвинуться на 1 вершину");
+            Console.WriteLine($"{baggageCar.BaggageCarID} пытается передвинуться на {DestinationVertex} вершину");
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(baggageCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(baggageCar, DestinationVertex, BaggageCar.Speed);
@@ -175,7 +175,7 @@ namespace Baggage
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
-            Console.WriteLine(baggageCar.BaggageCarID + "передвинулась на 1 вершину");
+            Console.WriteLine($"baggageCar.BaggageCarID передвинулась на {DestinationVertex} вершину");
         }
         private void SendVisualizationMessage(BaggageCar baggageCar, int DestinationVertex, int speed)
         {
