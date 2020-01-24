@@ -92,6 +92,7 @@ namespace TransportMotion
 
             car.MotionPermitted = false;
             Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
+
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
