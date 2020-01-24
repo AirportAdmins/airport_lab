@@ -157,10 +157,11 @@ namespace BusComponent
 
         int DoSmallCommands(PassengersServiceCommand cmd)
         {
-            var count = 1;
+            var count = 0;
             while(cmd.PassengersCount>0)
             {
-                cmd.PassengersCount -=  BusCar.PassengersMaxCount; //how many passengers left
+                count++;
+                cmd.PassengersCount -=  BusCar.PassengersMaxCount*count; //how many passengers left
                 if (cmd.PassengersCount>0)
                 {
                     commands.Enqueue(new PassengersServiceCommand()
@@ -171,7 +172,7 @@ namespace BusComponent
                         PlaneId=cmd.PlaneId,
                         PlaneLocationVertex=cmd.PlaneLocationVertex
                     });
-                    count++;
+                    
                 }
                 else
                 {

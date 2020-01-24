@@ -23,7 +23,7 @@ namespace BusComponent
         public int Passengers { get; set; }
         public string PlaneId { get; set; }
         public bool MotionPermitted { get; set; }
-        public int Speed { get => 60; set { } }
+        public int Speed { get => 15; set { } }
         public int LocationVertex { get; set; }
     }
 }

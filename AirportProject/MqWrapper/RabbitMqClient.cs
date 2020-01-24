@@ -41,6 +41,7 @@ namespace RabbitMqWrapper
                     arguments: null);
             }
         }
+
         public void PurgeQueues(params string[] queues)
         {
             foreach (var queue in queues)
