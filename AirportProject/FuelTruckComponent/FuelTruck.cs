@@ -177,7 +177,7 @@ namespace FuelTruck
                     mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
                     {
                         Fuel = command.Fuel,
-                        PlaneId = car.PlaneId
+                        PlaneId = command.PlaneId
                     });
                     SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, command.PlaneId));
                     completionEvents[command.PlaneId].Signal();
@@ -188,8 +188,7 @@ namespace FuelTruck
                     transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
                 }                
                 if (!tokens[car.CarId].IsCancellationRequested)
-                {
-                    
+                {                   
                     car.IsGoingHome = false;
                     wakeEvent.WaitOne();
                 }

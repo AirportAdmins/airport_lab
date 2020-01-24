@@ -22,6 +22,7 @@ namespace TransportMotion
         double timeFactor;
         int motionInterval = 100;
         PlayDelaySource source;
+        Random rand = new Random();
 
         public TransportMotion(string Component,RabbitMqClient MqClient,PlayDelaySource source)
         {
@@ -39,14 +40,12 @@ namespace TransportMotion
             };
             queuesTo = new Dictionary<string, string>()
             {
-
                 { Component.Logs, Component.Logs },
                 { Component.GroundMotion,Component.GroundMotion },
-
                 { Component.Visualizer,Component.Visualizer },
             };
         }
-  
+ 
         void Subscribe()
         {
             mqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
@@ -90,6 +89,7 @@ namespace TransportMotion
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
+
             car.MotionPermitted = false;
             Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
