@@ -46,6 +46,14 @@ namespace DeicingComponent
                     WorkWithPlane(sc.PlaneId);
                     Console.WriteLine($"{DateTime.Now} {car.DeicingCarID} почистила самолёт");
 
+                    ServiceCompletionMessage deicingCompletion = new ServiceCompletionMessage()
+                    {
+                        PlaneId = car.PlaneId,
+                        Component = Component.Deicing
+                    };
+
+                    mqClient.Send<ServiceCompletionMessage>(queueToGroundService, deicingCompletion);
+
                     var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
                     tokens.TryAdd(car.DeicingCarID, source);
                     //уезжаем на стоянку 
