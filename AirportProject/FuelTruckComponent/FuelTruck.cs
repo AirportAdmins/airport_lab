@@ -191,7 +191,7 @@ namespace FuelTruck
                 if (!tokens[car.CarId].IsCancellationRequested)
                 {                   
                     car.IsGoingHome = false;
-                    //wakeEvent.WaitOne();
+                    wakeEvent.WaitOne();
                 }
                 else
                 {
