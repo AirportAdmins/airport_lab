@@ -43,7 +43,7 @@ namespace BusComponent
             commands = new ConcurrentQueue<PassengersServiceCommand>();
             completionEvents = new ConcurrentDictionary<string, CountdownEvent>();
             playDelaySource = new PlayDelaySource(timeFactor);
-            transportMotion = new TransportMotion.TransportMotion(Component.Catering, mqClient,playDelaySource);
+            transportMotion = new TransportMotion.TransportMotion(Component.Bus, mqClient,playDelaySource);
         }
         public void Start()
         {
