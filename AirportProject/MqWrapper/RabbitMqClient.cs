@@ -49,7 +49,6 @@ namespace RabbitMqWrapper
                 mqChannel.QueuePurge(queue);
             }
         }
-
         public void Send<T>(string queueName, T message)
         {
             try
