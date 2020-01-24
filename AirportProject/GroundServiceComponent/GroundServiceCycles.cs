@@ -69,9 +69,9 @@ namespace GroundServiceComponent
             Component.Baggage,
             Component.FollowMe
         };
-
-        static int[] parkingVertices = new int[] { 8, 9, 11, 12, 17, 18, 23, 24 };
-        static int[] runWayVertices = new int[] { 5, 6, 7 };
+        static object parkingVerticesLock = new object();
+        static List<int> runWayVertices = new List<int>() { 5, 6, 7 };
+        static List<int> freeParkingvertices = new List<int>() { 8, 9, 11, 12, 17, 18, 23, 24 } ;
 
         int id;
         Cycle firstCycle;
@@ -100,7 +100,7 @@ namespace GroundServiceComponent
 
             logger?.Info($"{GroundServiceComponent.ComponentName}: Started first cycle in cycle with Id {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
-            RequestFollow(parkingVertices);
+            RequestFollow(freeParkingvertices, true);
 
             //Wait End of Park
             while (firstCycle.componentsAction[Component.FollowMe]!= ActionStatus.Finished)
@@ -148,7 +148,7 @@ namespace GroundServiceComponent
                     secondCycle.componentsAction[Component.Baggage] != ActionStatus.Finished ||
                     secondCycle.componentsAction[Component.Catering] != ActionStatus.Finished)
                 await Task.Delay(100);
-            RequestFollow(runWayVertices);
+            RequestFollow(runWayVertices, false);
         }
         public async void StartDeparture()
         {
@@ -183,15 +183,24 @@ namespace GroundServiceComponent
             else
                 secondCycle.FinishAction((string)component);
         }
-        void RequestFollow(int [] verticesSet)
+        void RequestFollow(List<int> verticesSet, bool isParkingAction)
         {
-            var newVertex = verticesSet[new Random().Next(0, verticesSet.Length)];
+            var newVertex = verticesSet[new Random().Next(0, verticesSet.Count)];
             mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
                 new AirplaneTransferCommand() {
                     PlaneLocationVertex = this.PlaneLocationVertex,
                     DestinationVertex = newVertex,
                     PlaneId = this.PlaneId
                 });
+
+            lock (parkingVerticesLock)
+            {
+                if (isParkingAction)
+                    freeParkingvertices.Remove(newVertex);
+                else
+                    freeParkingvertices.Add(PlaneLocationVertex);
+            }
+
             PlaneLocationVertex = newVertex;
             logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to FollowMe (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
