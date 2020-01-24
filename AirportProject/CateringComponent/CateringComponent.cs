@@ -157,40 +157,44 @@ namespace CateringComponent
         }
         Task DoCatering(CateringCar car, AutoResetEvent wakeEvent)      //car work
         {
-            while (true)
-            {                                                           //waits for common command
-                if (commands.TryDequeue(out var command))
-                {
-                    Console.WriteLine($"Catering car {car.CarId} is going to airplane {command.PlaneId}");
-                    transportMotion.GoPath(car, command.PlaneLocationVertex);
-                    Console.WriteLine($"Catering car {car.CarId} begins catering airplane {command.PlaneId}");
-                    playDelaySource.CreateToken().Sleep(1 * 60 * 1000);        //1 min to do catering
-                    mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
+            return new Task(() =>
+            {
+                while (true)
+                {                                                           //waits for common command
+                    if (commands.TryDequeue(out var command))
                     {
-                        FoodList = command.FoodList,
-                        PlaneId = car.PlaneId
-                    });
-                    Console.WriteLine($"Catering car {car.CarId} completed catering airplane {command.PlaneId}");
-                    completionEvents[car.PlaneId].Signal();
+                        Console.WriteLine($"Catering car {car.CarId} is going to airplane {command.PlaneId}");
+                        transportMotion.GoPath(car, command.PlaneLocationVertex);
+                        Console.WriteLine($"Catering car {car.CarId} begins catering airplane {command.PlaneId}");
+                        playDelaySource.CreateToken().Sleep(1 * 60 * 1000);        //1 min to do catering
+                        mqClient.Send<CateringCompletion>(queuesTo[Component.Airplane], new CateringCompletion()
+                        {
+                            FoodList = command.FoodList,
+                            PlaneId = car.PlaneId
+                        });
+                        Console.WriteLine($"Catering car {car.CarId} completed catering airplane {command.PlaneId}");
+                        completionEvents[command.PlaneId].Signal();
+                    }
+                    if (!IsHome(car.LocationVertex))            //if car is not home go home
+                    {
+                        Console.WriteLine($"Catering car {car.CarId} is going home");
+                        car.IsGoingHome = true;
+                        transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(),
+                            tokens[car.CarId].Token);
+                    }
+                    if (!tokens[car.CarId].IsCancellationRequested)   //if going home was not cancelled wait for task
+                    {
+                        car.IsGoingHome = false;
+                        wakeEvent.WaitOne();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Catering car {car.CarId} going home was cancelled");
+                        tokens[car.CarId] = new CancellationTokenSource();
+                    }
                 }
-                if (!IsHome(car.LocationVertex))            //if car is not home go home
-                {
-                    Console.WriteLine($"Catering car {car.CarId} is going home");
-                    car.IsGoingHome = true;
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(),
-                        tokens[car.CarId].Token);
-                }
-                if (!tokens[car.CarId].IsCancellationRequested)   //if going home was not cancelled wait for task
-                {
-                    car.IsGoingHome = false;
-                    wakeEvent.WaitOne();                    
-                }
-                else
-                {
-                    Console.WriteLine($"Catering car {car.CarId} going home was cancelled");
-                    tokens[car.CarId] = new CancellationTokenSource();
-                }
-             }
+            });
+     
          }
         bool IsHome(int locationVertex)
         {
