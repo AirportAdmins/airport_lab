@@ -32,7 +32,7 @@ namespace DeicingComponent
         const string queueToAirPlane = Component.Deicing + Component.Airplane;
         const string queueToLogs = Component.Logs;
         const string queueToGroundMotion = Component.GroundMotion;
-        const string queueToGroundService = Component.GroundService;
+        const string queueToGroundService = Component.Deicing + Component.GroundService;
         const string queueToVisualizer = Component.Visualizer;
 
         public RabbitMqClient mqClient;

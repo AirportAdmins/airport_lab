@@ -48,7 +48,7 @@ namespace DeicingComponent
 
                     ServiceCompletionMessage deicingCompletion = new ServiceCompletionMessage()
                     {
-                        PlaneId = car.PlaneId,
+                        PlaneId = sc.PlaneId,
                         Component = Component.Deicing
                     };
 
