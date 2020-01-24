@@ -43,7 +43,7 @@ namespace BusComponent
             commands = new ConcurrentQueue<PassengersServiceCommand>();
             completionEvents = new ConcurrentDictionary<string, CountdownEvent>();
             playDelaySource = new PlayDelaySource(timeFactor);
-            transportMotion = new TransportMotion.TransportMotion(Component.Catering, mqClient,playDelaySource);
+            transportMotion = new TransportMotion.TransportMotion(Component.Bus, mqClient,playDelaySource);
         }
         public void Start()
         {
@@ -87,7 +87,7 @@ namespace BusComponent
                 { Component.Storage,Component.Bus+Component.Storage },
                 { Component.Passenger,Component.Bus+Component.Passenger },
                 { Component.Logs,Component.Logs },
-                { Component.GroundMotion,Component.Bus+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
         }
@@ -124,6 +124,7 @@ namespace BusComponent
                 Status = PassengerStatus.InBus
             });
             cars[resp.BusId].Passengers = resp.PassengersCount;
+            cars[resp.BusId].CarTools.StorageResponse.Set();
             Console.WriteLine($"Bus {cars[resp.BusId].CarId} took {resp.PassengersCount} passengers from storage");
         }
         Task GotCommand(PassengersServiceCommand cmd)
@@ -142,6 +143,7 @@ namespace BusComponent
             return new Task(() =>
             {
                 cde.Wait();
+                Console.WriteLine($"Completion servicing airplane {cmd.PlaneId} ");
                 completionEvents.Remove(cmd.PlaneId, out cde);
                 mqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
                 {
@@ -192,7 +194,7 @@ namespace BusComponent
                         GetPassengersToAirplane(car, command);
                     else
                         TakePassengersFromAirplane(car, command);
-                    completionEvents[car.PlaneId].Signal();                    
+                    completionEvents[command.PlaneId].Signal();                    
                 }
                 if (!IsHome(car.LocationVertex))            //if car is not home go home
                 {
@@ -236,7 +238,7 @@ namespace BusComponent
                 $"and going to storage");
             transportMotion.GoPath(car, 25);
             Console.WriteLine($"Bus {car.CarId} begin to transfer passengers to storage ");
-            playDelaySource.CreateToken().Sleep(15 * 60 * 1000);  //just throw passengers in the rain
+            playDelaySource.CreateToken().Sleep(2 * 60 * 1000);  //just throw passengers in the rain
             Console.WriteLine($"Bus {car.CarId} has transfered passengers to storage");
             car.Passengers = 0;
         }
