@@ -82,11 +82,7 @@ namespace TransportMotion
             WaitForMotionPermission(car, StartVertex,DestinationVertex);
             SendVisualizationMessage(car, StartVertex,DestinationVertex, car.Speed);
             Console.WriteLine($"{component}car is going to vertex {DestinationVertex}");
-            while (position < distance)                     //go
-            {
-                position += car.Speed / 3.6 / 1000 * motionInterval * timeFactor;
-                source.CreateToken().Sleep(motionInterval);
-            };
+            source.CreateToken().Sleep(distance * 1000 / car.Speed);
             car.LocationVertex = DestinationVertex;         //change location
             car.MotionPermitted = false;
             Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
