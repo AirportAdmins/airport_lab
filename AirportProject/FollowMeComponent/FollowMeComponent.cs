@@ -117,7 +117,8 @@ namespace FollowMeComponent
                 followme.Status = Status.Busy;
                 followme.PlaneId = cmd.PlaneId;
                 var t = TransferAirplane(followme, cmd);
-                carTasks.AddOrUpdate(followme.FollowMeId, t, (key, value) => value = t);  //update task or add if not exists       
+                carTasks.AddOrUpdate(followme.FollowMeId, t, (key, value) => value = t);  //update task or add if not exists 
+                t.Start();
                 Console.WriteLine($"FollowMe {followme.FollowMeId} go transfer airplane {cmd.PlaneId}");
             });
             return task;
