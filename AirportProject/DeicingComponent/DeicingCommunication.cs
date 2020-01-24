@@ -48,11 +48,12 @@ namespace DeicingComponent
 
                     ServiceCompletionMessage deicingCompletion = new ServiceCompletionMessage()
                     {
-                        PlaneId = car.PlaneId,
+                        PlaneId = sc.PlaneId,
                         Component = Component.Deicing
                     };
 
                     mqClient.Send<ServiceCompletionMessage>(queueToGroundService, deicingCompletion);
+                    Console.WriteLine($"{DateTime.Now} {car.DeicingCarID} отправила сообщение СНО");
 
                     var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
                     tokens.TryAdd(car.DeicingCarID, source);

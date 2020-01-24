@@ -190,7 +190,8 @@ namespace BusComponent
         Task DoWork(BusCar car, AutoResetEvent wakeEvent)         //car work
         {
             while (true)
-            {                                                     //waits for common command
+            {
+                Console.WriteLine($"Bus {car.CarId} is trying to get command");
                 if (commands.TryDequeue(out var command))
                 {
                     if (command.Action == TransferAction.Give)
