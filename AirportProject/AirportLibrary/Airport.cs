@@ -46,7 +46,6 @@ namespace AirportLibrary
             Graph.AddEdge(2, 6, 286);
             Graph.AddEdge(3, 7, 286);
             Graph.AddEdge(4, 5, 156);
-            Graph.AddEdge(4, 10, 87);
             Graph.AddEdge(5, 6, 156);
             Graph.AddEdge(5, 13, 173);
             Graph.AddEdge(6, 7, 156);
@@ -57,7 +56,6 @@ namespace AirportLibrary
             Graph.AddEdge(8, 11, 86);
             Graph.AddEdge(9, 12, 86);
             Graph.AddEdge(10, 13, 178);
-            Graph.AddEdge(10, 16, 173);
             Graph.AddEdge(13, 14, 156);
             Graph.AddEdge(13, 16, 178);
             Graph.AddEdge(13, 20, 173);
@@ -67,7 +65,6 @@ namespace AirportLibrary
             Graph.AddEdge(11, 12, 156);
             Graph.AddEdge(11, 17, 173);
             Graph.AddEdge(12, 18, 173);
-            Graph.AddEdge(16, 19, 86);
             Graph.AddEdge(15, 17, 178);
             Graph.AddEdge(15, 22, 173);
             Graph.AddEdge(17, 18, 156);
