@@ -88,12 +88,12 @@ namespace FollowMeComponent
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
                     cars[response.ObjectId].MotionPermitted = true);
             MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>    //airpane
-            {
-                FollowMeCar followme = null;
-                followme = cars[mes.FollowMeId];
-                if (followme.PlaneId == mes.PlaneId && followme.LocationVertex == mes.LocationVertex)
-                    followme.GotAirplaneResponse = true;
-            });
+                    {
+                        FollowMeCar followme = null;
+                        followme = cars[mes.FollowMeId];
+                        if (followme.PlaneId == mes.PlaneId)           
+                            followme.GotAirplaneResponse = true;
+                    });
         }
         public Task GotTransferRequest(AirplaneTransferCommand cmd)
         {
