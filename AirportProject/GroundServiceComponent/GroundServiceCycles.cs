@@ -46,6 +46,7 @@ namespace GroundServiceComponent
     }
     public class GroundServiceCycles
     {
+        static int count = 0;
         static readonly string[] FirstCycleComponents = new string[]
         {
             Component.FollowMe,
@@ -62,9 +63,10 @@ namespace GroundServiceComponent
             Component.FollowMe
         };
 
-        static int[] parkingVertices = new int[] { 4, 10, 16, 19 };
-        static int[] runWayVertices = new int[] { 1, 2, 3 };
+        static int[] parkingVertices = new int[] { 8, 9, 11, 12, 17, 18, 23, 24 };
+        static int[] runWayVertices = new int[] { 5, 6, 7 };
 
+        int id;
         Cycle firstCycle;
         Cycle secondCycle;
 
@@ -77,15 +79,19 @@ namespace GroundServiceComponent
 
         public GroundServiceCycles(RabbitMqClient mq, ILogger logger)
         {
+            id = count++;
             firstCycle = new Cycle(FirstCycleComponents);
             secondCycle = new Cycle(SecondCycleComponents);
             this.logger = logger;
             mqClient = mq;
+            logger?.Debug($"{GroundServiceComponent.ComponentName}: Create new service cycle with Id {id} ");
         }
         public async void StartFisrtCycle(object needs)
         {
             lock(firstCycle.lockStatus)
                 firstCycle.Status = ActionStatus.Started;
+
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Started first cycle in cycle with Id {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
             RequestFollow(parkingVertices);
 
@@ -118,6 +124,8 @@ namespace GroundServiceComponent
         {
             while (firstCycle.Status != ActionStatus.Finished)
                 await Task.Delay(100);
+
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Started second cycle in cycle with {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
             secondCycle.Status = ActionStatus.Started;
 
@@ -164,9 +172,10 @@ namespace GroundServiceComponent
             mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
                 new AirplaneTransferCommand() {
                     PlaneLocationVertex = this.PlaneLocationVertex,
-                    DestinationVertex = verticesSet[new Random().Next(0, verticesSet.Length - 1)],
+                    DestinationVertex = verticesSet[new Random().Next(0, verticesSet.Length)],
                     PlaneId = this.PlaneId
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to FollowMe (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestMovePassengers(TransferAction action, int passengerCount)
         {
@@ -179,6 +188,7 @@ namespace GroundServiceComponent
                     Action = action,
                     PassengersCount = passengerCount
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Bus (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestMoveBaggage(TransferAction action, int baggageCount)
         {
@@ -191,6 +201,7 @@ namespace GroundServiceComponent
                     Action = action,
                     BaggageCount = baggageCount
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Baggage (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestDeice()
         {
@@ -200,6 +211,7 @@ namespace GroundServiceComponent
                     PlaneLocationVertex = this.PlaneLocationVertex,
                     PlaneId = this.PlaneId,
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Deicing (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestReplenishFuel(int fuelCount)
         {
@@ -210,6 +222,7 @@ namespace GroundServiceComponent
                     PlaneId = this.PlaneId,
                     Fuel = fuelCount
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Fueltruck (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
         void RequestDeliverEat(List<Tuple<Food, int>> foodList)
         {
@@ -220,6 +233,7 @@ namespace GroundServiceComponent
                     PlaneId = this.PlaneId,
                     FoodList = foodList
                 });
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Catering (PlaneId: {PlaneId}, FlightId: {FlightId})");
         }
     }
 }
