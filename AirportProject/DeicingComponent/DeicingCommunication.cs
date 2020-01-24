@@ -78,13 +78,18 @@ namespace DeicingComponent
                 }
                  //иначе прерываем движение на стоянку и ставим статус busy               
                 car.Status = Status.Busy;
-                if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
+
+                if (carTasks.ContainsKey(car.DeicingCarID))
                 {
-                    cancellationToken.Cancel();
-                    Task task = carTasks[car.DeicingCarID];
-                    task.Wait();
-                    carTasks.Remove(car.DeicingCarID, out task);
-                }                                 
+
+                    if (tokens.TryGetValue(car.DeicingCarID, out var cancellationToken))
+                    {
+                        cancellationToken.Cancel();
+                        Task task = carTasks[car.DeicingCarID];
+                        task.Wait();
+                        carTasks.Remove(car.DeicingCarID, out task);
+                    }
+                }
                 return car;
             }
         }
