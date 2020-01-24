@@ -32,7 +32,11 @@ namespace DeicingComponent
         const string queueToAirPlane = Component.Deicing + Component.Airplane;
         const string queueToLogs = Component.Logs;
         const string queueToGroundMotion = Component.GroundMotion;
+<<<<<<< HEAD
         const string queueToGroundService = Component.Deicing + Component.GroundService;
+=======
+        const string queueToGroundService = Component.GroundService;
+>>>>>>> 6d44e8241724ea095b6e681101a4d21168a730cd
         const string queueToVisualizer = Component.Visualizer;
 
         public RabbitMqClient mqClient;
@@ -47,12 +51,13 @@ namespace DeicingComponent
         {
             cars = new ConcurrentDictionary<string, DeicingCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            mqClient = new RabbitMqClient("v174153.hosted-by-vdsina.ru", "groundservice", "5254");
+            mqClient = new RabbitMqClient();
             source = new PlayDelaySource(TimeSpeedFactor);
         }
 
         public void Start()
         {
+            Console.WriteLine($"{Component.Deicing} начал работу");
             DeclarePurgeQueues();
             FillCollections();
             Subscribe();
@@ -84,6 +89,7 @@ namespace DeicingComponent
         private void GoPath(GoToVertexAction action, DeicingCar deicingCar, int destinationVertex)
         {
             var path = map.FindShortcut(deicingCar.LocationVertex, destinationVertex);
+            Console.WriteLine($"{deicingCar.DeicingCarID} поедет из {path[0]} в {path[path.Count - 1]}");
             for (int i = 0; i < path.Count - 1; i++)
             {
                 action(deicingCar, path[i + 1]);
@@ -93,7 +99,7 @@ namespace DeicingComponent
         CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(deicingCar.LocationVertex, destinationVertex);
-
+            Console.WriteLine($"{deicingCar.DeicingCarID} поедет домой из {path[0]} в {path[path.Count - 1]}");
             deicingCar.Status = Status.Free;
 
             for (int i = 0; i < path.Count - 1; i++)
@@ -120,7 +126,8 @@ namespace DeicingComponent
         }
         private void WaitForMotionPermission(DeicingCar deicingCar, int DestinationVertex)
         {
-            mqClient.Send<MotionPermissionRequest>(Component.Deicing, //permission request
+            Console.WriteLine($"{deicingCar.DeicingCarID} ждёт разрешения передвинуться в {DestinationVertex}");
+            mqClient.Send<MotionPermissionRequest>(queueToGroundMotion, //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -138,6 +145,7 @@ namespace DeicingComponent
         {
             mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
             {
+                Console.WriteLine($"{mpr.ObjectId} получил разрешение на перемещение");
                 cars[mpr.ObjectId].MotionPermitted = true;
             });
         }
