@@ -141,7 +141,7 @@ namespace Baggage
 
                                 sourceDelay.CreateToken().Sleep(2 * 60 * 1000); //забираем багаж 15 минут
                                 TakeOrGiveBaggageFromPlane(bsc.PlaneId, car.BaggageCarID, TransferAction.Take, car.CountOfBaggage);
-                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} отдала багаж самолёту");
+                                Console.WriteLine($"{DateTime.Now} {car.BaggageCarID} забрала багаж у самолёта");
 
                                 carsEndWork--; //машина обслужила самолёт
 
