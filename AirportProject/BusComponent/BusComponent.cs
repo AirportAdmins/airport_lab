@@ -124,6 +124,7 @@ namespace BusComponent
                 Status = PassengerStatus.InBus
             });
             cars[resp.BusId].Passengers = resp.PassengersCount;
+            cars[resp.BusId].CarTools.StorageResponse.Set();
             Console.WriteLine($"Bus {cars[resp.BusId].CarId} took {resp.PassengersCount} passengers from storage");
         }
         Task GotCommand(PassengersServiceCommand cmd)
@@ -142,6 +143,7 @@ namespace BusComponent
             return new Task(() =>
             {
                 cde.Wait();
+                Console.WriteLine($"Completion servicing airplane {cmd.PlaneId} );
                 completionEvents.Remove(cmd.PlaneId, out cde);
                 mqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
                 {
