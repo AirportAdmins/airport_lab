@@ -122,12 +122,15 @@ namespace GroundServiceComponent
         }
         public async void StartSecondCycle(object mes)
         {
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Try to start second cycle in cycle with Id {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
+
             while (firstCycle.Status != ActionStatus.Finished)
                 await Task.Delay(100);
 
             logger?.Info($"{GroundServiceComponent.ComponentName}: Started second cycle in cycle with {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
-            secondCycle.Status = ActionStatus.Started;
+            lock (secondCycle.lockStatus)
+                secondCycle.Status = ActionStatus.Started;
 
             RequestMovePassengers(TransferAction.Give, ((FlightInfo)mes).PassengerCount);
             RequestMoveBaggage(TransferAction.Give, ((FlightInfo)mes).BaggageCount);
