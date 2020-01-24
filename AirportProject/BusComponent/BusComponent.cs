@@ -192,7 +192,7 @@ namespace BusComponent
                         GetPassengersToAirplane(car, command);
                     else
                         TakePassengersFromAirplane(car, command);
-                    completionEvents[car.PlaneId].Signal();                    
+                    completionEvents[command.PlaneId].Signal();                    
                 }
                 if (!IsHome(car.LocationVertex))            //if car is not home go home
                 {
