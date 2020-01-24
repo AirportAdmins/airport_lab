@@ -18,11 +18,13 @@ namespace GroundServiceComponent
         public readonly object lockStatus = new object();
         static int count;
         public int Id { get; }
+        public ILogger logger;
         public ActionStatus Status = ActionStatus.NotStarted;
         public Dictionary<string, ActionStatus> componentsAction { get; }
         
-        public Cycle(params string[] actions)
+        public Cycle(ILogger logger,params string[] actions)
         {
+            this.logger = logger;
             Id = count++;
             componentsAction = new Dictionary<string, ActionStatus>();
             foreach (var component in actions)
@@ -38,8 +40,13 @@ namespace GroundServiceComponent
                     throw new Exception();
                 }
                 componentsAction[component] = ActionStatus.Finished;
+
+                logger?.Debug($"{GroundServiceComponent.ComponentName}: FinishAction: InnerCycle Id {Id} Action {component} is finished");
                 if (componentsAction.Keys.Where(x => componentsAction[x] == ActionStatus.Finished).Count() == componentsAction.Count)
+                {
                     this.Status = ActionStatus.Finished;
+                    logger?.Debug($"{GroundServiceComponent.ComponentName}: InnerCycle Id {Id} is finished");
+                }
             }
         }
 
