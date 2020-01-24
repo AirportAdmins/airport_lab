@@ -241,14 +241,9 @@ namespace FollowMeComponent
         }
         void MakeAMove(FollowMeCar followme, int DestinationVertex)     //just move to vertex
         {
-            double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);
             SendVisualizationMessage(followme, DestinationVertex, FollowMeCar.Speed);
-            while (position < distance)                     //go
-            {
-                position += FollowMeCar.Speed / 3.6 / 1000 * motionInterval * timeFactor;
-                source.CreateToken().Sleep(motionInterval);
-            };
+            source.CreateToken().Sleep(distance * 1000 / FollowMeCar.Speed);
             SendVisualizationMessage(followme, DestinationVertex, 0);
             followme.LocationVertex = DestinationVertex;
             followme.MotionPermitted = false;

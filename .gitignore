@@ -3,5 +3,9 @@
 [Oo]bj/
 App.config
 .DS_Store
+<<<<<<< HEAD
 node_modules/
 server.js
+=======
+visualizer/
+>>>>>>> 79448bf872c28e20332ffc4fa65cb77fa2d054e2
