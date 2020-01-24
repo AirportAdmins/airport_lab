@@ -91,7 +91,10 @@ namespace AirplaneComponent
                     source.TimeFactor = timeFactor;
                 });
             mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
-                     FollowAction(mes));
+                    Task.Run(()=>
+                    {
+                        FollowAction(mes);
+                    }));
             mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
             {
                 lock (airplanes[mes.PlaneId])
@@ -134,6 +137,7 @@ namespace AirplaneComponent
         ///<summary
         void ScheduleResponse(AirplaneGenerationRequest req)
         {
+
             Console.WriteLine("Request for generating a new airplane");
             Airplane airplane = Generator.Generate(req.AirplaneModelName, req.FlightId);
             if (airplanes.TryAdd(airplane.PlaneID, airplane))
@@ -147,7 +151,7 @@ namespace AirplaneComponent
                     });
                 airplane.LocationVertex = GetVertexToLand();
                 Land(airplane);
-                Console.WriteLine("I landed in vertex " + airplane.LocationVertex);
+                Console.WriteLine($"Airplane {airplane.PlaneID} landed in vertex " + airplane.LocationVertex);
                 AirplaneServiceCommand(airplane);
             }
         }
@@ -211,21 +215,18 @@ namespace AirplaneComponent
         {
             var plane = airplanes[cmd.PlaneId];
             int distance = GetDistance(plane.LocationVertex, cmd.DestinationVertex);
-            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);           
+            SendVisualizationMessage(plane, cmd.DestinationVertex, Airplane.SpeedOnGround);
+            source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedOnGround);
             Console.WriteLine("Go to vertex " + cmd.DestinationVertex + " with followme");
-            Task task = Task.Run(() =>
+            SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
+            plane.LocationVertex = cmd.DestinationVertex;
+            mqClient.Send(queuesTo[Component.FollowMe], new ArrivalConfirmation()
             {
-                source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedOnGround);
-                SendVisualizationMessage(plane, cmd.DestinationVertex, 0);
-                plane.LocationVertex = cmd.DestinationVertex;
-                mqClient.Send(queuesTo[Component.FollowMe], new ArrivalConfirmation()
-                {
-                    PlaneId = plane.PlaneID,
-                    FollowMeId = cmd.FollowMeId,
-                    LocationVertex = plane.LocationVertex
-                });
-                Console.WriteLine("In vertex " + plane.LocationVertex);
+                PlaneId = plane.PlaneID,
+                FollowMeId = cmd.FollowMeId,
+                LocationVertex = plane.LocationVertex
             });
+            Console.WriteLine("In vertex " + plane.LocationVertex);
         }
         void SendVisualizationMessage(Airplane plane, int DestinationVertex, int speed)
         {
@@ -255,13 +256,16 @@ namespace AirplaneComponent
         {
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
+
             Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
             SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
             Console.WriteLine("Send vs message");
+
             Task task = new Task(() =>
             {
                 source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedFly);
                 SendVisualizationMessage(plane, DestinationVertex, 0);
+
                 Console.WriteLine("Send vs message");
                 mqClient.Send(queuesTo[Component.GroundMotion], new MotionPermissionRequest()
                 {
@@ -273,7 +277,7 @@ namespace AirplaneComponent
                 });
                 plane.LocationVertex = DestinationVertex;
                 plane.MotionPermitted = false;
-                Console.WriteLine("In vertex " + DestinationVertex);
+                Console.WriteLine($"Airlane {plane.PlaneID} is now in vertex " + DestinationVertex);
 
             });
             task.Start();
@@ -293,6 +297,7 @@ namespace AirplaneComponent
 
             Console.WriteLine($"Airplane {airplane.PlaneID} starts waiting for permission...");
             airplane.MotionPermission.WaitOne();
+
         }
 
         int GetDistance(int locationVertex, int destinationVertex)
