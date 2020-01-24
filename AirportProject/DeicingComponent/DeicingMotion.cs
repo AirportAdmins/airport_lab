@@ -148,14 +148,9 @@ namespace DeicingComponent
 
         private void MakeAMove(DeicingCar deicingCar, int DestinationVertex)     //just move to vertex
         {
-            double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(deicingCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(deicingCar, DestinationVertex, DeicingCar.Speed);
-            while (position < distance)                     //go
-            {
-                position += DeicingCar.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
-                source.CreateToken().Sleep(motionInterval);
-            };
+            source.CreateToken().Sleep(distance * 1000 / DeicingCar.Speed);
             SendVisualizationMessage(deicingCar, DestinationVertex, 0);
             deicingCar.LocationVertex = DestinationVertex;
             deicingCar.MotionPermitted = false;

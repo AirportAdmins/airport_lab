@@ -21,7 +21,7 @@ namespace Baggage
         //motion data
         public bool MotionPermitted { get; set; }
         //
-        public static int Speed { get => 50; }
+        public static int Speed { get => 10; }
         public int LocationVertex { get; set; }
 
         public BaggageCar(int id)
