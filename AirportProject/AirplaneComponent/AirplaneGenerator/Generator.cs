@@ -23,8 +23,8 @@ namespace AirplaneComponent.AirplaneGenerator
         
         static Airplane FillAirplane(Airplane airplane)
         {
-            airplane.Passengers = rand.Next(0, airplane.Model.Seats);
-            airplane.BaggageAmount = rand.Next(0, airplane.Model.BaggagePlaces);
+            airplane.Passengers = rand.Next(1, airplane.Model.Seats);
+            airplane.BaggageAmount = rand.Next(1, airplane.Model.BaggagePlaces);
             airplane.FuelAmount = rand.Next(1, airplane.Model.Fuel);
             return airplane;
         }
