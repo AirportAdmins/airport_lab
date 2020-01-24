@@ -52,27 +52,29 @@ amqp.connect({
         });
 
         console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", queue);
-        // let type = 0;
+        // let type = 5;
+        // let factor = 0;
         // setInterval(()=>{
-        //     const testMessage = JSON.stringify({
-        //         type: TYPES[0], id: 1 , start: type % 24 + 1, end: type % 24 + 2, speed: 60
-        //         });
-        //     channel.sendToQueue(queue, Buffer.from(testMessage))
+        //     const testMessage = {
+        //         type: TYPES[type % 8 +1], id: type % 24 + 1 , start: type % 24 + 1, end: type % 24 + 2, speed: 0.001 * (type % 8 + 1)
+        //         };
+        //         io.emit('visualizer', testMessage);
         //     type++
-        // }, 5000)
+        // }, 10000)
 
         // setInterval(()=>{
-        //     const testMessage = JSON.stringify({
-        //         factor: type % 5 + 1
-        //         });
-        //     channel.sendToQueue(queueTime, Buffer.from(testMessage))
-        // }, 10000)
+        //     const testMessage = {
+        //         factor: factor % 10 + 1
+        //         };
+        //         io.emit('timeservicevisualizer', testMessage);
+        //         factor++
+        // }, 1000)
 
 
         channel.consume(queue, function(msg) {
             const message = JSON.parse(msg.content.toString());
             console.log(message.speed)
-            message.speed = message.speed / 3600
+            message.speed = message.speed / 1000
             io.emit('visualizer', message);
         }, {
             noAck: true
