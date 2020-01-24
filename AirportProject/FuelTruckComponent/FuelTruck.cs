@@ -167,6 +167,7 @@ namespace FuelTruck
         {
             while (true)
             {                                                           //waits for common command
+                Console.WriteLine($"Fueltrack {car.CarId} trying to get command");
                 if (commands.TryDequeue(out var command))
                 {
                     Console.WriteLine($"Fueltruck {car.CarId} is going to fuel airplane {command.PlaneId}" +
@@ -190,14 +191,13 @@ namespace FuelTruck
                 if (!tokens[car.CarId].IsCancellationRequested)
                 {                   
                     car.IsGoingHome = false;
-                    wakeEvent.WaitOne();
+                    //wakeEvent.WaitOne();
                 }
                 else
                 {
                     Console.WriteLine($"Fueltruck { car.CarId} going home was cancelled");
                     tokens[car.CarId] = new CancellationTokenSource();
-                }
-                
+                }                
             }
             bool IsHome(int locationVertex)
             {
