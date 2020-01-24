@@ -78,7 +78,10 @@ namespace AirplaneComponent
         void Subscribe()
         {
             mqClient.SubscribeTo<AirplaneGenerationRequest>(queuesFrom[Component.Schedule], mes =>   //schedule
-                     ScheduleResponse(mes));
+                     Task.Run(()=>
+                           {
+                               ScheduleResponse(mes);
+                           }));
             mqClient.SubscribeTo<PassengerTransferRequest>(queuesFrom[Component.Bus], mes =>    //bus
                      BusTransferResponse(mes));
             mqClient.SubscribeTo<BaggageTransferRequest>(queuesFrom[Component.Baggage], mes =>  //baggage
@@ -89,7 +92,10 @@ namespace AirplaneComponent
                     source.TimeFactor = timeFactor;
                 });
             mqClient.SubscribeTo<FollowMeCommand>(queuesFrom[Component.FollowMe], mes =>  //follow me
-                     FollowAction(mes));
+                    Task.Run(()=>
+                    {
+                        FollowAction(mes);
+                    }));
             mqClient.SubscribeTo<DeicingCompletion>(queuesFrom[Component.Deicing], mes =>   //deicing
             {
                 lock (airplanes[mes.PlaneId])
@@ -116,7 +122,10 @@ namespace AirplaneComponent
                 }
             });
             mqClient.SubscribeTo<DepartureSignal>(queuesFrom[Component.GroundService], mes =>   //groundservice
-                     Departure(mes));
+            Task.Run(()=>
+                {
+                     Departure(mes);
+                }));
             mqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], mes =>//groundmotion
             {
                 
