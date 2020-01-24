@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FollowMeComponent
@@ -13,6 +14,7 @@ namespace FollowMeComponent
     public class FollowMeCar
     {
         string followMeId;
+        public AutoResetEvent MotionPermission { get; set; } = new AutoResetEvent(false);
         public FollowMeCar(int id)
         {
             followMeId = "FollowMe-" + id;

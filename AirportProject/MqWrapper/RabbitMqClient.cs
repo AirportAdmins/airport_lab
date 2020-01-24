@@ -14,17 +14,19 @@ namespace RabbitMqWrapper
 
         // In order to use this constructor you need to have App.config
         // file in root of the project with the following parameters
-        public RabbitMqClient() 
+        public RabbitMqClient()
             : this(ConfigurationManager.AppSettings["mqHostName"],
                   ConfigurationManager.AppSettings["mqUserName"],
-                  ConfigurationManager.AppSettings["mqPassword"]) { }
-        public RabbitMqClient(string hostName, string userName, string password)
+                  ConfigurationManager.AppSettings["mqPassword"],
+                  ConfigurationManager.AppSettings["virtualHostName"]) { }
+        public RabbitMqClient(string hostName, string userName, string password, string vHost)
         {
             var factory = new ConnectionFactory()
             {
                 HostName = hostName,
                 UserName = userName,
-                Password = password
+                Password = password,
+                VirtualHost = vHost
             };
             mqConnection = factory.CreateConnection();
             mqChannel = mqConnection.CreateModel();

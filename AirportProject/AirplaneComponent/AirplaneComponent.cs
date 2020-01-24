@@ -255,8 +255,10 @@ namespace AirplaneComponent
         {
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
-            Console.WriteLine($"Airplane {plane.PlaneID} go to vertex "+DestinationVertex+" alone");
-            SendVisualizationMessage(plane, DestinationVertex, 1);
+
+            Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
+            SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
+            Console.WriteLine("Send vs message");
             Task task = new Task(() =>
             {
                 source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedFly);

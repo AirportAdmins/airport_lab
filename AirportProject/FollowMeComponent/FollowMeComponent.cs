@@ -25,15 +25,15 @@ namespace FollowMeComponent
         Map map = new Map();
         PlayDelaySource source;
 
-        double timeFactor = 1;
-        int motionInterval = 100;       //ms
+        
+        
         int countCars = 4;
         public FollowMeComponent()  
         {
             MqClient = new RabbitMqClient();
             cars = new ConcurrentDictionary<string, FollowMeCar>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
-            source = new PlayDelaySource(timeFactor);
+            source = new PlayDelaySource(1.0d);
             carTasks = new ConcurrentDictionary<string, Task>();
         }
         public void Start()
@@ -80,13 +80,12 @@ namespace FollowMeComponent
         {
             MqClient.SubscribeTo<NewTimeSpeedFactor>(queuesFrom[Component.TimeService], mes =>  //timespeed
             {
-                timeFactor = mes.Factor;
-                source.TimeFactor = timeFactor;
+                source.TimeFactor = mes.Factor;
             });
             MqClient.SubscribeTo<AirplaneTransferCommand>(queuesFrom[Component.GroundService], cmd =>//groundservice
                     GotTransferRequest(cmd).Start());
             MqClient.SubscribeTo<MotionPermissionResponse>(queuesFrom[Component.GroundMotion], response => //groundmotion
-                    cars[response.ObjectId].MotionPermitted = true);
+                    cars[response.ObjectId].MotionPermission.Set());
             MqClient.SubscribeTo<ArrivalConfirmation>(queuesFrom[Component.Airplane], mes =>    //airpane
                     {
                         FollowMeCar followme = null;
@@ -126,27 +125,33 @@ namespace FollowMeComponent
         Task TransferAirplane(FollowMeCar followme, AirplaneTransferCommand cmd)
         {
             return new Task(() =>
-            {     
-                GoPath(GoToVertexAlone, followme, cmd.PlaneLocationVertex);
-                GoPath(GoToVertexWithAirplane, followme, cmd.DestinationVertex);
-                MqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
+            {
+                try
                 {
-                    Component = Component.FollowMe,
-                    PlaneId = followme.PlaneId
-                });
-                SendToLogs("Completed transfering airplane ID " + cmd.PlaneId);
-                Console.WriteLine($"FollowMe {followme.FollowMeId} completed transfering airplane ID " 
-                    + cmd.PlaneId);
-                followme.Status = Status.Free;
-                Console.WriteLine($"FollowMe {followme.FollowMeId} is free now and going home");
-                var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
-                tokens.TryAdd(followme.FollowMeId, source);
-                GoPathHome(followme, GetHomeVertex(), source.Token);
-                if (source.Token.IsCancellationRequested)
-                    Console.WriteLine($"FollowMe {followme.FollowMeId} is going on new task");
-                else
-                    Console.WriteLine($"FollowMe {followme.FollowMeId} is in garage now");
-                tokens.Remove(followme.FollowMeId, out source);
+                    GoPath(GoToVertexAlone, followme, cmd.PlaneLocationVertex);
+                    GoPath(GoToVertexWithAirplane, followme, cmd.DestinationVertex);
+                    MqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
+                    {
+                        Component = Component.FollowMe,
+                        PlaneId = followme.PlaneId
+                    });
+                    SendToLogs("Completed transfering airplane ID " + cmd.PlaneId);
+                    Console.WriteLine($"FollowMe {followme.FollowMeId} completed transfering airplane ID "
+                        + cmd.PlaneId);
+                    followme.Status = Status.Free;
+                    Console.WriteLine($"FollowMe {followme.FollowMeId} is free now and going home");
+                    var source = new CancellationTokenSource();     //adds token and remove it after went home/new cmd
+                    tokens.TryAdd(followme.FollowMeId, source);
+                    GoPathHome(followme, GetHomeVertex(), source.Token);
+                    if (source.Token.IsCancellationRequested)
+                        Console.WriteLine($"FollowMe {followme.FollowMeId} is going on new task");
+                    else
+                        Console.WriteLine($"FollowMe {followme.FollowMeId} is in garage now");
+                    tokens.Remove(followme.FollowMeId, out source);
+                } catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             });                                                         
         }
         void GoPathHome(FollowMeCar followme, int destinationVertex,
@@ -226,7 +231,7 @@ namespace FollowMeComponent
         }
         void WaitForMotionPermission(FollowMeCar followme, int DestinationVertex)
         {
-            MqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //permission request
+            MqClient.Send(queuesTo[Component.GroundMotion], //permission request
                 new MotionPermissionRequest()
                 {
                     Action = MotionAction.Occupy,
@@ -236,26 +241,20 @@ namespace FollowMeComponent
                     StartVertex = followme.LocationVertex
                 });
 
-            while (!followme.MotionPermitted)               //check if followme can go
-                source.CreateToken().Sleep(10);
+            followme.MotionPermission.WaitOne();
         }
         void MakeAMove(FollowMeCar followme, int DestinationVertex)     //just move to vertex
         {
-            double position = 0;
+            
             int distance = map.Graph.GetWeightBetweenNearVerties(followme.LocationVertex, DestinationVertex);
             SendVisualizationMessage(followme, DestinationVertex, FollowMeCar.Speed);
-            while (position < distance)                     //go
-            {
-                position += FollowMeCar.Speed/3.6/1000 * motionInterval * timeFactor;
-                source.CreateToken().Sleep(motionInterval);
-            };
+            source.CreateToken().Sleep(distance * 1000 / FollowMeCar.Speed);
             SendVisualizationMessage(followme, DestinationVertex, 0);
             followme.LocationVertex = DestinationVertex;
-            followme.MotionPermitted = false;
         }
         void SendVisualizationMessage(FollowMeCar followme, int DestinationVertex, int speed)
         {
-            MqClient.Send<VisualizationMessage>(queuesTo[Component.Visualizer], new VisualizationMessage()
+            MqClient.Send(queuesTo[Component.Visualizer], new VisualizationMessage()
             {
                 ObjectId = followme.FollowMeId,
                 DestinationVertex = DestinationVertex,
@@ -266,7 +265,7 @@ namespace FollowMeComponent
         }
         void SendToLogs(string message)
         {
-            MqClient.Send<LogMessage>(queuesTo[Component.Logs], new LogMessage()
+            MqClient.Send(queuesTo[Component.Logs], new LogMessage()
             {
                 Component = Component.FollowMe,
                 Message = message
