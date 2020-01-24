@@ -2,8 +2,7 @@ comp/deicing
 comp/fueltruck
 comp/storage
 comp/timeservice
-comp/visualizer
-comp/logs
+visualizer
 common/mqwrapper
 common/airport
 comp/passenger
@@ -18,3 +17,4 @@ comp/bus
 comp/baggage
 comp/followme
 comp/catering
+common/motion

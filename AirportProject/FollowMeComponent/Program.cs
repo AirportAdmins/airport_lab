@@ -11,8 +11,7 @@ namespace FollowMeComponent
     {
         static void Main(string[] args)
         {
-            FollowMeComponent component = new FollowMeComponent();
-            component.Start();
+            new FollowMeComponent().Start();
         }
     }
 }

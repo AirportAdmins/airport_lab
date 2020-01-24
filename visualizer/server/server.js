@@ -31,9 +31,9 @@ http.listen(port, function(){
 var amqp = require('amqplib/callback_api');
 
 amqp.connect({
-    hostname: 'v174153.hosted-by-vdsina.ru',
-    username: 'slava',
-    password: '228',
+    hostname: 'localhost',
+    username: 'guest',
+    password: 'guest',
     vhost: '/'
 }, function(error0, connection) {
     if (error0) {
@@ -45,23 +45,41 @@ amqp.connect({
         }
 
         var queue = 'visualizer';
-  
+        var queueTime = 'timeservicevisualizer';
 
         channel.assertQueue(queue, {
             durable: false
         });
 
         console.log(" [*] Waiting for messages in %s. To exit press CTRL+C", queue);
-        let type = 0;
-        setInterval(()=>{
-            const testMessage = JSON.stringify({
-                type: TYPES[type++ % 8], id: randomInteger(1,25), start: randomInteger(1,25), end: randomInteger(1,25), speed: 0.1
-                });
-            channel.sendToQueue(queue, Buffer.from(testMessage))
-        }, 1000)
+        // let type = 0;
+        // setInterval(()=>{
+        //     const testMessage = JSON.stringify({
+        //         type: TYPES[0], id: 1 , start: type % 24 + 1, end: type % 24 + 2, speed: 60
+        //         });
+        //     channel.sendToQueue(queue, Buffer.from(testMessage))
+        //     type++
+        // }, 5000)
+
+        // setInterval(()=>{
+        //     const testMessage = JSON.stringify({
+        //         factor: type % 5 + 1
+        //         });
+        //     channel.sendToQueue(queueTime, Buffer.from(testMessage))
+        // }, 10000)
+
 
         channel.consume(queue, function(msg) {
-            io.emit('visualizer', JSON.parse(msg.content.toString()));
+            const message = JSON.parse(msg.content.toString());
+            console.log(message.speed)
+            message.speed = message.speed / 3600
+            io.emit('visualizer', message);
+        }, {
+            noAck: true
+        });
+
+        channel.consume(queueTime, function(msg) {
+            io.emit('timeservicevisualizer', JSON.parse(msg.content.toString()));
         }, {
             noAck: true
         });

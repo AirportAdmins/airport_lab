@@ -12,6 +12,7 @@ namespace AirplaneComponent
     {
         static void Main(string[] args)
         {
+            new AirplaneComponent().Start();
         }
     }
 }
