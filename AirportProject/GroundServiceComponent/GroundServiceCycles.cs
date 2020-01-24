@@ -172,7 +172,7 @@ namespace GroundServiceComponent
             mqClient.Send<AirplaneTransferCommand>(GroundServiceComponent.ComponentName + Component.FollowMe,
                 new AirplaneTransferCommand() {
                     PlaneLocationVertex = this.PlaneLocationVertex,
-                    DestinationVertex = verticesSet[new Random().Next(0, verticesSet.Length - 1)],
+                    DestinationVertex = verticesSet[new Random().Next(0, verticesSet.Length)],
                     PlaneId = this.PlaneId
                 });
             logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to FollowMe (PlaneId: {PlaneId}, FlightId: {FlightId})");
