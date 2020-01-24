@@ -48,10 +48,7 @@ namespace RabbitMqWrapper
                 mqChannel.QueuePurge(queue);
             }
         }
-<<<<<<< HEAD
-=======
 
->>>>>>> a5e2d6cc954f61d004541b42dd753e647bacec14
         public void Send<T>(string queueName, T message)
         {
             var json = JsonConvert.SerializeObject(message);
