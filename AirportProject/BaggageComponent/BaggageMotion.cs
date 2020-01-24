@@ -167,11 +167,7 @@ namespace Baggage
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(baggageCar.LocationVertex, DestinationVertex);
             SendVisualizationMessage(baggageCar, DestinationVertex, BaggageCar.Speed);
-            while (position < distance)                     //go
-            {
-                position += BaggageCar.Speed / 3.6 / 1000 * motionInterval * TimeSpeedFactor;
-                sourceDelay.CreateToken().Sleep(motionInterval);
-            };
+            sourceDelay.CreateToken().Sleep(distance * 1000 / BaggageCar.Speed);
             SendVisualizationMessage(baggageCar, DestinationVertex, 0);
             baggageCar.LocationVertex = DestinationVertex;
             baggageCar.MotionPermitted = false;
