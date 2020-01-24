@@ -46,6 +46,7 @@ namespace GroundServiceComponent
     }
     public class GroundServiceCycles
     {
+        static int count = 0;
         static readonly string[] FirstCycleComponents = new string[]
         {
             Component.FollowMe,
@@ -65,6 +66,7 @@ namespace GroundServiceComponent
         static int[] parkingVertices = new int[] { 4, 10, 16, 19 };
         static int[] runWayVertices = new int[] { 1, 2, 3 };
 
+        int id;
         Cycle firstCycle;
         Cycle secondCycle;
 
@@ -77,18 +79,19 @@ namespace GroundServiceComponent
 
         public GroundServiceCycles(RabbitMqClient mq, ILogger logger)
         {
+            id = count++;
             firstCycle = new Cycle(FirstCycleComponents);
             secondCycle = new Cycle(SecondCycleComponents);
             this.logger = logger;
             mqClient = mq;
-            logger?.Debug($"{GroundServiceComponent.ComponentName}: (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Debug($"{GroundServiceComponent.ComponentName}: Create new service cycle with Id {id} ");
         }
         public async void StartFisrtCycle(object needs)
         {
             lock(firstCycle.lockStatus)
                 firstCycle.Status = ActionStatus.Started;
 
-            logger?.Info($"{GroundServiceComponent.ComponentName}: Started first cycle (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Started first cycle in cycle with Id {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
             RequestFollow(parkingVertices);
 
@@ -122,7 +125,7 @@ namespace GroundServiceComponent
             while (firstCycle.Status != ActionStatus.Finished)
                 await Task.Delay(100);
 
-            logger?.Info($"{GroundServiceComponent.ComponentName}: Started second cycle (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Started second cycle in cycle with {id} (PlaneId: {PlaneId}, FlightId: {FlightId})");
 
             secondCycle.Status = ActionStatus.Started;
 
