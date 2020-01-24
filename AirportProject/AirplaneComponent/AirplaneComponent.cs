@@ -257,13 +257,15 @@ namespace AirplaneComponent
             int distance = GetDistance(plane.LocationVertex, DestinationVertex);
             WaitForMotionPermission(plane,DestinationVertex);
 
-            Console.WriteLine("Go to vertex "+DestinationVertex+" alone");
+            Console.WriteLine("Go to vertex "+DestinationVertex+$" alone: {DateTime.Now}");
             SendVisualizationMessage(plane, DestinationVertex, Airplane.SpeedFly);
+            Console.WriteLine($"Distance: {distance}, Speed: {Airplane.SpeedFly}");
             Console.WriteLine("Send vs message");
 
             Task task = new Task(() =>
             {
                 source.CreateToken().Sleep(distance * 1000 / Airplane.SpeedFly);
+                Console.WriteLine($"Arrived to vertes {DestinationVertex}: {DateTime.Now}");
                 SendVisualizationMessage(plane, DestinationVertex, 0);
 
                 Console.WriteLine("Send vs message");

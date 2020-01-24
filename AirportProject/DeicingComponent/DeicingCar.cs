@@ -17,7 +17,7 @@ namespace DeicingComponent
 
         public bool MotionPermitted { get; set; }
 
-        public static int Speed { get => 50; }
+        public static int Speed { get => 20; }
         public int LocationVertex { get; set; }
 
         public DeicingCar(int id)

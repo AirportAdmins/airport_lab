@@ -30,7 +30,6 @@ namespace FuelTruck
 
 
         double timeFactor = 1;
-        int motionInterval = 100;       //ms
         int countCars = 4;
         public FuelTruck()
         {

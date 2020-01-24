@@ -72,7 +72,7 @@ amqp.connect({
         channel.consume(queue, function(msg) {
             const message = JSON.parse(msg.content.toString());
             console.log(message.speed)
-            message.speed = message.speed / 3600
+            message.speed = message.speed / 1000
             io.emit('visualizer', message);
         }, {
             noAck: true

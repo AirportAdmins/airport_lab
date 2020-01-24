@@ -26,7 +26,7 @@ namespace CateringComponent
         public string CarId => carId ;                
         //public Status Status { get; set; }
         public string PlaneId { get; set; }
-        public int Speed { get => 40; set { } }
+        public int Speed { get => 18; set { } }
         public bool IsGoingHome { get; set; }
         public int LocationVertex { get; set; }
         //public List<Tuple<Food, int>> FoodList { get; set; }

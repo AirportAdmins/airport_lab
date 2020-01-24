@@ -20,7 +20,7 @@ namespace FuelTruck
         //public Status Status { get; set; }
         public string PlaneId { get; set; }
         public bool IsGoingHome { get; set; }
-        public int Speed { get => 40; set { } }
+        public int Speed { get => 10; set { } }
         public int LocationVertex { get; set; }
         //public List<Tuple<Food, int>> FoodList { get; set; }
         //public static List<Tuple<Food, int>> MaxFoodAmount { get => maxFoodAmount; }
