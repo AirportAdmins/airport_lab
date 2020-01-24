@@ -134,8 +134,8 @@ namespace GroundServiceComponent
             RequestDeliverEat(((FlightInfo)mes).FoodList);
 
             //Wait End of overhead actions
-            while (firstCycle.componentsAction[Component.Bus] != ActionStatus.Finished &&
-                    firstCycle.componentsAction[Component.Baggage] != ActionStatus.Finished &&
+            while (firstCycle.componentsAction[Component.Bus] != ActionStatus.Finished ||
+                    firstCycle.componentsAction[Component.Baggage] != ActionStatus.Finished ||
                     firstCycle.componentsAction[Component.Catering] != ActionStatus.Finished)
                 await Task.Delay(100);
             RequestFollow(runWayVertices);
@@ -190,7 +190,7 @@ namespace GroundServiceComponent
                     Action = action,
                     PassengersCount = passengerCount
                 });
-            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Bus (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Bus (PlaneId: {PlaneId}, FlightId: {FlightId}, Passengers Count: {passengerCount})");
         }
         void RequestMoveBaggage(TransferAction action, int baggageCount)
         {
@@ -203,7 +203,7 @@ namespace GroundServiceComponent
                     Action = action,
                     BaggageCount = baggageCount
                 });
-            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Baggage (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Baggage (PlaneId: {PlaneId}, FlightId: {FlightId}, BaggageCount: {baggageCount})");
         }
         void RequestDeice()
         {
@@ -224,7 +224,7 @@ namespace GroundServiceComponent
                     PlaneId = this.PlaneId,
                     Fuel = fuelCount
                 });
-            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Fueltruck (PlaneId: {PlaneId}, FlightId: {FlightId})");
+            logger?.Info($"{GroundServiceComponent.ComponentName}: Send request to Fueltruck (PlaneId: {PlaneId}, FlightId: {FlightId}, FuelCount: {fuelCount})");
         }
         void RequestDeliverEat(List<Tuple<Food, int>> foodList)
         {
