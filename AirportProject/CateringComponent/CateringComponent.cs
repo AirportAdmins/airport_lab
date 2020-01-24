@@ -147,7 +147,7 @@ namespace CateringComponent
             {
                 var maxAmout = CateringCar.MaxFoodAmount.Find
                     (tuple => tuple.Item1 == cmdCat.FoodList[i].Item1).Item2;
-                while(cmdCat.FoodList[i].Item2>maxAmout*count)
+                while(cmd.FoodList[i].Item2>maxAmout*count)
                 {
                     count++;
                     break;
