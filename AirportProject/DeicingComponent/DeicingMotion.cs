@@ -85,6 +85,7 @@ namespace DeicingComponent
         private void GoPath(GoToVertexAction action, DeicingCar deicingCar, int destinationVertex)
         {
             var path = map.FindShortcut(deicingCar.LocationVertex, destinationVertex);
+            Console.WriteLine($"{deicingCar.DeicingCarID} поедет из {path[0]} в {path[path.Count - 1]}");
             for (int i = 0; i < path.Count - 1; i++)
             {
                 action(deicingCar, path[i + 1]);
@@ -94,7 +95,7 @@ namespace DeicingComponent
         CancellationTokenSource cancellationToken)
         {
             var path = map.FindShortcut(deicingCar.LocationVertex, destinationVertex);
-
+            Console.WriteLine($"{deicingCar.DeicingCarID} поедет домой из {path[0]} в {path[path.Count - 1]}");
             deicingCar.Status = Status.Free;
 
             for (int i = 0; i < path.Count - 1; i++)
@@ -121,6 +122,7 @@ namespace DeicingComponent
         }
         private void WaitForMotionPermission(DeicingCar deicingCar, int DestinationVertex)
         {
+            Console.WriteLine($"{deicingCar.DeicingCarID} ждёт разрешения передвинуться в {DestinationVertex}");
             mqClient.Send<MotionPermissionRequest>(Component.Deicing, //permission request
                 new MotionPermissionRequest()
                 {
@@ -139,6 +141,7 @@ namespace DeicingComponent
         {
             mqClient.SubscribeTo<MotionPermissionResponse>(queueFromGroundMotion, (mpr) =>
             {
+                Console.WriteLine($"{mpr.ObjectId} получил разрешение на перемещение");
                 cars[mpr.ObjectId].MotionPermitted = true;
             });
         }
