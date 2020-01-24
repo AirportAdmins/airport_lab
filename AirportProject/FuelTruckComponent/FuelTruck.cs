@@ -14,7 +14,7 @@ namespace FuelTruck
 {
     public class FuelTruck
     {
-        
+
         Dictionary<string, string> queuesFrom;
         Dictionary<string, string> queuesTo;
 
@@ -39,7 +39,7 @@ namespace FuelTruck
             completionEvents = new ConcurrentDictionary<string, CountdownEvent>();
             tokens = new ConcurrentDictionary<string, CancellationTokenSource>();
             playDelaySource = new PlayDelaySource(timeFactor);
-            transportMotion = new TransportMotion.TransportMotion(Component.FuelTruck, mqClient,playDelaySource);
+            transportMotion = new TransportMotion.TransportMotion(Component.FuelTruck, mqClient, playDelaySource);
         }
         public void Start()
         {
@@ -118,7 +118,7 @@ namespace FuelTruck
         {
             Console.WriteLine($"Got new command for airplane {cmd.PlaneId}");
             int countCars = 1; // HowManyCarsNeeded(cmd); //1000 - maxFuel
-            while(cmd.Fuel>0)        //breaking the command on small commands for cars
+            while (cmd.Fuel > 0)        //breaking the command on small commands for cars
             {
                 cmd.Fuel -= FuelTruckCar.MaxFuelOnBoard;
                 if (cmd.Fuel > 0)
@@ -141,7 +141,7 @@ namespace FuelTruck
             }
             var cde = new CountdownEvent(countCars);
             completionEvents.TryAdd(cmd.PlaneId, cde);
-            foreach(var car in cars.Values)
+            foreach (var car in cars.Values)
             {
                 if (car.IsGoingHome)
                     tokens[car.CarId].Cancel();
@@ -164,46 +164,49 @@ namespace FuelTruck
 
         Task DoRefuel(FuelTruckCar car, AutoResetEvent wakeEvent)      //car work
         {
-            while (true)
-            {                                                           //waits for common command
-                if (commands.TryDequeue(out var command))
-                {
-                    Console.WriteLine($"Fueltruck {car.CarId} is going to fuel airplane {command.PlaneId}" +
-                        $"with {command.Fuel} litres of fuel");
-                    transportMotion.GoPath(car, command.PlaneLocationVertex);
-                    Console.WriteLine($"Fueltruck {car.CarId} is fueling plane {command.PlaneId}");
-                    playDelaySource.CreateToken().Sleep(2 * 60 * 1000);        
-                    mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
-                    {
-                        Fuel = command.Fuel,
-                        PlaneId = command.PlaneId
-                    });
-                    SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, command.PlaneId));
-                    completionEvents[command.PlaneId].Signal();
-                }
-                if (!IsHome(car.LocationVertex))            //if car is not home go home
-                {
-                    car.IsGoingHome = true;
-                    transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
-                }                
-                if (!tokens[car.CarId].IsCancellationRequested)
-                {                   
-                    car.IsGoingHome = false;
-                    wakeEvent.WaitOne();
-                }
-                else
-                {
-                    Console.WriteLine($"Fueltruck { car.CarId} going home was cancelled");
-                    tokens[car.CarId] = new CancellationTokenSource();
-                }
-                
-            }
-            bool IsHome(int locationVertex)
+            return new Task(() =>
             {
-                List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
-                return homeVertexes.Contains(locationVertex);
-            }
+                while (true)
+                {                                                           //waits for common command
+                    Console.WriteLine($"Fueltrack {car.CarId} trying to get command");
+                    if (commands.TryDequeue(out var command))
+                    {
+                        Console.WriteLine($"Fueltruck {car.CarId} is going to fuel airplane {command.PlaneId}" +
+                            $"with {command.Fuel} litres of fuel");
+                        transportMotion.GoPath(car, command.PlaneLocationVertex);
+                        Console.WriteLine($"Fueltruck {car.CarId} is fueling plane {command.PlaneId}");
+                        playDelaySource.CreateToken().Sleep(2 * 60 * 1000);
+                        mqClient.Send<RefuelCompletion>(queuesTo[Component.Airplane], new RefuelCompletion()
+                        {
+                            Fuel = command.Fuel,
+                            PlaneId = command.PlaneId
+                        });
+                        SendLogMessage(String.Format("{0} заправила самолёт {1} и поехала домой", car.CarId, command.PlaneId));
+                        completionEvents[command.PlaneId].Signal();
+                    }
+                    if (!IsHome(car.LocationVertex))            //if car is not home go home
+                    {
+                        car.IsGoingHome = true;
+                        transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(), tokens[car.CarId].Token);
+                    }
+                    if (!tokens[car.CarId].IsCancellationRequested)
+                    {
+                        car.IsGoingHome = false;
+                        wakeEvent.WaitOne();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Fueltruck { car.CarId} going home was cancelled");
+                        tokens[car.CarId] = new CancellationTokenSource();
+                    }
+                }
+                bool IsHome(int locationVertex)
+                {
+                    List<int> homeVertexes = new List<int>() { 4, 10, 16, 19 };
+                    return homeVertexes.Contains(locationVertex);
+                }
+            });
         }
-    }
 
+    }
 }
