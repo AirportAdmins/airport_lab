@@ -91,7 +91,7 @@ namespace FollowMeComponent
                     {
                         FollowMeCar followme = null;
                         followme = cars[mes.FollowMeId];
-                        if (followme.PlaneId == mes.PlaneId&&followme.LocationVertex==mes.LocationVertex)           
+                        if (followme.PlaneId == mes.PlaneId)           
                             followme.GotAirplaneResponse = true;
                     });
         }
