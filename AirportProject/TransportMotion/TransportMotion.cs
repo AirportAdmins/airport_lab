@@ -89,10 +89,7 @@ namespace TransportMotion
                 source.CreateToken().Sleep(motionInterval);
             };
             car.LocationVertex = DestinationVertex;         //change location
-<<<<<<< HEAD
 
-=======
->>>>>>> dfdbc71d5b2c9c12c1dfe4e2a73c2d708af3a952
             car.MotionPermitted = false;
             Console.WriteLine($"{component}car is in vertex {DestinationVertex}");
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
