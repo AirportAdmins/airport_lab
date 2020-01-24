@@ -87,8 +87,8 @@ namespace GroundServiceComponent
         public GroundServiceCycles(RabbitMqClient mq, ILogger logger)
         {
             id = count++;
-            firstCycle = new Cycle(FirstCycleComponents);
-            secondCycle = new Cycle(SecondCycleComponents);
+            firstCycle = new Cycle(logger, FirstCycleComponents);
+            secondCycle = new Cycle(logger, SecondCycleComponents);
             this.logger = logger;
             mqClient = mq;
             logger?.Debug($"{GroundServiceComponent.ComponentName}: Create new service cycle with Id {id} ");
