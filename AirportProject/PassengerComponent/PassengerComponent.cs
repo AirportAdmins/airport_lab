@@ -39,12 +39,15 @@ namespace PassengerComponent
             TimeServiceToPassengerQueue
         };
 
-        public const int PASSENGER_CREATION_PERIOD_MS = 60 * 1000;
+        public const int PASSENGER_CREATION_PERIOD_MS = 45 * 1000;
         public const int PASSENGER_ACTIVITY_PERIOD_MS = 60 * 1000;
 
-        public const double CHANCE_TO_MISTAKE = 0.001;
-        public const double CHANCE_TO_DO_NORMAL_ACTION = 0.05 + CHANCE_TO_MISTAKE;
-        public const double CHANCE_TO_RETURN_TICKET = 0.0025 + CHANCE_TO_MISTAKE;
+        public const double CHANCE_TO_MISTAKE_CB = 0.001;
+        public const double CHANCE_TO_DO_NORMAL_ACTION_CB = 0.075 + CHANCE_TO_MISTAKE_CB;
+        public const double CHANCE_TO_RETURN_TICKET = 0.0025 + CHANCE_TO_MISTAKE_CB;
+
+        public const double CHANCE_TO_MISTAKE_REG = 0.005;
+        public const double CHANCE_TO_DO_NORMAL_ACTION_REG = 0.125 + CHANCE_TO_MISTAKE_REG;
 
         public static double timeFactor = 1.0;
 
@@ -345,7 +348,7 @@ namespace PassengerComponent
                 var chance = random.NextDouble();
                 if (passenger.Status == PassengerStatus.NoTicket)
                 {
-                    if (chance < CHANCE_TO_MISTAKE)
+                    if (chance < CHANCE_TO_MISTAKE_CB)
                     {
                         var option = random.Next(3);
                         switch (option)
@@ -364,7 +367,7 @@ namespace PassengerComponent
                                 break;
                         }
                     }
-                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
+                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION_CB)
                     {
                         var goodFlights = tt.Flights.Where(
                             f => f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn
@@ -374,7 +377,7 @@ namespace PassengerComponent
                 }
                 else if (passenger.Status == PassengerStatus.HasTicket)
                 {
-                    if (chance < CHANCE_TO_MISTAKE)
+                    if (chance < CHANCE_TO_MISTAKE_REG)
                     {
                         var option = random.Next(3);
                         switch (option)
@@ -401,7 +404,7 @@ namespace PassengerComponent
                                 break;
                         }
                     }
-                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION)
+                    else if (chance < CHANCE_TO_DO_NORMAL_ACTION_REG)
                     {
                         var passengersFlight = tt.Flights.Where(
                             f => f.FlightId == passenger.FlightId && (f.Status == FlightStatus.New || f.Status == FlightStatus.CheckIn)
