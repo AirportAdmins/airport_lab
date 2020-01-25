@@ -25,5 +25,6 @@ namespace BusComponent
         public bool MotionPermitted { get; set; }
         public int Speed { get => 15; set { } }
         public int LocationVertex { get; set; }
+        public List<string> PassengersList { get; set; } = new List<string>();
     }
 }

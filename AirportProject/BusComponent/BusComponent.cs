@@ -117,13 +117,8 @@ namespace BusComponent
 
         void StorageResponse(PassengersFromStorageResponse resp)
         {
-            mqClient.Send<PassengerPassMessage>(queuesTo[Component.Passenger], new PassengerPassMessage()
-            {
-                ObjectId = resp.BusId,
-                PassengersIds = resp.PassengersIds,
-                Status = PassengerStatus.InBus
-            });
             cars[resp.BusId].Passengers = resp.PassengersCount;
+            cars[resp.BusId].PassengersList = resp.PassengersIds;
             cars[resp.BusId].CarTools.StorageResponse.Set();
             Console.WriteLine($"{cars[resp.BusId].CarId} took {resp.PassengersCount} passengers from storage");
         }
@@ -269,6 +264,12 @@ namespace BusComponent
                 BusId = car.CarId,
                 PassengersCount = car.Passengers,
                 PlaneId = cmd.PlaneId
+            });
+            mqClient.Send<PassengerPassMessage>(queuesTo[Component.Passenger], new PassengerPassMessage()
+            {
+                ObjectId = car.PlaneId,
+                PassengersIds = car.PassengersList,
+                Status = PassengerStatus.InAirplane
             });
             Console.WriteLine($"{car.CarId} gave {cmd.PassengersCount} passengers to {cmd.PlaneId}");
             car.Passengers = 0;
