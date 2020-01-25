@@ -108,7 +108,7 @@ namespace BusComponent
             {
                 var car = cars[tr.BusId];
                 car.Passengers = tr.PassengerCount;
-                Console.WriteLine($"Bus {car.CarId} took {tr.PassengerCount} from airplane");
+                Console.WriteLine($"{car.CarId} took {tr.PassengerCount} passengers from {car.PlaneId}");
                 car.CarTools.AirplaneResponse.Set();
             });
             mqClient.SubscribeTo<PassengersFromStorageResponse>(queuesFrom[Component.Storage], resp =>
@@ -125,14 +125,15 @@ namespace BusComponent
             });
             cars[resp.BusId].Passengers = resp.PassengersCount;
             cars[resp.BusId].CarTools.StorageResponse.Set();
-            Console.WriteLine($"Bus {cars[resp.BusId].CarId} took {resp.PassengersCount} passengers from storage");
+            Console.WriteLine($"{cars[resp.BusId].CarId} took {resp.PassengersCount} passengers from storage");
         }
         Task GotCommand(PassengersServiceCommand cmd)
         {
-            Console.WriteLine($"Got a new command of {cmd.Action} passengers for an airplane {cmd.PlaneId}" +
-                $"passengercount= {cmd.PassengersCount}");
+
+            Console.WriteLine($"{cmd.PlaneId} new command: {cmd.Action} {cmd.PassengersCount} passengers");
             var count = DoSmallCommands(cmd);                      //breaking a command on small commands  
-            Console.WriteLine($"Broke a command for {cmd.PlaneId} on {count} commands");
+            Console.WriteLine($"{cmd.PlaneId} needs {count} buses");
+
             var cde = new CountdownEvent(count);
             completionEvents.TryAdd(cmd.PlaneId, cde);
             foreach (var car in cars.Values)        //cancel going home
@@ -145,7 +146,7 @@ namespace BusComponent
             return new Task(() =>
             {
                 cde.Wait();
-                Console.WriteLine($"Completion servicing airplane {cmd.PlaneId} ");
+                Console.WriteLine($"{cmd.PlaneId}: servicing completed");
                 completionEvents.Remove(cmd.PlaneId, out cde);
                 mqClient.Send<ServiceCompletionMessage>(queuesTo[Component.GroundService], new ServiceCompletionMessage()
                 {
@@ -194,7 +195,6 @@ namespace BusComponent
             {
                 while (true)
                 {
-                    Console.WriteLine($"Bus {car.CarId} is trying to get command");
                     if (commands.TryDequeue(out var command))
                     {
                         if (command.Action == TransferAction.Give)
@@ -205,7 +205,7 @@ namespace BusComponent
                     }
                     if (!IsHome(car.LocationVertex))            //if car is not home go home
                     {
-                        Console.WriteLine($"Bus {car.CarId} is going home");
+                        Console.WriteLine($"{car.CarId} is going home");
                         car.IsGoingHome = true;
                         transportMotion.GoPathFree(car, transportMotion.GetHomeVertex(),
                             car.CarTools.TokenSource.Token);
@@ -230,9 +230,8 @@ namespace BusComponent
         }
         void TakePassengersFromAirplane(BusCar car, PassengersServiceCommand cmd)
         {
-            Console.WriteLine($"Bus {car.CarId} is going to take passngers from airplane {cmd.PlaneId}");
+            Console.WriteLine($"{car.CarId} is going to take passengers from {cmd.PlaneId}");
             transportMotion.GoPath(car, cmd.PlaneLocationVertex);
-            Console.WriteLine($"Bus {car.CarId} begins to take passengers from airplane {cmd.PlaneId} ");
             playDelaySource.CreateToken().Sleep(2 * 60 * 1000);      //take passengers from airplane
             mqClient.Send<PassengerTransferRequest>(queuesTo[Component.Airplane], new PassengerTransferRequest()
             {
@@ -242,18 +241,15 @@ namespace BusComponent
                 PlaneId = cmd.PlaneId
             });
             car.CarTools.AirplaneResponse.WaitOne();
-            Console.WriteLine($"Bus {car.CarId} has taken passengers from airplane {cmd.PlaneId} " +
-                $"and going to storage");
+            Console.WriteLine($"{car.CarId} is going to storage");
             transportMotion.GoPath(car, 25);
-            Console.WriteLine($"Bus {car.CarId} begin to transfer passengers to storage ");
             playDelaySource.CreateToken().Sleep(2 * 60 * 1000);  //just throw passengers in the rain
-            Console.WriteLine($"Bus {car.CarId} has transfered passengers to storage");
+            Console.WriteLine($"{car.CarId} has transfered passengers to storage");
             car.Passengers = 0;
         }
         void GetPassengersToAirplane(BusCar car, PassengersServiceCommand cmd)
         {
-            Console.WriteLine($"Bus {car.CarId} is going to get passengers to airplane {cmd.PlaneId}");
-            Console.WriteLine($"Bus {car.CarId} is going to storage");
+            Console.WriteLine($"{car.CarId} is going to storage to get {cmd.PassengersCount} passengers to {cmd.PlaneId}");
             transportMotion.GoPath(car, 25);
 
             mqClient.Send<PassengersFromStorageRequest>(queuesTo[Component.Storage], new PassengersFromStorageRequest()
@@ -262,11 +258,10 @@ namespace BusComponent
                 Capacity = BusCar.PassengersMaxCount,
                 FlightId = cmd.FlightId
             });
-            Console.WriteLine($"Bus {car.CarId} send message to storage");
+            Console.WriteLine($"{car.CarId} send message to storage");
             car.CarTools.StorageResponse.WaitOne();
-            Console.WriteLine($"Bus {car.CarId} took passengers from storage and is going to plane {cmd.PlaneId}");
+            Console.WriteLine($"{car.CarId} took passengers from storage and is going to {cmd.PlaneId}");
             transportMotion.GoPath(car, cmd.PlaneLocationVertex);
-            Console.WriteLine($"Bus {car.CarId} begins to give passengers to airplane {cmd.PlaneId} ");
             playDelaySource.CreateToken().Sleep(2 * 60 * 1000);        //get passengers to airplane
             mqClient.Send<PassengerTransferRequest>(queuesTo[Component.Airplane], new PassengerTransferRequest()
             {
@@ -275,7 +270,7 @@ namespace BusComponent
                 PassengersCount = car.Passengers,
                 PlaneId = cmd.PlaneId
             });
-            Console.WriteLine($"Bus {car.CarId} gave passengers to storage");
+            Console.WriteLine($"{car.CarId} gave {cmd.PassengersCount} passengers to {cmd.PlaneId}");
             car.Passengers = 0;
         }
 
