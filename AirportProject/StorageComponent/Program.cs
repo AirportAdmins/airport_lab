@@ -159,13 +159,13 @@ namespace StorageComponent
 
                 MqClient.Send<PassengersFromStorageResponse>(storageBus,
                     new PassengersFromStorageResponse() { BusId = busId, PassengersCount = passCount, PassengersIds = passengers });
-                Console.WriteLine($"Sent to Bus: {busId}, {passCount}, {passengers}");
+                Console.WriteLine($"Sent to Bus: {busId}, {passCount}");
 
                 flight.Passengers.RemoveRange(0, passCount);
 
                 MqClient.Send<PassengerPassMessage>(storagePas,
                    new PassengerPassMessage() { ObjectId = busId, Status = PassengerStatus.InBus, PassengersIds = passengers });
-                Console.WriteLine($"Sent to Passenger: {busId}, {PassengerStatus.InBus}, {passengers}");
+                Console.WriteLine($"Sent to Passenger: in {busId}");
 
                 TryToRemove(flightId);
             }
