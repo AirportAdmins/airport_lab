@@ -6,6 +6,7 @@ using AirportLibrary.DTO;
 using System.Threading;
 using System.Collections.Concurrent;
 using AirportLibrary.Delay;
+using System.Threading.Tasks;
 
 namespace StorageComponent
 {
@@ -22,8 +23,8 @@ namespace StorageComponent
         public PlayDelaySource DelaySource { get; set; } = new PlayDelaySource(1);
         private readonly object flightLock = new object();
 
-        const int PASS_TIME_MS = 10000; // передача пассажиров - 10 секунд игрового времени
-        const int BAGGAGE_TIME_MS = 3000; // передача пассажиров - 3 секунд игрового времени
+        const int PASS_TIME_MS = 2 * 60 * 1000; // передача пассажиров - 2 минуты игрового времени
+        const int BAGGAGE_TIME_MS = 60 * 1000; // передача пассажиров - минута игрового времени
 
         const string timeStorage = Component.TimeService + Component.Storage;
         const string regStorage = Component.Registration + Component.Storage;
@@ -34,6 +35,12 @@ namespace StorageComponent
         const string storageBus = Component.Storage + Component.Bus;
         const string storageBaggage = Component.Storage + Component.Baggage;
 
+        ConcurrentQueue<PassengersFromStorageRequest> passengersRequests = new ConcurrentQueue<PassengersFromStorageRequest>();
+        AutoResetEvent passengersResetEvent = new AutoResetEvent(false);
+
+        ConcurrentQueue<BaggageFromStorageRequest> baggageRequests = new ConcurrentQueue<BaggageFromStorageRequest>();
+        AutoResetEvent baggageResetEvent = new AutoResetEvent(false);
+
         public static readonly List<string> queues = new List<string>
         {
             timeStorage, regStorage, regStorageBaggage, busStorage, baggageStorage, storagePas, storageBus, storageBaggage
@@ -41,43 +48,71 @@ namespace StorageComponent
 
         static void Main(string[] args)
         {
-            var storage = new Storage();
+            new Storage().Start();
+        }
 
-            storage.MqClient.DeclareQueues(queues.ToArray());
-            storage.MqClient.PurgeQueues(queues.ToArray());
+        public void Start()
+        {
+            MqClient.DeclareQueues(queues.ToArray());
+            MqClient.PurgeQueues(queues.ToArray());
 
-            storage.MqClient.SubscribeTo<NewTimeSpeedFactor>(timeStorage, (mes) =>
+            Task.Run(() =>
             {
-                storage.DelaySource.TimeFactor = mes.Factor;
+                while (true)
+                {
+                    while (passengersRequests.TryDequeue(out var request))
+                    {
+                        DelaySource.CreateToken().Sleep(PASS_TIME_MS);
+                        PassPassengers(request.BusId, request.FlightId, request.Capacity);
+                    }
+                    passengersResetEvent.WaitOne();
+                }
             });
 
-            storage.MqClient.SubscribeTo<PassengerStoragePass>(regStorage, (mes) =>
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    while (baggageRequests.TryDequeue(out var request))
+                    {
+                        DelaySource.CreateToken().Sleep(BAGGAGE_TIME_MS);
+                        PassBaggage(request.CarId, request.FlightId, request.Capacity);
+                    }
+                    baggageResetEvent.WaitOne();
+                }
+            });
+
+            MqClient.SubscribeTo<NewTimeSpeedFactor>(timeStorage, (mes) =>
+            {
+                DelaySource.TimeFactor = mes.Factor;
+            });
+
+            MqClient.SubscribeTo<PassengerStoragePass>(regStorage, (mes) =>
             {
                 Console.WriteLine($"Received from Registration: {mes.FlightId} - {mes.PassengerId}");
-                storage.AddPassenger(mes.FlightId, mes.PassengerId);
+                AddPassenger(mes.FlightId, mes.PassengerId);
             });
 
-            storage.MqClient.SubscribeTo<BaggageStoragePass>(regStorageBaggage, (mes) =>
+            MqClient.SubscribeTo<BaggageStoragePass>(regStorageBaggage, (mes) =>
             {
                 Console.WriteLine($"Received from Registration: {mes.FlightId} + 1 baggage");
-                storage.AddBaggage(mes.FlightId);
+                AddBaggage(mes.FlightId);
             });
 
-            storage.MqClient.SubscribeTo<PassengersFromStorageRequest>(busStorage, (mes) =>
+            MqClient.SubscribeTo<PassengersFromStorageRequest>(busStorage, (mes) =>
             {
                 Console.WriteLine($"Received from Bus: {mes.BusId}, {mes.FlightId}, {mes.Capacity}");
-                storage.DelaySource.CreateToken().Sleep(PASS_TIME_MS);
-                storage.PassPassengers(mes.BusId, mes.FlightId, mes.Capacity);
+                passengersRequests.Enqueue(mes);
+                passengersResetEvent.Set();
             });
 
-            storage.MqClient.SubscribeTo<BaggageFromStorageRequest>(baggageStorage, (mes) =>
+            MqClient.SubscribeTo<BaggageFromStorageRequest>(baggageStorage, (mes) =>
             {
                 Console.WriteLine($"Received from Baggage car: {mes.CarId}, {mes.FlightId}, {mes.Capacity}");
-                storage.DelaySource.CreateToken().Sleep(BAGGAGE_TIME_MS);
-                storage.PassBaggage(mes.CarId, mes.FlightId, mes.Capacity);
+                baggageRequests.Enqueue(mes);
+                baggageResetEvent.Set();
             });
 
-            //reg.MqClient.Dispose();
         }
 
         public void AddPassenger(string flightId, string pasId)
