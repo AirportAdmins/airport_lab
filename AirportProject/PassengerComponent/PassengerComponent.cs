@@ -91,7 +91,7 @@ namespace PassengerComponent
                         if (random.NextDouble() < 1.0 / num)
                         {
                             var passenger = generator.GeneratePassenger();
-                            Console.WriteLine($"New passenger: {passenger.PassengerId}");
+                            Console.WriteLine($"{passenger.PassengerId}: new passenger");
                             idlePassengers.TryAdd(
                                 passenger.PassengerId,
                                 passenger
@@ -143,7 +143,7 @@ namespace PassengerComponent
                         {
                             if (passivePassengers.TryRemove(passenger.PassengerId, out var depPassenger))
                             {
-                                Console.WriteLine($"Passenger {depPassenger.PassengerId} has departed with flight {depPassenger.FlightId}");
+                                Console.WriteLine($"{depPassenger.PassengerId} has departed with {depPassenger.FlightId}");
                             };
                         }
                     }
@@ -212,7 +212,7 @@ namespace PassengerComponent
             }
             foreach (var passId in mes.PassengersIds)
             {
-                Console.WriteLine($"Passenger {passId} has been placed in {obj} {objId}");
+                Console.WriteLine($"{passId} is in {obj} {objId}");
                 passivePassengers[passId].Status = newStatus;
             }
         }
@@ -228,7 +228,7 @@ namespace PassengerComponent
                     if (passivePassengers.TryAdd(passenger.PassengerId, passenger))
                     {
                         passenger.Status = PassengerStatus.InStorage;
-                        Console.WriteLine($"Passenger {passId} has been placed in terminal");
+                        Console.WriteLine($"{passId} is in terminal");
                     }
                 }
             }
@@ -237,10 +237,10 @@ namespace PassengerComponent
             {
                 if (waitingForResponsePassengers.TryRemove(passId, out var passenger))
                 {
-                    Console.WriteLine($"Passenger {passId} has come too early for flight {passenger.FlightId} registration");
+                    Console.WriteLine($"{passId} has come too early for {passenger.FlightId} registration");
                     if (idlePassengers.TryAdd(passenger.PassengerId, passenger))
                     {
-                        Console.WriteLine($"Passenger {passId} goes away to come back later");
+                        Console.WriteLine($"{passId} goes away to come back later");
                     }
                 }
             }
@@ -249,7 +249,7 @@ namespace PassengerComponent
             {
                 var passenger = waitingForResponsePassengers[passId];
                 passenger.Status = PassengerStatus.Registered;
-                Console.WriteLine($"Passenger {passId} has been registered for flight {passenger.FlightId} registration");
+                Console.WriteLine($"{passId} has been registered for {passenger.FlightId}");
             }
             // else disappears 
             else
@@ -263,7 +263,7 @@ namespace PassengerComponent
                             action = "is not really punctual";
                             break;
                         case CheckInStatus.LateForTerminal:
-                            action = "loves duty free";
+                            action = "loves duty free!!!!!!!!!";
                             break;
                         case CheckInStatus.NoSuchFlight:
                             action = "goes away puzzled forever";
@@ -272,7 +272,7 @@ namespace PassengerComponent
                             action = "has missed something. Police will figure it out";
                             break;
                     }
-                    Console.WriteLine($"Passenger {passId} {action} {mes.Status}");
+                    Console.WriteLine($"{passId} {action} - {mes.Status}");
                 }
             }
         }
@@ -282,7 +282,7 @@ namespace PassengerComponent
             var status = mes.Status;
 
             Action<string> log = (action) => {
-                Console.WriteLine($"Passenger {mes.PassengerId} {action}");
+                Console.WriteLine($"{mes.PassengerId} {action}");
             };
 
             // AlreadyHasTicket - go to idle
@@ -307,28 +307,28 @@ namespace PassengerComponent
                         idlePassengers.TryAdd(passenger.PassengerId, passenger);
                         break;
                     case TicketStatus.Late:
-                        log($"is late for buying ticket for flight {passenger.FlightId}");
+                        log($"is late for buying ticket for {passenger.FlightId}");
                         idlePassengers.TryAdd(passenger.PassengerId, passenger);
                         break;
                     case TicketStatus.NoTicketsLeft:
-                        log($"is too late, no tickets left for flight {passenger.FlightId}");
+                        log($"is too late, no tickets left for {passenger.FlightId}");
                         idlePassengers.TryAdd(passenger.PassengerId, passenger);
                         break;
                     case TicketStatus.HasTicket:
-                        log($"has bought a ticket for flight {passenger.FlightId} successfully");
+                        log($"has bought a ticket for {passenger.FlightId} successfully");
                         passenger.Status = PassengerStatus.HasTicket;
                         idlePassengers.TryAdd(passenger.PassengerId, passenger);
                         break;
                     case TicketStatus.TicketReturn:
-                        log($"returned a ticket for flight {passenger.FlightId} successfully");
+                        log($"returned a ticket for {passenger.FlightId} successfully");
                         passenger.Status = PassengerStatus.NoTicket;
                         idlePassengers.TryAdd(passenger.PassengerId, passenger);
                         break;
                     case TicketStatus.LateReturn:
-                        log($"was late returning a ticket for flight {passenger.FlightId}");
+                        log($"was late returning a ticket for {passenger.FlightId}");
                         break;
                     case TicketStatus.ReturnError:
-                        log($"cannot return a ticket for flight {passenger.FlightId}");
+                        log($"cannot return a ticket for {passenger.FlightId}");
                         break;
                     default:
                         break;
@@ -414,7 +414,7 @@ namespace PassengerComponent
                             // throw this passenger out
                             if (idlePassengers.TryRemove(passenger.PassengerId, out passenger))
                             {
-                                Console.WriteLine($"Passenger {passenger.PassengerId} has missed check in - he sadly goes away");
+                                Console.WriteLine($"{passenger.PassengerId} has missed check in - he sadly goes away");
                             }
                         }
                         else if (chance < CHANCE_TO_RETURN_TICKET)
@@ -455,7 +455,7 @@ namespace PassengerComponent
                     Action = TicketAction.Buy
                 });
             },
-            $"is going to buy a ticket for flight {flight.FlightId}...");
+            $"is going to buy a ticket for {flight.FlightId}...");
             
         }
 
@@ -475,7 +475,7 @@ namespace PassengerComponent
                     HasBaggage = passenger.HasBaggage
                 });
             },
-            $"is going to check in for flight {flight.FlightId}...");
+            $"is going to check in for {flight.FlightId}...");
         }
 
         private void GoReturnTicketToAnyOfFlights(Passenger passenger, List<FlightStatusUpdate> flights)
@@ -493,13 +493,13 @@ namespace PassengerComponent
                     Action = TicketAction.Return
                 });
             },
-            $"is going to return a ticket for flight {flight.FlightId}...");
+            $"is going to return a ticket for {flight.FlightId}...");
         }
 
         private void MovePassengerFromIdleToWaitingAndDoAction(Passenger passenger, Action action, string message = null)
         {
             Action<string> log = (action) => {
-                Console.WriteLine($"Passenger {passenger.PassengerId} {action}");
+                Console.WriteLine($"{passenger.PassengerId} {action}");
             };
             if (idlePassengers.TryRemove(passenger.PassengerId, out passenger))
             {
