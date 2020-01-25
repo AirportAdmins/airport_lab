@@ -212,7 +212,7 @@ namespace PassengerComponent
             }
             foreach (var passId in mes.PassengersIds)
             {
-                Console.WriteLine($"{passId} has been placed in {obj} {objId}");
+                Console.WriteLine($"{passId} is in {obj} {objId}");
                 passivePassengers[passId].Status = newStatus;
             }
         }
@@ -228,7 +228,7 @@ namespace PassengerComponent
                     if (passivePassengers.TryAdd(passenger.PassengerId, passenger))
                     {
                         passenger.Status = PassengerStatus.InStorage;
-                        Console.WriteLine($"{passId} has been placed in terminal");
+                        Console.WriteLine($"{passId} is in terminal");
                     }
                 }
             }
