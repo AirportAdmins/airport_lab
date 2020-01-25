@@ -13,7 +13,7 @@ namespace FuelTruck
 
         public FuelTruckCar(int id) // CateringCar = FuelTrackCar
         {
-            carId = "FuelTrack-" + id;
+            carId = "FuelTruck-" + id;
             //Status = Status.Free;           
         }
         public string CarId => carId;
