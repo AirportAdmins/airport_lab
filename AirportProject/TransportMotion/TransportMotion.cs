@@ -40,7 +40,7 @@ namespace TransportMotion
             queuesTo = new Dictionary<string, string>()
             {
                 { Component.Logs, Component.Logs },
-                { Component.GroundMotion,component+Component.GroundMotion },
+                { Component.GroundMotion,Component.GroundMotion },
                 { Component.Visualizer,Component.Visualizer },
             };
         }
@@ -77,11 +77,15 @@ namespace TransportMotion
             double position = 0;
             int distance = map.Graph.GetWeightBetweenNearVerties(car.LocationVertex, DestinationVertex);
             int StartVertex = car.LocationVertex;
+
+            Console.WriteLine($"{car.CarId} is waiting for motion permission");
             WaitForMotionPermission(car, StartVertex,DestinationVertex);
             SendVisualizationMessage(car, StartVertex,DestinationVertex, car.Speed);
+            Console.WriteLine($"{car.CarId} is going to vertex {DestinationVertex}");
             source.CreateToken().Sleep(distance * 1000 / car.Speed);
             car.LocationVertex = DestinationVertex;         //change location
             car.MotionPermitted = false;
+            Console.WriteLine($"{car.CarId} is in vertex {DestinationVertex}");
             SendVisualizationMessage(car, StartVertex, DestinationVertex, 0);           
             mqClient.Send<MotionPermissionRequest>(queuesTo[Component.GroundMotion], //free edge
             new MotionPermissionRequest()
